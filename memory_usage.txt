@@ -1,0 +1,752 @@
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   460m         2%     15881Mi         50%
+
+k8s-master2   209m         1%     4733Mi          15%
+
+k8s-master3   172m         1%     4954Mi          15%
+
+k8s-worker1   103m         0%     4078Mi          13%
+
+k8s-worker2   111m         0%     11264Mi         35%
+
+k8s-worker3   72m          0%     4212Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   460m         2%     15881Mi         50%
+
+k8s-master2   209m         1%     4733Mi          15%
+
+k8s-master3   172m         1%     4954Mi          15%
+
+k8s-worker1   103m         0%     4078Mi          13%
+
+k8s-worker2   111m         0%     11264Mi         35%
+
+k8s-worker3   72m          0%     4212Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   460m         2%     15881Mi         50%
+
+k8s-master2   209m         1%     4733Mi          15%
+
+k8s-master3   172m         1%     4954Mi          15%
+
+k8s-worker1   103m         0%     4078Mi          13%
+
+k8s-worker2   111m         0%     11264Mi         35%
+
+k8s-worker3   72m          0%     4212Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   378m         2%     15872Mi         50%
+
+k8s-master2   135m         0%     4732Mi          15%
+
+k8s-master3   117m         0%     4952Mi          15%
+
+k8s-worker1   60m          0%     4074Mi          13%
+
+k8s-worker2   637m         3%     18948Mi         60%
+
+k8s-worker3   51m          0%     4213Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   417m         2%     15869Mi         50%
+
+k8s-master2   144m         0%     4735Mi          15%
+
+k8s-master3   133m         0%     4958Mi          15%
+
+k8s-worker1   63m          0%     4076Mi          13%
+
+k8s-worker2   945m         5%     11344Mi         36%
+
+k8s-worker3   54m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   417m         2%     15869Mi         50%
+
+k8s-master2   144m         0%     4735Mi          15%
+
+k8s-master3   133m         0%     4958Mi          15%
+
+k8s-worker1   63m          0%     4076Mi          13%
+
+k8s-worker2   945m         5%     11344Mi         36%
+
+k8s-worker3   54m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   417m         2%     15869Mi         50%
+
+k8s-master2   144m         0%     4735Mi          15%
+
+k8s-master3   133m         0%     4958Mi          15%
+
+k8s-worker1   63m          0%     4076Mi          13%
+
+k8s-worker2   945m         5%     11344Mi         36%
+
+k8s-worker3   54m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   417m         2%     15869Mi         50%
+
+k8s-master2   144m         0%     4735Mi          15%
+
+k8s-master3   133m         0%     4958Mi          15%
+
+k8s-worker1   63m          0%     4076Mi          13%
+
+k8s-worker2   945m         5%     11344Mi         36%
+
+k8s-worker3   54m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   433m         2%     15917Mi         50%
+
+k8s-master2   135m         0%     4731Mi          15%
+
+k8s-master3   122m         0%     4954Mi          15%
+
+k8s-worker1   66m          0%     4074Mi          13%
+
+k8s-worker2   230m         1%     14341Mi         45%
+
+k8s-worker3   45m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   450m         2%     15912Mi         50%
+
+k8s-master2   152m         0%     4735Mi          15%
+
+k8s-master3   130m         0%     4957Mi          15%
+
+k8s-worker1   64m          0%     4077Mi          13%
+
+k8s-worker2   1060m        6%     20510Mi         65%
+
+k8s-worker3   52m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   385m         2%     15909Mi         50%
+
+k8s-master2   145m         0%     4734Mi          15%
+
+k8s-master3   124m         0%     4957Mi          15%
+
+k8s-worker1   59m          0%     4075Mi          13%
+
+k8s-worker2   409m         2%     14412Mi         46%
+
+k8s-worker3   50m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   385m         2%     15909Mi         50%
+
+k8s-master2   145m         0%     4734Mi          15%
+
+k8s-master3   124m         0%     4957Mi          15%
+
+k8s-worker1   59m          0%     4075Mi          13%
+
+k8s-worker2   409m         2%     14412Mi         46%
+
+k8s-worker3   50m          0%     4215Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   339m         2%     15894Mi         50%
+
+k8s-master2   133m         0%     4729Mi          15%
+
+k8s-master3   127m         0%     4955Mi          15%
+
+k8s-worker1   57m          0%     4077Mi          13%
+
+k8s-worker2   56m          0%     14411Mi         46%
+
+k8s-worker3   46m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   339m         2%     15894Mi         50%
+
+k8s-master2   133m         0%     4729Mi          15%
+
+k8s-master3   127m         0%     4955Mi          15%
+
+k8s-worker1   57m          0%     4077Mi          13%
+
+k8s-worker2   56m          0%     14411Mi         46%
+
+k8s-worker3   46m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   339m         2%     15894Mi         50%
+
+k8s-master2   133m         0%     4729Mi          15%
+
+k8s-master3   127m         0%     4955Mi          15%
+
+k8s-worker1   57m          0%     4077Mi          13%
+
+k8s-worker2   56m          0%     14411Mi         46%
+
+k8s-worker3   46m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   339m         2%     15894Mi         50%
+
+k8s-master2   133m         0%     4729Mi          15%
+
+k8s-master3   127m         0%     4955Mi          15%
+
+k8s-worker1   57m          0%     4077Mi          13%
+
+k8s-worker2   56m          0%     14411Mi         46%
+
+k8s-worker3   46m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   339m         2%     15894Mi         50%
+
+k8s-master2   133m         0%     4729Mi          15%
+
+k8s-master3   127m         0%     4955Mi          15%
+
+k8s-worker1   57m          0%     4077Mi          13%
+
+k8s-worker2   56m          0%     14411Mi         46%
+
+k8s-worker3   46m          0%     4214Mi          13%
+
+[bdm@k8s-master1 develope]$ kubectl top nodes
+
+NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+
+k8s-master1   414m         2%     15900Mi         50%
+
+k8s-master2   195m         1%     4736Mi          15%
+
+k8s-master3   155m         0%     4933Mi          15%
+
+k8s-worker1   100m         0%     4079Mi          13%
+
+k8s-worker2   226m         1%     8357Mi          26%
+
+k8s-worker3   68m          0%     4216Mi          13%
+

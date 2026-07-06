@@ -1,0 +1,8 @@
+# 前端公告功能更新镜像
+# 基于已有镜像，仅替换前端构建产物
+# docker build -t 10.240.125.39/cube-studio/kubeflow-dashboard-frontend:20260612 -f install/docker/dockerFrontend/Dockerfile-update .
+
+FROM ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard-frontend:2026.03.01
+
+# 替换更新后的前端构建产物（包含公告功能）
+COPY myapp/static/appbuilder/frontend /data/web/frontend

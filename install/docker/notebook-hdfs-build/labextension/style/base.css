@@ -1,0 +1,7 @@
+.cs-dataset-panel {
+  font-size: 13px;
+}
+
+.cs-dataset-panel .cs-ds-header:hover {
+  background: #f5f5f5;
+}
