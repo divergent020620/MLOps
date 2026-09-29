@@ -61,3 +61,7 @@ myapp/static/aihub
 myapp/static/dataset
 myapp/static/global
 myapp/static/mnt
+
+# Binary / build artifacts
+*.whl
+fix/caddy-build/caddy
