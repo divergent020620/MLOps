@@ -1,0 +1,655 @@
+sh-5.0# echo "===== 1. 系统与架构 ====="
+
+===== 1. 系统与架构 =====
+
+sh-5.0# cat /etc/kylin-release 2>/dev/null; cat /etc/os-release 2>/dev/null | head -5
+
+Kylin Linux Advanced Server release V10 (Halberd)
+
+NAME="Kylin Linux Advanced Server"
+
+VERSION="V10 (Halberd)"
+
+ID="kylin"
+
+VERSION_ID="V10"
+
+PRETTY_NAME="Kylin Linux Advanced Server V10 (Halberd)"
+
+sh-5.0# uname -a; uname -m
+
+Linux 7bda8500c364 4.19.90-89.40.v2401.ky10.x86_64 #1 SMP Tue Jun 9 09:47:29 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+x86_64
+
+sh-5.0# echo "===== 2. glibc 与基础库版本 ====="
+
+===== 2. glibc 与基础库版本 =====
+
+sh-5.0# ldd --version 2>/dev/null | head -1
+
+ldd (GNU libc) 2.28
+
+sh-5.0# rpm -qa 2>/dev/null | grep -E "^(glibc|glibc-common|glibc-devel|openssl|openssl-libs|zlib|bzip2|bzip2-libs|libstdc|libgcc|pcre|expat|ca-certificates)" | sort
+
+bzip2-libs-1.0.8-6.img01.ky10.x86_64
+
+ca-certificates-2023.2.60-2.ky10.noarch
+
+expat-2.2.9-23.ky10.x86_64
+
+glibc-2.28-98.p12.ky10.x86_64
+
+glibc-common-2.28-98.p12.ky10.x86_64
+
+libgcc-7.3.0-2020033101.58.p03.ky10.x86_64
+
+libstdc++-7.3.0-2020033101.58.p03.ky10.x86_64
+
+openssl-libs-1.1.1f-31.p34.ky10.x86_64
+
+pcre-8.44-2.p02.img01.ky10.x86_64
+
+pcre2-10.39-9.img01.ky10.x86_64
+
+zlib-1.2.11-23.ky10.x86_64
+
+sh-5.0# echo "rpm 总包数: $(rpm -qa 2>/dev/null | wc -l)"
+
+rpm 总包数: 157
+
+sh-5.0# echo "===== 3. Python 全家 ====="
+
+===== 3. Python 全家 =====
+
+sh-5.0# for c in python python3 python3.7 python3.12; do
+
+>   cmd=$(command -v $c 2>/dev/null)
+
+>   if [ -n "$cmd" ]; then
+
+>     echo "--- $c -> $cmd"
+
+>     $c --version 2>&1
+
+>     $c -m pip --version 2>&1 || echo "pip: 无"
+
+>     $c -c "import ssl; print('ssl:', ssl.OPENSSL_VERSION)" 2>&1
+
+>     $c -m venv /tmp/venvtest >/dev/null 2>&1 && echo "venv: OK" || echo "venv: 无"
+
+>   else
+
+>     echo "--- $c: 不存在"
+
+>   fi
+
+> done
+
+--- python: 不存在
+
+--- python3 -> /opt/python3.12.10-x86_64-bin/bin/python3
+
+Python 3.12.10
+
+pip 25.0.1 from /opt/python3.12.10-x86_64-bin/lib/python3.12/site-packages/pip (python 3.12)
+
+ssl: OpenSSL 1.1.1f  31 Mar 2020
+
+venv: OK
+
+--- python3.7 -> /usr/bin/python3.7
+
+Python 3.7.9
+
+pip 20.2.2 from /usr/local/lib/python3.7/site-packages/pip (python 3.7)
+
+ssl: OpenSSL 1.1.1f  31 Mar 2020
+
+venv: 无
+
+--- python3.12 -> /opt/python3.12.10-x86_64-bin/bin/python3.12
+
+Python 3.12.10
+
+pip 25.0.1 from /opt/python3.12.10-x86_64-bin/lib/python3.12/site-packages/pip (python 3.12)
+
+ssl: OpenSSL 1.1.1f  31 Mar 2020
+
+venv: OK
+
+sh-5.0# echo "--- python3 属于哪个包:"
+
+--- python3 属于哪个包:
+
+sh-5.0# rpm -qf $(readlink -f $(command -v python3)) 2>/dev/null || echo "非 rpm 安装(可能源码/conda/拷贝)"
+
+file /opt/python3.12.10-x86_64-bin/bin/python3.12 is not owned by any package
+
+非 rpm 安装(可能源码/conda/拷贝)
+
+sh-5.0# echo "--- conda 痕迹:"
+
+--- conda 痕迹:
+
+sh-5.0# ls -d /root/miniconda3 /opt/conda /usr/local/miniconda3 /opt/miniconda3 2>/dev/null || echo "无 conda 目录"
+
+无 conda 目录
+
+sh-5.0# conda --version 2>&1 || true
+
+sh: conda: command not found
+
+sh-5.0# echo "===== 4. pip 配置 ====="
+
+===== 4. pip 配置 =====
+
+sh-5.0# pip --version 2>&1; pip3 --version 2>&1
+
+pip 25.0.1 from /opt/python3.12.10-x86_64-bin/lib/python3.12/site-packages/pip (python 3.12)
+
+pip 25.0.1 from /opt/python3.12.10-x86_64-bin/lib/python3.12/site-packages/pip (python 3.12)
+
+sh-5.0# pip config list 2>&1
+
+sh-5.0# pip3.12 --version 2>&1
+
+pip 25.0.1 from /opt/python3.12.10-x86_64-bin/lib/python3.12/site-packages/pip (python 3.12)
+
+sh-5.0# echo "===== 5. 关键 rpm 版本(漏洞对照用)====="
+
+===== 5. 关键 rpm 版本(漏洞对照用)=====
+
+sh-5.0# rpm -qa 2>/dev/null | grep -E "krb5|cyrus-sasl|libsasl|perl|libxml2|pam|libssh|libarchive|unbound|libcurl|curl|fontconfig|wqy|nginx|python3|python-pip|jq|rsync|tar|findutils|coreutils|which|sudo|vim|git|wget|iproute|net-tools|procps" | sort
+
+coreutils-8.32-10.p03.img01.ky10.x86_64
+
+crypto-policies-20200619-4.git781bbd4.p01.img01.ky10.noarch
+
+curl-7.71.1-47.ky10.x86_64
+
+cyrus-sasl-lib-2.1.27-15.ky10.x86_64
+
+findutils-4.7.0-5.p01.ky10.x86_64
+
+iproute-5.5.0-15.p02.ky10.x86_64
+
+iproute-help-5.5.0-15.p02.ky10.noarch
+
+krb5-libs-1.18.2-23.ky10.x86_64
+
+libarchive-3.4.3-14.img01.ky10.x86_64
+
+libcurl-7.71.1-47.ky10.x86_64
+
+libssh-0.9.4-16.ky10.x86_64
+
+libxml2-2.9.10-43.p16.ky10.x86_64
+
+pam-1.5.2-6.p06.se.02.ky10.x86_64
+
+procps-ng-3.3.16-19.p01.ky10.x86_64
+
+python3-3.7.9-44.se.01.p05.ky10.x86_64
+
+python3-dnf-4.2.23-11.p04.ky10.noarch
+
+python3-gpgme-1.14.0-1.ky10.x86_64
+
+python3-hawkey-0.48.0-5.p01.ky10.x86_64
+
+python3-libcomps-0.1.10-2.ky10.x86_64
+
+python3-libdnf-0.48.0-5.p01.ky10.x86_64
+
+python3-rpm-4.15.1-54.p02.se.05.img01.ky10.x86_64
+
+tar-1.32-4.ky10.x86_64
+
+vim-minimal-9.0-35.p03.ky10.x86_64
+
+sh-5.0# echo "===== 6. yum 能力(确认是否真的无源)====="
+
+===== 6. yum 能力(确认是否真的无源)=====
+
+sh-5.0# command -v yum dnf 2>/dev/null || echo "yum/dnf: 不存在"
+
+/usr/bin/yum
+
+/usr/bin/dnf
+
+sh-5.0# yum repolist 2>&1 | head -8
+
+repo id                                 repo name
+
+base                                    base
+
+updates                                 updates
+
+sh-5.0# ls /etc/yum.repos.d/ 2>/dev/null
+
+kylin_sp3.repo
+
+sh-5.0# echo "===== 7. 关键动态库(在 /usr/lib /lib 下找)====="
+
+===== 7. 关键动态库(在 /usr/lib /lib 下找)=====
+
+sh-5.0# for so in libgssapi_krb5.so.2 libsasl2.so.3 libssl.so.3 libssl.so.1.1 libcrypto.so.3 libz.so.1 libbz2.so.1 libpq.so.5 libcurl.so.4 libxml2.so.2 libffi.so.8 libstdc++.so.6; do
+
+>   found=$(find /usr/lib64 /lib64 /usr/lib -name "$so" 2>/dev/null | head -1)
+
+>   [ -n "$found" ] && echo "$so: $found" || echo "$so: 缺失"
+
+> done
+
+libgssapi_krb5.so.2: /usr/lib64/libgssapi_krb5.so.2
+
+libsasl2.so.3: /usr/lib64/libsasl2.so.3
+
+libssl.so.3: 缺失
+
+libssl.so.1.1: /usr/lib64/libssl.so.1.1
+
+libcrypto.so.3: 缺失
+
+libz.so.1: /usr/lib64/libz.so.1
+
+libbz2.so.1: /usr/lib64/libbz2.so.1
+
+libpq.so.5: 缺失
+
+libcurl.so.4: /usr/lib64/libcurl.so.4
+
+libxml2.so.2: /usr/lib64/libxml2.so.2
+
+libffi.so.8: 缺失
+
+libstdc++.so.6: /usr/lib64/libstdc++.so.6
+
+sh-5.0# echo "===== 8. 常用命令存在性 ====="
+
+===== 8. 常用命令存在性 =====
+
+sh-5.0# for c in curl wget git unzip zip tar kinit kubectl jq rsync ssh vi vim node npm nginx java mysql psql socat nc; do
+
+>   command -v $c >/dev/null 2>&1 && echo "$c: $(command -v $c)" || echo "$c: 缺失"
+
+> done
+
+curl: /usr/bin/curl
+
+wget: 缺失
+
+git: 缺失
+
+unzip: 缺失
+
+zip: 缺失
+
+tar: /usr/bin/tar
+
+kinit: 缺失
+
+kubectl: 缺失
+
+jq: 缺失
+
+rsync: 缺失
+
+ssh: 缺失
+
+vi: /usr/bin/vi
+
+vim: 缺失
+
+node: 缺失
+
+npm: 缺失
+
+nginx: 缺失
+
+java: 缺失
+
+mysql: 缺失
+
+psql: 缺失
+
+socat: 缺失
+
+nc: 缺失
+
+sh-5.0# echo "===== 9. rpm 全量清单 ====="
+
+===== 9. rpm 全量清单 =====
+
+sh-5.0# rpm -qa 2>/dev/null | sort
+
+acl-2.2.53-9.ky10.x86_64
+
+audit-libs-3.0-10.se.07.ky10.x86_64
+
+basesystem-12-2.ky10.noarch
+
+bash-5.0-21.p01.se.01.ky10.x86_64
+
+brotli-1.0.7-4.ky10.x86_64
+
+bzip2-libs-1.0.8-6.img01.ky10.x86_64
+
+ca-certificates-2023.2.60-2.ky10.noarch
+
+chkconfig-1.14-3.img01.ky10.x86_64
+
+coreutils-8.32-10.p03.img01.ky10.x86_64
+
+cracklib-2.9.7-7.ky10.x86_64
+
+crontabs-1.11-21.ky10.noarch
+
+crypto-policies-20200619-4.git781bbd4.p01.img01.ky10.noarch
+
+cryptsetup-2.4.1-5.ky10.x86_64
+
+curl-7.71.1-47.ky10.x86_64
+
+cyrus-sasl-lib-2.1.27-15.ky10.x86_64
+
+dbus-common-1.12.16-22.p01.ky10.noarch
+
+dbus-daemon-1.12.16-22.p01.ky10.x86_64
+
+dbus-libs-1.12.16-22.p01.ky10.x86_64
+
+dbus-tools-1.12.16-22.p01.ky10.x86_64
+
+device-mapper-1.02.171-15.p06.ky10.x86_64
+
+dnf-4.2.23-11.p04.ky10.noarch
+
+elfutils-libs-0.180-15.p04.img01.ky10.x86_64
+
+expat-2.2.9-23.ky10.x86_64
+
+file-libs-5.39-7.p02.ky10.x86_64
+
+filesystem-3.14-1.ky10.x86_64
+
+findutils-4.7.0-5.p01.ky10.x86_64
+
+gawk-5.0.1-5.p01.ky10.x86_64
+
+gdbm-1.18.1-8.ky10.x86_64
+
+glib2-2.66.8-13.p08.img01.ky10.x86_64
+
+glibc-2.28-98.p12.ky10.x86_64
+
+glibc-common-2.28-98.p12.ky10.x86_64
+
+gmp-6.2.0-2.ky10.x86_64
+
+gnupg2-2.2.21-10.ky10.x86_64
+
+gnutls-3.6.14-16.p08.img01.ky10.x86_64
+
+gpgme-1.14.0-1.ky10.x86_64
+
+grep-3.4-4.p01.ky10.x86_64
+
+groff-base-1.22.4-9.ky10.x86_64
+
+gzip-1.10-3.ky10.x86_64
+
+ima-evm-utils-libs-1.3.1-10.ky10.x86_64
+
+info-6.7-2.ky10.x86_64
+
+iproute-5.5.0-15.p02.ky10.x86_64
+
+iproute-help-5.5.0-15.p02.ky10.noarch
+
+iptables-libs-1.8.5-6.ky10.x86_64
+
+json-c-0.15-6.ky10.x86_64
+
+keyutils-libs-1.6.3-4.ky10.x86_64
+
+kmod-libs-29-7.se.01.ky10.x86_64
+
+krb5-libs-1.18.2-23.ky10.x86_64
+
+kylin-gpg-keys-1.0-2.4.p21.ky10.x86_64
+
+kylin-release-10-24.6.p195.03.ky10.x86_64
+
+kylin-repos-1.0-2.4.p21.ky10.x86_64
+
+less-590-5.ky10.x86_64
+
+libacl-2.2.53-9.ky10.x86_64
+
+libarchive-3.4.3-14.img01.ky10.x86_64
+
+libargon2-20190702-3.ky10.x86_64
+
+libassuan-2.5.3-2.ky10.x86_64
+
+libattr-2.4.48-15.img01.ky10.x86_64
+
+libblkid-2.35.2-14.p07.ky10.x86_64
+
+libcap-2.32-8.ky10.x86_64
+
+libcap-ng-0.8.1-1.img01.ky10.x86_64
+
+libchkuid-1.0-3.se.08.ky10.x86_64
+
+libcom_err-1.45.6-20.img01.ky10.x86_64
+
+libcomps-0.1.10-2.ky10.x86_64
+
+libcurl-7.71.1-47.ky10.x86_64
+
+libdb-5.3.28-41.p01.img01.ky10.x86_64
+
+libdb-utils-5.3.28-41.p01.img01.ky10.x86_64
+
+libdnf-0.48.0-5.p01.ky10.x86_64
+
+libfdisk-2.35.2-14.p07.ky10.x86_64
+
+libffi-3.3-11.ky10.x86_64
+
+libgcc-7.3.0-2020033101.58.p03.ky10.x86_64
+
+libgcrypt-1.9.4-3.ky10.x86_64
+
+libgomp-7.3.0-2020033101.58.p03.ky10.x86_64
+
+libgpg-error-1.38-2.p01.ky10.x86_64
+
+libidn2-2.3.0-4.img01.ky10.x86_64
+
+libksba-1.4.0-4.ky10.x86_64
+
+libkysec-3.4.1-01.se.26.ky10.x86_64
+
+libkysec-adv-1.1.1-01.se.09.ky10.x86_64
+
+libkysec-core-1.1.1-01.se.09.ky10.x86_64
+
+libmnl-1.0.4-10.ky10.x86_64
+
+libmodulemd-2.9.4-3.ky10.x86_64
+
+libmount-2.35.2-14.p07.ky10.x86_64
+
+libnghttp2-1.41.0-7.ky10.x86_64
+
+libnsl2-1.3.0-2.ky10.x86_64
+
+libpcap-1.10.3-4.ky10.x86_64
+
+libpipeline-1.5.2-1.ky10.x86_64
+
+libpng-1.6.37-6.ky10.x86_64
+
+libpsl-0.21.1-2.img02.ky10.x86_64
+
+libpwquality-1.4.2-3.p03.se.04.ky10.x86_64
+
+librepo-1.12.0-3.ky10.x86_64
+
+libreport-filesystem-2.10.1-10.p01.ky10.noarch
+
+libseccomp-2.5.0-5.p03.ky10.x86_64
+
+libsecurity1-1.2-1.se.03.ky10.x86_64
+
+libselinux-3.1-7.se.03.ky10.x86_64
+
+libsemanage-3.1-3.se.02.ky10.x86_64
+
+libsepol-3.1-10.ky10.x86_64
+
+libsigsegv-2.12-2.ky10.x86_64
+
+libsmartcols-2.35.2-14.p07.ky10.x86_64
+
+libsolv-0.7.14-7.img01.ky10.x86_64
+
+libssh-0.9.4-16.ky10.x86_64
+
+libstdc++-7.3.0-2020033101.58.p03.ky10.x86_64
+
+libtasn1-4.16.0-3.p01.img01.ky10.x86_64
+
+libtirpc-1.2.6-4.p01.ky10.x86_64
+
+libunistring-0.9.10-8.ky10.x86_64
+
+libuser-0.62-23.ky10.x86_64
+
+libutempter-1.2.1-3.ky10.x86_64
+
+libuuid-2.35.2-14.p07.ky10.x86_64
+
+libverto-0.3.1-6.img01.ky10.x86_64
+
+libxcrypt-4.4.16-2.ky10.x86_64
+
+libxml2-2.9.10-43.p16.ky10.x86_64
+
+libyaml-0.2.5-6.ky10.x86_64
+
+libzstd-1.4.5-2.img01.ky10.x86_64
+
+logrotate-3.16.0-5.ky10.x86_64
+
+lua-libs-5.3.5-5.img01.ky10.x86_64
+
+lz4-libs-1.9.2-4.img01.ky10.x86_64
+
+mpfr-4.1.0-1.ky10.x86_64
+
+ncurses-6.2-7.p01.ky10.x86_64
+
+ncurses-base-6.2-7.p01.ky10.noarch
+
+ncurses-libs-6.2-7.p01.ky10.x86_64
+
+nettle-3.6-5.p04.ky10.x86_64
+
+npth-1.6-1.ky10.x86_64
+
+openldap-2.4.50-8.ky10.x86_64
+
+openssl-libs-1.1.1f-31.p34.ky10.x86_64
+
+p11-kit-0.23.20-4.ky10.x86_64
+
+p11-kit-trust-0.23.20-4.ky10.x86_64
+
+pam-1.5.2-6.p06.se.02.ky10.x86_64
+
+passwd-0.80-9.se.01.p02.ky10.x86_64
+
+pcre-8.44-2.p02.img01.ky10.x86_64
+
+pcre2-10.39-9.img01.ky10.x86_64
+
+popt-1.18-3.ky10.x86_64
+
+procps-ng-3.3.16-19.p01.ky10.x86_64
+
+publicsuffix-list-20200718-2.ky10.noarch
+
+python3-3.7.9-44.se.01.p05.ky10.x86_64
+
+python3-dnf-4.2.23-11.p04.ky10.noarch
+
+python3-gpgme-1.14.0-1.ky10.x86_64
+
+python3-hawkey-0.48.0-5.p01.ky10.x86_64
+
+python3-libcomps-0.1.10-2.ky10.x86_64
+
+python3-libdnf-0.48.0-5.p01.ky10.x86_64
+
+python3-rpm-4.15.1-54.p02.se.05.img01.ky10.x86_64
+
+qrencode-4.0.2-3.ky10.x86_64
+
+readline-8.0-4.ky10.x86_64
+
+rpm-4.15.1-54.p02.se.05.img01.ky10.x86_64
+
+rpm-build-libs-4.15.1-54.p02.se.05.img01.ky10.x86_64
+
+rpm-libs-4.15.1-54.p02.se.05.img01.ky10.x86_64
+
+rpm-sign-libs-4.15.1-54.p02.se.05.img01.ky10.x86_64
+
+sed-4.8-6.ky10.x86_64
+
+setup-2.13.7-1.p03.ky10.noarch
+
+shadow-4.8.1-10.se.02.p01.ky10.x86_64
+
+sqlite-libs-3.32.3-7.p01.img01.ky10.x86_64
+
+systemd-243-67.p14.img01.ky10.x86_64
+
+systemd-libs-243-67.p14.img01.ky10.x86_64
+
+tar-1.32-4.ky10.x86_64
+
+tzdata-2022a-15.p01.ky10.noarch
+
+util-linux-2.35.2-14.p07.ky10.x86_64
+
+vim-minimal-9.0-35.p03.ky10.x86_64
+
+xz-libs-5.2.5-3.ky10.x86_64
+
+yum-4.2.23-11.p04.ky10.noarch
+
+zlib-1.2.11-23.ky10.x86_64
+
+zstd-1.4.5-2.img01.ky10.x86_64
+
+sh-5.0# echo "===== 10. 环境变量 ====="
+
+===== 10. 环境变量 =====
+
+sh-5.0# env | grep -iE "path|python|conda|pip|locale|lang|tz|proxy" | sort
+
+LANG=C.utf8
+
+LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:
+
+PATH=/opt/python3.12.10-x86_64-bin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+sh-5.0# echo "===== 完成 ====="
+
+===== 完成 =====

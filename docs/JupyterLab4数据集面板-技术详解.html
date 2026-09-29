@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JupyterLab 4 数据集面板 — 技术详解</title>
+<style>
+  :root{
+    --bg:#f0f2f5; --surface:#fff; --text:#1a1a2e; --text2:#6b7280;
+    --border:#e5e7eb; --primary:#4f46e5; --primary-l:#e0e7ff;
+    --ok:#10b981; --ok-l:#d1fae5;
+    --warn:#f59e0b; --warn-l:#fef3c7;
+    --danger:#ef4444; --danger-l:#fee2e2;
+    --info:#3b82f6; --info-l:#dbeafe;
+    --purple:#8b5cf6; --purple-l:#ede9fe;
+    --code-bg:#1e293b; --code-fg:#e2e8f0;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,"Courier New",monospace;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+    --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+    --radius:10px; --radius-sm:6px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.65;padding:24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .layout{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px;align-items:start}
+
+  .header{
+    grid-column:1/-1;
+    background:linear-gradient(135deg,#0f172a 0%,#4f46e5 55%,#7c3aed 100%);
+    border-radius:var(--radius);padding:30px 34px;color:#fff;box-shadow:var(--shadow-md);
+  }
+  .header h1{font-size:1.6rem;font-weight:700;letter-spacing:-.02em}
+  .header .sub{font-size:.93rem;opacity:.92;margin-top:6px}
+  .header .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .header .meta span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+    padding:3px 11px;border-radius:20px;font-size:.76rem;font-weight:500}
+
+  .toc{position:sticky;top:24px;background:var(--surface);border-radius:var(--radius);
+    padding:16px 14px;box-shadow:var(--shadow);max-height:calc(100vh - 48px);overflow-y:auto}
+  .toc h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--text2);
+    font-weight:700;margin-bottom:10px;padding-left:8px}
+  .toc a{display:block;padding:6px 9px;border-radius:var(--radius-sm);font-size:.83rem;
+    color:var(--text2);text-decoration:none;border-left:2.5px solid transparent;transition:all .15s;line-height:1.4}
+  .toc a:hover{background:var(--bg);color:var(--text)}
+  .toc a.active{background:var(--primary-l);color:var(--primary);font-weight:600;border-left-color:var(--primary)}
+  .toc a.sub{padding-left:20px;font-size:.78rem}
+  .toc hr{border:none;border-top:1px solid var(--border);margin:9px 0}
+
+  main{display:flex;flex-direction:column;gap:20px;min-width:0}
+  section.card{background:var(--surface);border-radius:var(--radius);padding:24px 28px;
+    box-shadow:var(--shadow);border-left:4px solid transparent;scroll-margin-top:24px}
+  section.card.c-p{border-left-color:var(--primary)}
+  section.card.c-d{border-left-color:var(--danger)}
+  section.card.c-w{border-left-color:var(--warn)}
+  section.card.c-i{border-left-color:var(--info)}
+  section.card.c-o{border-left-color:var(--ok)}
+  section.card.c-u{border-left-color:var(--purple)}
+
+  h2.sec{font-size:1.2rem;font-weight:700;letter-spacing:-.01em;margin-bottom:4px;
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  h2.sec .num{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;
+    padding:0 7px;background:var(--primary);color:#fff;border-radius:var(--radius-sm);
+    font-size:.78rem;font-weight:700;flex:none;align-self:center}
+  h2.sec .en{font-size:.78rem;color:var(--text2);font-weight:400}
+  .lead{color:var(--text2);font-size:.9rem;margin-bottom:16px;line-height:1.6}
+
+  h3.sub{font-size:1rem;font-weight:700;margin:22px 0 10px;padding-left:10px;
+    border-left:3px solid var(--primary);line-height:1.35}
+  h3.sub:first-of-type{margin-top:12px}
+  h4.sub2{font-size:.875rem;font-weight:700;margin:16px 0 8px}
+  p{margin:10px 0;font-size:.9rem}
+  ul,ol{margin:10px 0 10px 22px;font-size:.9rem}
+  li{margin:5px 0}
+  li::marker{color:var(--text2)}
+
+  code{font-family:var(--mono);font-size:.83em;background:#eef2f7;color:#3730a3;
+    padding:1.5px 5px;border-radius:4px;word-break:break-word}
+  pre{background:var(--code-bg);color:var(--code-fg);padding:16px 18px;border-radius:var(--radius-sm);
+    overflow-x:auto;margin:12px 0;font-size:.785rem;line-height:1.62;font-family:var(--mono);
+    white-space:pre;tab-size:4}
+  pre .c{color:#7c8ba1}
+  pre .k{color:#c792ea}
+  pre .s{color:#a5e075}
+  pre .n{color:#ffcb6b}
+  pre .hl{color:#82aaff;font-weight:600}
+  pre .bad{color:#ff9cac;font-weight:700}
+  pre.plain{background:#f8fafc;color:#334155;border:1px solid var(--border)}
+
+  .tw{overflow-x:auto;margin:12px 0;border-radius:var(--radius-sm);border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:.845rem;background:var(--surface)}
+  th{background:#f8fafc;text-align:left;padding:9px 12px;font-weight:700;color:var(--text);
+    border-bottom:2px solid var(--border);white-space:nowrap;font-size:.78rem;
+    text-transform:uppercase;letter-spacing:.03em}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafbff}
+  td.mono,th.mono{font-family:var(--mono);font-size:.79rem}
+  td.num{font-family:var(--mono);color:var(--text2);font-size:.79rem;white-space:nowrap}
+  td.nowrap{white-space:nowrap}
+
+  .callout{border-radius:var(--radius-sm);padding:12px 16px;margin:14px 0;font-size:.87rem;
+    border-left:3px solid;display:flex;gap:10px;align-items:flex-start}
+  .callout .ico{font-size:1rem;line-height:1.45;flex:none}
+  .callout.warn{background:var(--warn-l);border-color:var(--warn);color:#78350f}
+  .callout.danger{background:var(--danger-l);border-color:var(--danger);color:#7f1d1d}
+  .callout.info{background:var(--info-l);border-color:var(--info);color:#1e3a5f}
+  .callout.ok{background:var(--ok-l);border-color:var(--ok);color:#064e3b}
+  .callout.idea{background:var(--purple-l);border-color:var(--purple);color:#4c1d95}
+  .callout b{font-weight:700}
+  .callout code{background:rgba(255,255,255,.6);color:inherit}
+
+  .chain{background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:14px 18px;margin:12px 0;font-family:var(--mono);
+    font-size:.785rem;line-height:1.85;overflow-x:auto}
+  .chain b{color:var(--primary);font-weight:700}
+  .chain .bad{color:#b91c1c;font-weight:700}
+
+  .pit{border:1px solid var(--border);border-radius:var(--radius-sm);margin:16px 0;overflow:hidden}
+  .pit-h{background:#fef2f2;border-bottom:1px solid #fecaca;padding:10px 16px;font-weight:700;
+    color:#991b1b;font-size:.9rem;display:flex;align-items:center;gap:8px}
+  .pit-h .n{background:#dc2626;color:#fff;border-radius:50%;width:22px;height:22px;flex:none;
+    display:inline-flex;align-items:center;justify-content:center;font-size:.75rem}
+  .pit-b{padding:4px 16px 14px}
+  .pit-b > *:first-child{margin-top:8px}
+
+  footer{grid-column:1/-1;text-align:center;color:var(--text2);font-size:.78rem;padding:16px 0 4px}
+
+  @media(max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .toc{position:static;max-height:none;display:none}
+    body{padding:14px}
+    section.card{padding:20px 18px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <header class="header">
+    <h1>JupyterLab 4 数据集面板 — 技术详解</h1>
+    <div class="sub">从「面板不显示」到「wheel 装完即生效」，中间所有技术细节</div>
+    <div class="meta">
+      <span>代码：fix/jupyter-jl4/</span>
+      <span>交付包：fix/jupyter-jl4-pack.tgz</span>
+      <span>JL3 → JL4 扩展模型变迁</span>
+      <span>Module Federation</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h2>目录</h2>
+    <a href="#p1">一 · 为什么突然变麻烦</a>
+    <a href="#p1-1" class="sub">1.1 旧版：Python 里塞 JS</a>
+    <a href="#p1-2" class="sub">1.2 JL4 堵死两处</a>
+    <a href="#p1-3" class="sub">1.3 必须预编译</a>
+    <a href="#p2">二 · Module Federation</a>
+    <a href="#p3">三 · ★ 发现机制</a>
+    <a href="#p4">四 · 完整构建链</a>
+    <a href="#p5">五 · ★ 六个坑</a>
+    <a href="#p6">六 · 分层调试方法论</a>
+    <a href="#p7">七 · 文件职责清单</a>
+    <a href="#p8">八 · 想改改哪里</a>
+    <a href="#pa">附录 · 代码位置速查</a>
+  </nav>
+
+  <main>
+
+  <!-- ══ 一 ══ -->
+  <section class="card c-d" id="p1">
+    <h2 class="sec"><span class="num">一</span>为什么这件事突然变麻烦了</h2>
+
+    <h3 class="sub" id="p1-1">1.1 旧版是「Python 里塞 JS」，JL3 允许这么干</h3>
+    <p><code>fix/交接/jupyter/cube_studio_dataset/__init__.py</code> 干的事很朴素：</p>
+<pre><span class="k">def</span> _load_jupyter_server_extension(lab_app):
+    extra_js = PANEL_JS                     <span class="c"># ← 一大段 &lt;script&gt;...&lt;/script&gt; 字符串</span>
+    <span class="k">class</span> _InjectPanelJS(OutputTransform):
+        <span class="k">def</span> transform_first_chunk(self, status_code, headers, chunk, finishing):
+            <span class="k">if</span> b<span class="s">'&lt;/body&gt;'</span> <span class="k">in</span> chunk:
+                chunk = chunk.replace(b<span class="s">'&lt;/body&gt;'</span>, js_bytes + b<span class="s">'\n&lt;/body&gt;'</span>)
+            <span class="k">return</span> status_code, headers, chunk
+    lab_app.web_app.add_transform(_InjectPanelJS())      <span class="c"># ← 往页面里插</span></pre>
+
+    <p>思路：用 Tornado 的 <code>OutputTransform</code> 在响应 HTML 的 <code>&lt;/body&gt;</code> 前塞一段 <code>&lt;script&gt;</code>，
+      这段 JS 再靠 <code>window.jupyterlab</code> 拿到 JupyterLab 的应用对象，往侧边栏挂 widget。</p>
+
+    <div class="callout ok">
+      <span class="ico">✅</span>
+      <div><b>在 JL3 上这确实能跑</b>，所以 <code>domestic-jupyter</code> 当年是好的。</div>
+    </div>
+
+    <h3 class="sub" id="p1-2">1.2 JL4 把这条路堵死了两处</h3>
+    <div class="tw"><table>
+      <thead><tr><th>断点</th><th>具体</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td><b>注入失败</b></td><td><code>add_transform</code> 在 jupyter_server 2.x 上抛异常</td><td>JL4 配套的 jupyter_server 2.x 换了页面服务实现</td></tr>
+        <tr><td><b>拿不到 app</b></td><td><code>window.jupyterlab</code> 在 JL4 <b>不存在</b></td><td>JL4 重构了前端，不再往 window 暴露全局</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout danger">
+      <span class="ico">🎯</span>
+      <div>第二点是决定性的：<b>即使 JS 成功注入，它也没有任何办法拿到 JupyterLab 的 shell</b>，
+      所以 <code>shell.add(panel, 'left')</code> 这行永远执行不了。</div>
+    </div>
+
+    <h3 class="sub" id="p1-3">1.3 JL4 的答案：扩展必须预编译</h3>
+    <p>JL3 时代有两种扩展：</p>
+    <ul>
+      <li><b>source extension</b>：源码放在 <code>share/jupyter/labextensions/&lt;name&gt;/</code>，启动时由 JL 统一 webpack 打包</li>
+      <li><b>prebuilt extension</b>：已编译好的包</li>
+    </ul>
+    <p>JL4 <b>取消了 source 这条路</b>（也取消了 <code>jupyter lab build</code>）。
+      现在唯一形态是 <b>prebuilt / federated extension</b> —— 一个独立编译好的 webpack 产物。</p>
+
+<pre>JL3:  源码 → (容器内 npm + jupyter lab build) → 打进 JL 主 bundle
+JL4:  源码 → (发布前 tsc + webpack) → 独立的 remoteEntry.js → 运行时按需加载</pre>
+
+    <div class="callout idea">
+      <span class="ico">💡</span>
+      <div><b>这就是为什么必须行外编译</b>：编译从「运行时/构建时」挪到了「发布前」，
+      而 JL4 的规定就是发布者自己负责把编译做掉。</div>
+    </div>
+  </section>
+
+  <!-- ══ 二 ══ -->
+  <section class="card c-p" id="p2">
+    <h2 class="sec"><span class="num">二</span>Module Federation 到底怎么回事</h2>
+    <p class="lead">理解「为什么 bundle 只有 6.9KB」的关键。</p>
+
+    <h3 class="sub">2.1 每个扩展是一个 webpack "remote"</h3>
+    <p>预构建扩展被编译成一个 <b>Module Federation remote</b>：</p>
+<pre class="plain">static/remoteEntry.9ed04956ef4517a6ee99.js   ← remote 入口，暴露一个 container
+static/968.4ccf7ba23c581292fb72.js           ← 代码分块
+static/509.9758412eb8a54dcbdfec.js           ← 代码分块（面板逻辑在这）</pre>
+    <p>JupyterLab 主应用是 <b>host</b>，运行时通过 <code>_build.load</code> 指向的 remoteEntry 去<b>动态加载</b>这个扩展。</p>
+
+    <h3 class="sub">2.2 <code>sharedPackages</code> + <code>singleton</code> —— 关键设计</h3>
+<pre><span class="s">"jupyterlab"</span>: {
+  <span class="s">"sharedPackages"</span>: {
+    <span class="s">"@lumino/widgets"</span>: { <span class="s">"bundled"</span>: <span class="k">false</span>, <span class="s">"singleton"</span>: <span class="k">true</span> }
+  }
+}</pre>
+    <div class="tw"><table>
+      <thead><tr><th>字段</th><th>意思</th><th>不这么写会怎样</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">bundled: false</td><td><b>不要把 lumino/widgets 的代码打进我的 bundle</b>，运行时用宿主的</td><td>打进去会多 ~200KB，且和宿主两份 <code>Widget</code> 类</td></tr>
+        <tr><td class="mono">singleton: true</td><td>宿主和扩展必须<b>共用同一个实例</b></td><td>如果各有一份，<code>widgetA instanceof Widget</code> 会 false，挂载到 DOM 会炸</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>编译日志印证了这一点：</p>
+<pre>consume shared module (default) <span class="hl">@jupyterlab/apputils@^4.7.3</span> (singleton) <span class="n">42 bytes</span>
+consume shared module (default) <span class="hl">@lumino/widgets@^2.3.1-alpha.1</span> (singleton) <span class="n">42 bytes</span></pre>
+
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div><b>42 bytes</b> 就是那句「我要用你的那份」的声明 —— 一行引用代码，不是实现。所以整个 bundle 才 6.9KB。<br>
+      这也意味着<b>扩展和 JupyterLab 主版本的 API 必须兼容</b>。用 <code>@jupyterlab/* ^4.2</code> 编译，跑在 JL 4.6.3 上 —— 4.x 内小版本兼容。</div>
+    </div>
+  </section>
+
+  <!-- ══ 三 ══ -->
+  <section class="card c-w" id="p3">
+    <h2 class="sec"><span class="num">三</span>★ JL4 到底怎么「发现」一个扩展 <span class="en">决定 wheel 怎么打</span></h2>
+    <div class="callout danger">
+      <span class="ico">⚠️</span>
+      <div><b>这是这次最容易做错、且做错后毫无报错的一步。</b></div>
+    </div>
+
+    <h3 class="sub">3.1 我第一版 wheel 就是错的</h3>
+    <p>直觉上会这么想：</p>
+<pre><span class="c"># cube_studio_dataset/__init__.py</span>
+<span class="k">def</span> _jupyter_labextension_paths():
+    <span class="k">return</span> [{<span class="s">"src"</span>: <span class="s">"labextension"</span>, <span class="s">"dest"</span>: <span class="s">"cube_studio_dataset"</span>}]</pre>
+    <p>看起来这是「告诉 Jupyter 我的扩展在哪」。<b>但 JL4 运行时根本不读这个函数。</b></p>
+    <p>我在整个 site-packages 里搜过引用它的地方：</p>
+<pre class="plain">jupyterlab/tests/...          ← 测试
+jupyter_builder/...           ← 构建工具（develop 模式用）
+jupyterlab_pygments/...       ← 另一个扩展自己声明
+
+jupyterlab 本体、jupyter_server 本体 —— 零引用。</pre>
+
+    <h3 class="sub">3.2 真正的发现机制</h3>
+    <p><code>jupyterlab_server/config.py:40</code>：</p>
+<pre><span class="k">def</span> <span class="hl">get_federated_extensions</span>(labextensions_path: list[str]) -&gt; dict[str, Any]:
+    federated_extensions = {}
+    <span class="k">for</span> ext_dir <span class="k">in</span> labextensions_path:
+        <span class="c"># extensions are either top-level directories, or two-deep in @org directories</span>
+        <span class="k">for</span> ext_path <span class="k">in</span> chain(
+            iglob(pjoin(ext_dir, <span class="s">"[!@]*"</span>, <span class="s">"package.json"</span>)),
+            iglob(pjoin(ext_dir, <span class="s">"@*"</span>, <span class="s">"*"</span>, <span class="s">"package.json"</span>)),
+        ):
+            <span class="k">with</span> open(ext_path, encoding=<span class="s">"utf-8"</span>) <span class="k">as</span> fid:
+                pkgdata = json.load(fid)
+            ...</pre>
+    <p><b>它就是扫目录。</b>而 <code>labextensions_path</code> 的实际取值：</p>
+<pre class="plain">C:\...\.venv\share\jupyter\labextensions           ← &lt;sys.prefix&gt;/share/jupyter/labextensions
+C:\Users\...\AppData\Roaming\jupyter\labextensions ← 用户目录
+
+（Linux 上就是 /opt/nbenv/share/jupyter/labextensions）</pre>
+
+    <h3 class="sub">3.3 所以 wheel 必须这么打</h3>
+    <p><code>setup.py</code> 里必须用 <b><code>data_files</code></b>（不是 <code>package_data</code>）：</p>
+<pre>LABEXT_DEST = os.path.join(<span class="s">"share"</span>, <span class="s">"jupyter"</span>, <span class="s">"labextensions"</span>, EXT_NAME)
+
+<span class="k">def</span> _labextension_data_files():
+    out = []
+    <span class="k">for</span> path <span class="k">in</span> sorted(LABEXT_BUILT.rglob(<span class="s">"*"</span>)):
+        <span class="k">if</span> <span class="k">not</span> path.is_file():
+            <span class="k">continue</span>
+        rel_parent = path.relative_to(LABEXT_BUILT).parent
+        target = LABEXT_DEST <span class="k">if</span> str(rel_parent) == <span class="s">"."</span> <span class="k">else</span> os.path.join(LABEXT_DEST, str(rel_parent))
+        out.append((target, [str(path)]))
+    <span class="k">return</span> out
+
+setup(
+    ...
+    package_data={...},                      <span class="c"># ← 这一份是备用的（自检 + JL3 兼容）</span>
+    <span class="hl">data_files=_labextension_data_files()</span>,   <span class="c"># ← ★ 这一份才是 JL4 认的</span>
+)</pre>
+
+    <p>打出来的 wheel 里会多出一层 <code>.data/data/</code>：</p>
+<pre class="plain">cube_studio_dataset-2.0.0.data/data/share/jupyter/labextensions/cube-studio-dataset/
+    ├── package.json
+    ├── install.json
+    ├── static/remoteEntry.9ed04956ef4517a6ee99.js
+    └── schemas/...
+cube_studio_dataset/                      ← 包里那份（备用）
+    ├── __init__.py
+    └── labextension/...</pre>
+    <p>pip 会把 <code>.data/data/</code> 的内容铺到 <code>&lt;venv&gt;/share/jupyter/labextensions/</code> —— 正好是 3.2 扫的目录。</p>
+
+    <h3 class="sub">3.4 怎么验证（这条命令是判据）</h3>
+<pre>from jupyter_core.paths <span class="k">import</span> jupyter_path
+from jupyterlab_server.config <span class="k">import</span> get_federated_extensions
+
+exts = get_federated_extensions(jupyter_path(<span class="s">'labextensions'</span>))
+print(list(exts.keys()))
+<span class="c"># ['cube-studio-dataset', 'jupyterlab_pygments']   ← 内置 pygments 是已知正确的对照组</span></pre>
+    <div class="callout ok">
+      <span class="ico">✅</span>
+      <div><b>这是唯一可靠的验收方式</b> —— 它调用的就是 JupyterLab 启动时用的那个函数。</div>
+    </div>
+  </section>
+
+  <!-- ══ 四 ══ -->
+  <section class="card c-i" id="p4">
+    <h2 class="sec"><span class="num">四</span>完整构建链（每一步在干什么）</h2>
+
+    <div class="chain">
+labextension/src/index.ts          TypeScript 源码（面板逻辑）
+        │
+        │ ① npm install             拉 @jupyterlab/* ^4、@lumino/widgets ^2
+        ↓
+   node_modules/
+        │
+        │ ② npx tsc                  类型检查 + 编译到 lib/
+        ↓
+   labextension/lib/index.js
+        │
+        │ ③ jupyter-builder build    用 webpack Module Federation 打包
+        │                            （读 package.json 的 jupyterlab.outputDir 决定落点）
+        ↓
+   cube_studio_dataset/labextension/
+   ├── package.json                  ← builder 重写过，加了 jupyterlab._build
+   ├── static/remoteEntry.&lt;hash&gt;.js  ← ★ 核心产物
+   └── schemas/
+        │
+        │ ④ fix_build_paths.py       把 Windows 反斜杠规范成正斜杠
+        ↓
+        │ ⑤ python -m build --wheel  用 setup.py 的 data_files 铺进 wheel
+        ↓
+   cube_studio_dataset-2.0.0-py3-none-any.whl
+        │
+        │ ⑥ 行内：pip install         ← 只有这一步在行内，且<b>不需要 node</b>
+        ↓
+   /opt/nbenv/share/jupyter/labextensions/cube-studio-dataset/
+        │
+        │ ⑦ JupyterLab 启动时 get_federated_extensions() 扫到它
+        ↓
+   侧边栏出现「数据集」
+    </div>
+
+    <h3 class="sub">4.1 为什么 ② 和 ③ 是两步而不是一步</h3>
+    <ul>
+      <li><code>tsc</code> 负责 <b>TS → JS</b>（类型检查在这一步，语法/类型错误早暴露）</li>
+      <li><code>jupyter-builder build</code> 负责 <b>webpack 打包</b>（Module Federation 的 container 包装）</li>
+    </ul>
+    <p><code>package.json</code> 里 <code>"main": "lib/index.js"</code> 指向 ② 的产物，③ 再从这里打包。
+      <b>所以两步顺序不能颠倒。</b></p>
+
+    <h3 class="sub">4.2 builder 重写 package.json 做了什么</h3>
+<pre><span class="c">// 我写的（源）</span>
+<span class="s">"jupyterlab"</span>: {
+  <span class="s">"extension"</span>: <span class="k">true</span>,
+  <span class="s">"outputDir"</span>: <span class="s">"../cube_studio_dataset/labextension"</span>,
+  <span class="s">"sharedPackages"</span>: { <span class="s">"@lumino/widgets"</span>: { <span class="s">"bundled"</span>: <span class="k">false</span>, <span class="s">"singleton"</span>: <span class="k">true</span> } }
+}
+
+<span class="c">// builder 产出的（多了 _build）</span>
+<span class="s">"jupyterlab"</span>: {
+  ...,
+  <span class="hl">"_build"</span>: {
+    <span class="s">"load"</span>: <span class="s">"static/remoteEntry.9ed04956ef4517a6ee99.js"</span>,   <span class="c">// ← 主应用去哪加载</span>
+    <span class="s">"extension"</span>: <span class="s">"./extension"</span>,                              <span class="c">// ← 暴露的模块名</span>
+    <span class="s">"style"</span>: <span class="s">"./style"</span>                                       <span class="c">// ← 样式入口</span>
+  }
+}</pre>
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><code>_build.load</code> 就是<b>运行时那条下载路径</b> —— 也正是它被 Windows 写成反斜杠会致命。</div>
+    </div>
+  </section>
+
+  <!-- ══ 五 ══ -->
+  <section class="card c-d" id="p5">
+    <h2 class="sec"><span class="num">五</span>★ 六个坑 <span class="en">这一节是精华</span></h2>
+
+    <div class="pit">
+      <div class="pit-h"><span class="n">1</span>jupyter labextension build 在 JL4.6 已废弃且会崩</div>
+      <div class="pit-b">
+<pre>$ jupyter labextension build .
+(Deprecated) <span class="s">'jupyter labextension build'</span> is deprecated, use <span class="s">'jupyter-builder build'</span> instead.
+Traceback (most recent call last):
+  ...
+  File <span class="s">"jupyterlab/labextensions.py"</span>, line 467, in start
+    sys.exit(subprocess.call([<span class="s">"jupyter-builder"</span>, <span class="s">"build"</span>] + self._builder_args))</pre>
+        <p><b>对策</b>：直接用 <code>jupyter-builder build . --core-path &lt;jupyterlab&gt;/staging</code>。</p>
+        <p>这也是为什么「版本决定一切」—— JL 4.6 和 4.2 的行为就可能不同。</p>
+      </div>
+    </div>
+
+    <div class="pit">
+      <div class="pit-h"><span class="n">2</span>Windows 中文 locale 把 builder 读崩</div>
+      <div class="pit-b">
+<pre>UnicodeDecodeError: <span class="bad">'gbk' codec can't decode byte 0x94 in position 103</span>
+  File <span class="s">"jupyter_builder/federated_extensions.py"</span>, line 444
+    ext_data = json.load(fid)</pre>
+        <p>Python 在中文 Windows 上默认用 GBK 打开文件。我的 <code>package.json</code> 里有个 <code>—</code>（U+2014，UTF-8 是 <code>E2 80 94</code>），<code>0x94</code> 就是它。</p>
+        <p><b>对策</b>：① 全程 <code>PYTHONUTF8=1</code>；② <code>package.json</code> 的 description 改成纯 ASCII。</p>
+        <p><code>schema/plugin.json</code> 里的中文<b>不用改</b> —— 那是运行时由 JupyterLab 以 UTF-8 读的，不经过 Python 的 <code>json.load</code>。</p>
+      </div>
+    </div>
+
+    <div class="pit">
+      <div class="pit-h"><span class="n">3</span>★ Windows 反斜杠 → 麒麟上 404 白屏</div>
+      <div class="pit-b">
+        <p>builder 用 <code>os.path.join</code> 生成路径，Windows 上得到：</p>
+<pre><span class="s">"load"</span>: <span class="bad">"static\\remoteEntry.9ed04956ef4517a6ee99.js"</span>     <span class="c">&lt;- 反斜杠</span></pre>
+        <p>对照内置的正确样例：</p>
+<pre><span class="c">// jupyterlab_pygments</span>
+<span class="s">"load"</span>: <span class="s">"static/remoteEntry.5cbb9d2323598fbda535.js"</span>      <span class="c">&lt;- 正斜杠</span></pre>
+        <div class="callout danger">
+          <span class="ico">💥</span>
+          <div>这个值被拼成前端 fetch 的 URL。<b>Windows 浏览器容忍反斜杠，所以行外怎么测都是好的；
+          麒麟（Linux）上反斜杠是合法 URL 字符、不是分隔符 → 404。</b><br>
+          而且失败方式很隐蔽：JS 加载失败，控制台<b>不一定</b>报错，表现得就是「面板不出现」。</div>
+        </div>
+        <p><b>对策</b>：<code>fix_build_paths.py</code> 规范化 + 构建脚本 <code>grep</code> 复验 + Dockerfile 断言里再查一次。<b>三处兜底。</b></p>
+      </div>
+    </div>
+
+    <div class="pit">
+      <div class="pit-h"><span class="n">4</span>_jupyter_labextension_paths() 不是发现机制</div>
+      <div class="pit-b">
+        <p>已在第三部分详述。<b>做错的后果是：装得上、无报错、就是没面板。</b></p>
+        <p>最难查的一类 bug —— 因为你所有的「日志」都是正常的。</p>
+        <p><b>对策</b>：用 <code>get_federated_extensions()</code> 做验收，而不是看「pip install 成功」。</p>
+      </div>
+    </div>
+
+    <div class="pit">
+      <div class="pit-h"><span class="n">5</span>★ 后端给的是 String，我按 number 写的</div>
+      <div class="pit-b">
+        <p>前端第一版：</p>
+<pre><span class="k">const</span> rows = ds.entries_num ? <span class="bad">ds.entries_num.toLocaleString()</span> : <span class="s">'-'</span>;</pre>
+        <p>但后端：</p>
+<pre><span class="c"># myapp/models/model_dataset.py:48</span>
+entries_num = Column(<span class="hl">String(200)</span>, nullable=<span class="k">True</span>, default=<span class="s">''</span>, comment=<span class="s">'记录数目'</span>)
+<span class="c"># myapp/tasks/hdfs_tasks.py:357</span>
+dataset.entries_num = <span class="hl">str</span>(total_rows) <span class="k">if</span> total_rows <span class="k">else</span> <span class="s">''</span></pre>
+        <div class="callout danger">
+          <span class="ico">💥</span>
+          <div><b>是字符串。</b><code>"1000".toLocaleString</code> 是 <code>undefined</code> →
+          <code>TypeError: ds.entries_num.toLocaleString is not a function</code> →
+          整个 <code>_renderDatasets()</code> 抛出 → <b>面板白屏</b>。</div>
+        </div>
+        <p><b>对策</b>：</p>
+<pre><span class="k">function</span> formatCount(v: unknown): string {
+  <span class="k">if</span> (v === <span class="k">null</span> || v === <span class="k">undefined</span> || v === <span class="s">''</span>) <span class="k">return</span> <span class="s">'-'</span>;
+  <span class="k">const</span> n = Number(String(v).replace(<span class="s">/,/g</span>, <span class="s">''</span>).trim());
+  <span class="k">return</span> Number.isFinite(n) ? n.toLocaleString() : String(v);
+}</pre>
+        <div class="callout idea">
+          <span class="ico">💡</span>
+          <div><b>教训</b>：前端对接后端时，<b>去读列定义</b>，别信接口文档或示例 JSON。
+          这种 bug 在「有数据」时才出现，空列表时测不出来。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pit">
+      <div class="pit-h"><span class="n">6</span>dataset_init.sh 是个孤儿脚本</div>
+      <div class="pit-b">
+<pre><span class="c"># 参照版 install/docker/notebook-hdfs-build/Dockerfile:81</span>
+COPY dataset_init.sh /init.sh          <span class="c"># dataset_init.sh 就是 /init.sh  ✓</span>
+
+<span class="c"># domestic-jupyter/Dockerfile.hdfs:68,80</span>
+COPY dataset_init.sh <span class="bad">/init-dataset.sh</span>  <span class="c"># 放成了别的名字  ✗</span>
+COPY init.sh         /init.sh          <span class="c"># /init.sh 是 SSH 那个</span></pre>
+        <p>而平台只执行 <code>/init.sh</code>：</p>
+<pre><span class="c"># myapp/views/view_notebook.py:499</span>
+pre_command = <span class="s">'(nohup sh /init.sh &gt; /notebook_init.log 2&gt;&amp;1 &amp;) ; (nohup sh /mnt/%s/init.sh &gt; /init.log 2&gt;&amp;1 &amp;) ; '</span></pre>
+        <div class="callout danger">
+          <span class="ico">💥</span>
+          <div><b>所以 <code>/init-dataset.sh</code> 从来没有被调用过</b> →
+          <code>/opt/dataset_helper.py</code> 从没被复制到 <code>/mnt/&lt;user&gt;/</code> →
+          notebook 里 <code>from dataset_helper import ...</code> <b>必然 ImportError</b>。</div>
+        </div>
+        <p><b>对策</b>：把两个脚本合并成一个 <code>/init.sh</code>（SSH + 数据集目录 + helper 落地）。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 六 ══ -->
+  <section class="card c-u" id="p6">
+    <h2 class="sec"><span class="num">六</span>分层调试方法论</h2>
+    <p class="lead">每一层一个<b>独立判据</b>。出问题时，从上往下逐层排除，不要跳。</p>
+
+    <div class="tw"><table>
+      <thead><tr><th class="num">#</th><th>层</th><th>判据</th><th>命令</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>TS 编译</td><td>无类型错误</td><td class="mono">npx tsc --noEmit</td></tr>
+        <tr><td class="num">2</td><td>webpack</td><td>消费的是 <b>JL4</b> 共享模块</td><td>看日志 <code>@jupyterlab/apputils@^4.x</code></td></tr>
+        <tr><td class="num">3</td><td>wheel 落位</td><td>有 <code>share/jupyter/labextensions/…</code></td><td class="mono">unzip -l xxx.whl | grep labextensions</td></tr>
+        <tr style="background:#fffbeb"><td class="num">4</td><td><b>JL 发现</b></td><td><b>★ 名字出现在扩展列表</b></td><td class="mono">get_federated_extensions(jupyter_path('labextensions'))</td></tr>
+        <tr><td class="num">5</td><td>加载路径</td><td><code>_build.load</code> <b>无反斜杠</b></td><td>见坑 3</td></tr>
+        <tr><td class="num">6</td><td>数据接口</td><td>后端返回 <code>status: 0</code></td><td class="mono">curl -b &lt;cookie&gt; …/dataset_modelview/api/jupyter_list</td></tr>
+        <tr><td class="num">7</td><td>渲染</td><td>浏览器里看到 Tab</td><td>人眼 + Ctrl+Shift+R</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout ok">
+      <span class="ico">✅</span>
+      <div><b>第 4 层是最有价值的一层。</b>它把「面板能不能显示」这个模糊问题，变成了一个二值断言 ——
+      而且它用的就是 JupyterLab 自己的代码。<br>
+      这也是为什么 Dockerfile 里那 6 条断言值得写：<b>把运行时才发现的失败，提前到构建时。</b></div>
+    </div>
+  </section>
+
+  <!-- ══ 七 ══ -->
+  <section class="card c-p" id="p7">
+    <h2 class="sec"><span class="num">七</span>文件职责清单</h2>
+
+    <h3 class="sub">7.1 前端 <span class="en">fix/jupyter-jl4/labextension/</span></h3>
+    <div class="tw"><table>
+      <thead><tr><th>文件</th><th>职责</th><th>关键点</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">package.json</td><td>依赖 + 打包配置</td><td><code>@jupyterlab/* ^4</code>、<code>@lumino/widgets ^2</code>；<code>outputDir</code> 决定产物落点；<code>sharedPackages.singleton</code></td></tr>
+        <tr><td class="mono">tsconfig.json</td><td>TS 配置</td><td><code>target: ES2018</code>（JL4 浏览器基线）</td></tr>
+        <tr><td class="mono">src/index.ts</td><td><b>面板实现</b></td><td><code>JupyterFrontEndPlugin</code> + <code>activate(app)</code>；<b>不碰 <code>window</code> 全局</b></td></tr>
+        <tr><td class="mono">style/base.css</td><td>样式</td><td>全用 <code>--jp-*</code> 变量 → 自动跟随亮/暗主题</td></tr>
+        <tr><td class="mono">schema/plugin.json</td><td>设置项</td><td><code>apiBase</code>、<code>autoOpen</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">7.2 Python 包 <span class="en">fix/jupyter-jl4/cube_studio_dataset/</span></h3>
+    <div class="tw"><table>
+      <thead><tr><th>文件</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">__init__.py</td><td><code>_jupyter_server_extension_points()</code>（JL4 新入口）+ <code>_jupyter_labextension_paths()</code>（兼容/develop 用）+ <b>已删除 OutputTransform</b>；<code>status()</code> 自检函数</td></tr>
+        <tr><td class="mono">labextension/</td><td>构建产物落点（脚本生成，不进 git）</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">7.3 打包 <span class="en">fix/jupyter-jl4/</span></h3>
+    <div class="tw"><table>
+      <thead><tr><th>文件</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">setup.py</td><td>★ <b><code>data_files</code> 铺到 <code>share/jupyter/labextensions/</code></b> —— JL4 认的就是这份</td></tr>
+        <tr><td class="mono">pyproject.toml</td><td>只声明 <code>build-system</code>，<b>不写 <code>[project]</code></b>（避免和 setup.py 元数据打架）</td></tr>
+        <tr><td class="mono">MANIFEST.in</td><td>sdist 内容</td></tr>
+        <tr><td class="mono">build_jupyter_ext.sh</td><td>七步一键构建</td></tr>
+        <tr><td class="mono">fix_build_paths.py</td><td>反斜杠规范化（坑 3）</td></tr>
+        <tr><td class="mono">Dockerfile.notebook-p312</td><td>行内镜像</td></tr>
+        <tr><td class="mono">init.sh</td><td>容器启动初始化（合并版，修了坑 6）</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ══ 八 ══ -->
+  <section class="card c-o" id="p8">
+    <h2 class="sec"><span class="num">八</span>如果你想改，改哪里会怎样</h2>
+    <div class="tw"><table>
+      <thead><tr><th>想做的事</th><th>改哪</th><th>注意</th></tr></thead>
+      <tbody>
+        <tr><td>改面板外观</td><td class="mono">style/base.css</td><td>用 <code>--jp-*</code> 变量才能跟主题</td></tr>
+        <tr><td>改列表字段/交互</td><td class="mono">src/index.ts 的 _renderDatasets()</td><td><b>改前先去 <code>model_dataset.py</code> 确认字段类型</b>（坑 5）</td></tr>
+        <tr><td>加一个功能按钮</td><td class="mono">src/index.ts 的 activate()</td><td>加完记得 <code>palette.addItem</code> 才能进命令面板</td></tr>
+        <tr><td>换 API 地址</td><td class="mono">schema/plugin.json 的 apiBase</td><td>默认同源相对路径 <code>/dataset_modelview/api</code></td></tr>
+        <tr><td>升级 JupyterLab</td><td class="mono">package.json + jupyter-requirements.txt</td><td>两处<b>必须同步</b>，否则 Module Federation 版本不匹配</td></tr>
+        <tr><td>改面板版本号</td><td class="mono">两个 <code>version</code></td><td><code>labextension/package.json</code> <b>和</b> <code>__init__.py</code> 的 <code>__version__</code>；setup.py 有断言，不一致会<b>直接报错</b>（防止「幽灵扩展」）</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout danger">
+      <span class="ico">📌</span>
+      <div><b>一条重要纪律</b>：改完必须重跑 <code>build_jupyter_ext.sh</code>。
+      直接改 <code>cube_studio_dataset/labextension/</code> 里的产物是没用的 ——
+      那是脚本生成的，下次构建会被覆盖；而且 <code>data_files</code> 是从它复制的，改了也进不了 wheel。</div>
+    </div>
+  </section>
+
+  <!-- ══ 附录 ══ -->
+  <section class="card c-i" id="pa">
+    <h2 class="sec"><span class="num">附</span>关键代码位置速查</h2>
+    <div class="tw"><table>
+      <thead><tr><th>内容</th><th>位置</th></tr></thead>
+      <tbody>
+        <tr><td>JL4 扩展发现逻辑</td><td class="mono">jupyterlab_server/config.py:40  get_federated_extensions()</td></tr>
+        <tr><td><code>labextensions_path</code> 默认值</td><td class="mono">jupyter_core/paths.py  jupyter_path('labextensions')</td></tr>
+        <tr><td><code>OutputTransform</code> 旧实现（已废）</td><td class="mono">fix/交接/jupyter/cube_studio_dataset/__init__.py:215-231</td></tr>
+        <tr><td>数据集列表接口</td><td class="mono">myapp/views/view_dataset.py:683  jupyter_list()</td></tr>
+        <tr><td>接口注册路径</td><td class="mono">myapp/views/view_dataset.py:805  route_base = '/dataset_modelview/api'</td></tr>
+        <tr><td>Dataset 字段类型</td><td class="mono">myapp/models/model_dataset.py:47-48（两个都是 String）</td></tr>
+        <tr><td>平台拉起 <code>/init.sh</code></td><td class="mono">myapp/views/view_notebook.py:499 和 :628 的 pre_command</td></tr>
+        <tr><td>notebook 内读数据集</td><td class="mono">dataset_helper.py → pd.read_parquet('/mnt/&lt;user&gt;/datasets/&lt;name&gt;_&lt;ver&gt;/data.parquet')</td></tr>
+        <tr><td>HDFS 下载（在<b>后端</b>）</td><td class="mono">myapp/tasks/hdfs_tasks.py:28  download_hdfs_dataset</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <footer>
+    JupyterLab 4 数据集面板 — 技术详解 · 代码：<code>fix/jupyter-jl4/</code>
+  </footer>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var sections = links.map(function(a){
+    return document.getElementById(a.getAttribute('href').slice(1));
+  }).filter(Boolean);
+  function onScroll(){
+    var y = window.scrollY + 130, cur = sections[0];
+    for (var i=0;i<sections.length;i++) if (sections[i].offsetTop <= y) cur = sections[i];
+    links.forEach(function(a){ a.classList.remove('active'); });
+    if (cur){
+      var hit = links.filter(function(a){ return a.getAttribute('href') === '#'+cur.id; })[0];
+      if (hit) hit.classList.add('active');
+    }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>

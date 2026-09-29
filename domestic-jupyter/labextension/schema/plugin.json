@@ -1,0 +1,4 @@
+{
+  "extends": "./node_modules/@jupyterlab/apputils/schema/plugin.json",
+  "jupyter.lab.shortcuts": []
+}

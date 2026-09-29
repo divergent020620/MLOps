@@ -1,0 +1,82 @@
+# ============================================================================
+# Cube Studio — 麒麟信创 Jupyter Notebook (Spark 2.4.8 客户端)
+# 严格参照:
+#   - images/jupyter-notebook/spark-client/Dockerfile
+#   - images/jupyter-notebook/Dockerfile-ubuntu-conda
+#
+# 构建:
+#   docker build --network=host \
+#     -t 10.240.125.39/cube-studio/notebook:jupyter-kylin-spark -f Dockerfile.spark .
+# ============================================================================
+
+FROM cube-studio/kylin:v10-sp3-2403
+
+ENV TZ=Asia/Shanghai
+ENV LANG=zh_CN.UTF-8
+ENV LC_ALL=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN.UTF-8
+
+# ── 1. 系统依赖 ────────────────────────────────────────────
+RUN yum install -y --nogpgcheck \
+        java-1.8.0-openjdk java-1.8.0-openjdk-devel \
+        krb5-workstation krb5-libs krb5-devel \
+        cyrus-sasl-devel cyrus-sasl \
+        vim wget curl git unzip zip lsof procps-ng net-tools \
+        fontconfig wqy-microhei-fonts \
+        nodejs npm \
+        bzip2 \
+        iproute \
+        gcc gcc-c++ make \
+    && yum clean all && rm -rf /var/cache/yum/*
+
+# ── 2. Miniconda + Python 3.7 ──────────────────────────────
+COPY packages/Miniconda3-4.7.12.1-Linux-x86_64.sh /tmp/
+RUN bash /tmp/Miniconda3-4.7.12.1-Linux-x86_64.sh -b && \
+    rm -f /tmp/Miniconda3-4.7.12.1-Linux-x86_64.sh
+
+ENV PATH=/root/miniconda3/bin:${PATH}
+RUN conda create -y -n python37 python=3.7.4
+ENV PATH=/root/miniconda3/envs/python37/bin:${PATH}
+ENV CONDA_DEFAULT_ENV=python37
+
+# ── 3. JupyterLab + Python 包 ──────────────────────────────
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
+    pip install --no-cache-dir \
+        jupyterlab==3.4.8 notebook==6.4.12 ipykernel \
+        numpy pandas scikit-learn scipy matplotlib Pillow seaborn \
+        pyarrow pymysql sqlalchemy requests pysnooper jinja2 pyyaml \
+        pyspark hdfs requests_kerberos krbcontext \
+    && rm -rf /tmp/* /root/.cache
+
+# ── 5. Spark 2.4.8 + Hadoop 2.7 ────────────────────────────
+# 对应 spark-client: COPY spark-2.4.8-bin-hadoop2.7.tgz
+COPY spark-2.4.8-bin-hadoop2.7.tgz /tmp/
+RUN tar xzf /tmp/spark-2.4.8-bin-hadoop2.7.tgz -C /opt/ && \
+    ln -s /opt/spark-2.4.8-bin-hadoop2.7 /opt/spark && \
+    rm /tmp/spark-2.4.8-bin-hadoop2.7.tgz
+
+# ── 6. CDP 集群配置 ────────────────────────────────────────
+COPY hadoop-conf/core-site.xml \
+     hadoop-conf/hdfs-site.xml \
+     hadoop-conf/yarn-site.xml \
+     hadoop-conf/ssl-client.xml \
+     /etc/hadoop/conf/
+COPY krb5.conf /etc/krb5.conf
+
+# ── 7. Kerberos keytab ─────────────────────────────────────
+COPY ai_general.keytab /home/ai_general/
+
+# ── 8. 环境变量 ────────────────────────────────────────────
+ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+ENV SPARK_HOME=/opt/spark
+ENV HADOOP_CONF_DIR=/etc/hadoop/conf
+ENV PYSPARK_PYTHON=python
+ENV PATH=/root/miniconda3/envs/python37/bin:/root/miniconda3/bin:${JAVA_HOME}/bin:${SPARK_HOME}/bin:${PATH}
+ENV PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.7-src.zip:${PYTHONPATH:-}
+
+# ── 9. 初始化 ──────────────────────────────────────────────
+COPY init.sh /init.sh
+RUN chmod +x /init.sh
+
+WORKDIR /mnt
+EXPOSE 3000 8888

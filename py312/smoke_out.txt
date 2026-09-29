@@ -1,0 +1,384 @@
+/home/myapp/myapp/security.py:58: SAWarning: Implicitly combining column ab_user.active with column ab_user.active under attribute 'active'.  Please configure one or more attributes for these same-named columns explicitly.
+  class MyUser(User,MyappModelBase):
+/home/myapp/myapp/views/view_dimension.py:63: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp("^[a-z][a-z0-9\-_]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+/home/myapp/myapp/views/view_dimension.py:205: SyntaxWarning: invalid escape sequence '\+'
+  validators=[DataRequired(), Regexp("^(mysql\+pymysql|postgresql\+psycopg2)://.*:.*@.*:[0-9]*/[a-zA-Z_\-]*")]
+/home/myapp/myapp/views/view_dimension.py:212: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-_]*[a-z0-9]$")]
+/home/myapp/myapp/views/view_dataset.py:158: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$")]
+/home/myapp/myapp/views/view_dataset.py:165: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("[a-z0-9_\-\.]*")]
+/home/myapp/myapp/views/view_images.py:64: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp('^[a-zA-Z0-9\-._:@\/]*$')]
+/home/myapp/myapp/views/view_images.py:99: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+/home/myapp/myapp/views/view_images.py:187: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp('^[a-zA-Z0-9\-._:@\/]*$')]
+/home/myapp/myapp/views/view_etl_pipeline.py:136: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+/home/myapp/myapp/views/view_notebook.py:92: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]  # 注意不能以-开头和结尾
+/home/myapp/myapp/views/view_notebook.py:174: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]
+/home/myapp/myapp/views/view_docker.py:107: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]
+/home/myapp/myapp/views/view_docker.py:144: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp('^[a-zA-Z0-9\-._:@\/]*$')]
+/home/myapp/myapp/views/view_docker.py:151: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp('^[a-zA-Z0-9\-._:@\/]*$')]
+/home/myapp/myapp/views/view_job_template.py:88: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
+/home/myapp/myapp/views/view_job_template.py:152: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(0, 54)]
+/home/myapp/myapp/views/view_task.py:103: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+/home/myapp/myapp/views/view_task.py:173: SyntaxWarning: invalid escape sequence '\-'
+  add_form_extra_fields['resource_gpu'] = StringField('gpu', default='0', description= _('gpu的资源使用配置(单位卡)，示例:1，2，训练任务每个容器独占整卡。申请具体的卡型号，可以类似 1(V100)'),widget=BS3TextFieldWidget(),validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')])
+/home/myapp/myapp/views/view_task.py:677: SyntaxWarning: invalid escape sequence '\{'
+  all_templates_vars = re.findall("(\{\{.*?\}\})",task.args)
+/home/myapp/myapp/views/view_pipeline.py:607: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+/home/myapp/myapp/views/view_workflow.py:407: SyntaxWarning: invalid escape sequence '\('
+  match = re.findall("(\([1-9]+\))", displayName)
+/home/myapp/myapp/views/view_nni.py:103: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
+/home/myapp/myapp/views/view_nni.py:116: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
+/home/myapp/myapp/views/view_nni.py:154: SyntaxWarning: invalid escape sequence '\.'
+  validators=[DataRequired(),Regexp("^[\.0-9]*$")]
+/home/myapp/myapp/views/view_nni.py:253: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]
+/home/myapp/myapp/views/view_train_model.py:124: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp("[a-z0-9_\-\.]*")]
+/home/myapp/myapp/views/view_train_model.py:142: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("^[a-z0-9\-]*$"), Length(1, 54)]
+/home/myapp/myapp/views/view_serving.py:85: SyntaxWarning: invalid escape sequence '\-'
+  "name":StringField(_('名称'), description= _('英文名(小写字母、数字、- 组成)，最长50个字符'),widget=BS3TextFieldWidget(), validators=[DataRequired(),Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
+/home/myapp/myapp/views/view_serving.py:87: SyntaxWarning: invalid escape sequence '\-'
+  "images": StringField(_('镜像'), description= _('镜像全称'), widget=BS3TextFieldWidget(), validators=[DataRequired(),Regexp('^[a-zA-Z0-9\-._:@\/]*$')]),
+/home/myapp/myapp/views/view_serving.py:94: SyntaxWarning: invalid escape sequence '\-'
+  "resource_gpu": StringField(_('gpu'), default='0',description= _('gpu的资源使用配置(单位卡)，示例:1，2，训练任务每个容器独占整卡'), widget=BS3TextFieldWidget(), validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]),
+/home/myapp/myapp/views/view_inferenceserving.py:207: SyntaxWarning: invalid escape sequence '\-'
+  widget=BS3TextFieldWidget(),validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]),
+/home/myapp/myapp/views/view_inferenceserving.py:231: SyntaxWarning: invalid escape sequence '\.'
+  validators=[DataRequired(), Regexp("^[a-z][a-z0-9\.\/:\-]*[a-z0-9]$"), Length(1, 54)]  #
+/home/myapp/myapp/views/view_inferenceserving.py:238: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp("[a-z0-9_\-\.]*"), Length(1, 54)]
+/home/myapp/myapp/views/view_inferenceserving.py:262: SyntaxWarning: invalid escape sequence '\-'
+  validators=[Regexp('^[0-9a-zA-Z ,\-*\/]*$')]
+/home/myapp/myapp/views/view_chat.py:252: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(),Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$")]
+/home/myapp/myapp/views/view_chat.py:356: SyntaxWarning: invalid escape sequence '\-'
+  validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$")]
+/home/myapp/myapp/views/view_chat.py:691: SyntaxWarning: invalid escape sequence '\S'
+  search_text = re.sub(':\S+?:', ' ', text)  # 去除表情
+mysql+pymysql://root:root@host.docker.internal:33070/cubestudio
+['ab_api_key', 'ab_group', 'ab_group_role', 'ab_permission', 'ab_permission_view', 'ab_permission_view_role', 'ab_register_user', 'ab_role', 'ab_user', 'ab_user_group', 'ab_user_role', 'ab_view_menu']
+cubestudio db下，table aihub不完整，请
+1、mysql: drop dabatase cubestudio
+2、重启当前pod
+FAIL: myapp.check_tables: SystemExit(1)
+CREATE DATABASE IF NOT EXISTS cubestudio DEFAULT   CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+ * Serving Flask app 'myapp'
+ * Debug mode: on
+2026-09-08 02:14:50,035:INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:80
+ * Running on http://172.17.0.4:80
+2026-09-08 02:14:50,036:INFO:werkzeug:[33mPress CTRL+C to quit[0m
+2026-09-08 02:14:50,036:INFO:werkzeug: * Restarting with stat
+/home/myapp/myapp/security.py:58: SAWarning: Implicitly combining column ab_user.active with column ab_user.active under attribute 'active'.  Please configure one or more attributes for these same-named columns explicitly.
+  class MyUser(User,MyappModelBase):
+2026-09-08 02:14:53,173:WARNING:werkzeug: * Debugger is active!
+2026-09-08 02:14:53,179:INFO:werkzeug: * Debugger PIN: 125-599-791
+2026-09-08 02:14:53,394:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:53,396:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:53,397:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:53,397:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:53,397:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:53,397:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:53,397:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:53,398:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+mysql+pymysql://root:root@host.docker.internal:33070/cubestudio
+['ab_api_key', 'ab_group', 'ab_group_role', 'ab_permission', 'ab_permission_view', 'ab_permission_view_role', 'ab_register_user', 'ab_role', 'ab_user', 'ab_user_group', 'ab_user_role', 'ab_view_menu']
+cubestudio db下，table aihub不完整，请
+1、mysql: drop dabatase cubestudio
+2、重启当前pod
+FAIL: myapp.check_tables: SystemExit(1)
+CREATE DATABASE IF NOT EXISTS cubestudio DEFAULT   CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+FAIL: myapp.run: ValueError('I/O operation on closed file')
+/home/myapp/myapp/tools/../
+FAIL: myapp.tools.watch_service: ConfigException('Service host/port is not set.')
+FAIL: myapp.tools.watch_workflow: ConfigException('Service host/port is not set.')
+=== modules tried: 96, failed: 4 ===
+2026-09-08 02:14:54,200:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:54,201:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:54,201:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:54,201:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:54,202:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:54,202:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:54,202:ERROR:flask_appbuilder.base:Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+Traceback (most recent call last):
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/base.py", line 661, in _add_permissions_menu
+    self.sm.add_permissions_menu(name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/manager.py", line 2037, in add_permissions_menu
+    self.add_view_menu(view_menu_name)
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1031, in add_view_menu
+    view_menu = self.find_view_menu(name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 1019, in find_view_menu
+    self.session.query(self.viewmenu_model).filter_by(name=name).one_or_none()
+    ^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/flask_appbuilder/security/sqla/manager.py", line 255, in session
+    return current_app.appbuilder.session
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/myapp/py312/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2026-09-08 02:14:54,202:ERROR:flask_appbuilder.base:Add Permission on Menu Error: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+FAIL: myapp.run: SystemExit(1)
+/home/myapp/myapp/tools/../
+FAIL: myapp.tools.watch_service: ConfigException('Service host/port is not set.')
+FAIL: myapp.tools.watch_workflow: ConfigException('Service host/port is not set.')
+=== modules tried: 96, failed: 4 ===

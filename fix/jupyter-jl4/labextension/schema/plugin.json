@@ -1,0 +1,19 @@
+{
+  "title": "Cube Studio Dataset",
+  "description": "Cube Studio 数据集面板配置",
+  "type": "object",
+  "properties": {
+    "apiBase": {
+      "type": "string",
+      "title": "Cube Studio API 前缀",
+      "description": "留空则使用同源相对路径 /dataset_modelview/api",
+      "default": ""
+    },
+    "autoOpen": {
+      "type": "boolean",
+      "title": "启动时自动打开数据集面板",
+      "default": true
+    }
+  },
+  "additionalProperties": false
+}

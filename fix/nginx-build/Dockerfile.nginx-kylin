@@ -1,0 +1,70 @@
+# ============================================================================
+# Cube Studio — 行内 nginx 前端镜像装配（不在容器里 yum install nginx）
+#
+# 和 Caddy 方案的定位完全对应：只把**已编译好的二进制 + 配置**放进基座，
+# 全程不碰 yum、不改 ssl、不动 rpm 数据库。
+#
+# 前置：已在行外执行
+#   bash fix/nginx-build/build_nginx.sh <NGINX_VERSION>
+# 产物 fix/fe-nginx-kylin.tgz 传进行内后：
+#   mkdir -p /tmp/fe-nginx && tar xzf fe-nginx-kylin.tgz -C /tmp/fe-nginx
+#
+# 构建（在含 out/ 的目录执行）：
+#   docker build --network=none \
+#     --build-arg BASE_IMAGE=192.168.11.12/cube-studio/kylin:v10-sp3-2403 \
+#     -t 192.168.11.12/cube-studio/kubeflow-dashboard-frontend:kylin-nginx-v1 \
+#     -f fix/nginx-build/Dockerfile.nginx-kylin .
+# ============================================================================
+
+ARG BASE_IMAGE=192.168.11.12/cube-studio/kylin:v10-sp3-2403
+FROM ${BASE_IMAGE}
+
+# ── 二进制与配置 ────────────────────────────────────────────────────────────
+COPY out/nginx        /usr/local/nginx/sbin/nginx
+COPY out/mime.types   /etc/nginx/mime.types
+COPY out/nginx.conf   /etc/nginx/nginx.conf
+COPY out/nginx.80.conf /etc/nginx/conf.d/default.conf
+COPY out/start.sh     /start.sh
+
+# ── nginx 运行用户 ──────────────────────────────────────────────────────────
+# 现有 nginx.conf 第一行是 `user nginx;`，而基座里没有这个用户时 nginx 会
+# 以 getpwnam("nginx") failed 拒绝启动。原 RPM 包会带这个用户，自编译不带，
+# 所以这里补上。
+RUN set -eux; \
+    groupadd -r nginx 2>/dev/null || true; \
+    useradd -r -g nginx -s /sbin/nologin nginx 2>/dev/null || true; \
+    id nginx
+
+# ── 目录与权限 ──────────────────────────────────────────────────────────────
+# /data/log/nginx  ← nginx.80.conf 里的 access_log/error_log
+# /var/log/nginx   ← nginx.conf 里的 access_log
+# /data/web/frontend 和 /data/web/static ← 由前端构建产物填充
+RUN set -eux; \
+    mkdir -p /data/log/nginx /var/log/nginx /data/web/frontend /etc/nginx/conf.d; \
+    chmod +x /usr/local/nginx/sbin/nginx /start.sh
+
+# 让现有 start.sh 里的裸 `nginx` 命令能找到二进制，start.sh 一行不用改
+RUN ln -sf /usr/local/nginx/sbin/nginx /usr/sbin/nginx
+ENV PATH=/usr/local/nginx/sbin:${PATH}
+
+# ── 构建期断言：运行时依赖必须齐全 ──────────────────────────────────────────
+# 自编译二进制是动态链接的，依赖基座提供：
+#   libssl.so.1.1 / libcrypto.so.1.1（OpenSSL 1.1.1 系列，不是 3.x）
+#   libpcre2-8.so.0 / libz.so.1
+# 缺任何一个直接构建失败，避免产出起不来的镜像。
+RUN set -eux; \
+    echo "════ nginx 动态依赖 ════"; \
+    ldd /usr/local/nginx/sbin/nginx; \
+    if ldd /usr/local/nginx/sbin/nginx | grep -q "not found"; then \
+        echo "!!! 失败：基座缺少 nginx 运行时依赖（见上方 not found）"; exit 1; \
+    fi; \
+    if ldd /usr/local/nginx/sbin/nginx | grep -iE "perl|libgd|libtiff|libXpm"; then \
+        echo "!!! 失败：产物链接了被禁组件"; exit 1; \
+    fi; \
+    echo "════ nginx 版本 ════"; \
+    nginx -v; \
+    echo "════ 配置语法校验 ════"; \
+    nginx -t
+
+EXPOSE 80
+CMD ["/start.sh"]

@@ -1,0 +1,100 @@
+# ============================================================================
+# Cube Studio — 麒麟信创 后端基础镜像
+# ★ 此 Dockerfile 包含所有联网操作（yum/pip/wget）
+# ★ 构建在联网环境执行一次，产物镜像 push 到内网 registry
+# ★ 后续 Dockerfile.kylin 只做 COPY，无需联网
+#
+# 构建:
+#   docker build --network=host \
+#     -t 192.168.11.12/cube-studio/kubeflow-dashboard:base-python3.9-kylin \
+#     -f install/docker/Dockerfile-base.kylin .
+#   docker push 192.168.11.12/cube-studio/kubeflow-dashboard:base-python3.9-kylin
+# ============================================================================
+
+FROM cube-studio/kylin:v10-sp3-2403
+
+ENV TZ=Asia/Shanghai
+ENV LANG=zh_CN.UTF-8
+ENV LC_ALL=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN.UTF-8
+
+# ═══════════════════════════════════════════════════════════════
+# 以下全部是联网操作，离线构建不需要执行这一层
+# ═══════════════════════════════════════════════════════════════
+
+# ── 1. 系统依赖（yum install）────────────────────────────────
+# ★ gcc/gcc-c++/make — 麒麟缺少编译环境（domestic-jupyter 已验证）
+RUN yum install -y --nogpgcheck \
+        # 编译工具（麒麟缺少）
+        gcc gcc-c++ make \
+        # Python 3.9 + 开发头文件
+        python39 python39-devel python39-pip \
+        # 运维工具
+        vim wget curl git unzip zip lsof procps-ng net-tools \
+        bind-utils iputils \
+        # 证书
+        ca-certificates \
+        # 数据库客户端
+        mariadb \
+        # JSON 处理
+        jq \
+        # 字体 + 中文
+        fontconfig wqy-microhei-fonts \
+        # SSH / 远程
+        openssh-server \
+        # SASL（pyhive/thrift-sasl 编译依赖）
+        cyrus-sasl-devel cyrus-sasl \
+        # PostgreSQL（psycopg2 编译依赖）
+        libpq-devel \
+        # Python C 扩展编译依赖（cryptography/cffi/gevent/gmssl）
+        openssl-devel libffi-devel libev-devel \
+        bzip2-devel zlib-devel \
+        # Node.js
+        nodejs npm \
+        # Kerberos（HDFS 认证）
+        krb5-workstation krb5-libs krb5-devel \
+        # 其他
+        bzip2 iproute rsync \
+    && yum clean all && rm -rf /var/cache/yum/*
+
+# ── 2. Python 符号链接 ─────────────────────────────────────
+RUN ln -sf /usr/bin/python3.9 /usr/bin/python && \
+    ln -sf /usr/bin/python3.9 /usr/bin/python3 && \
+    ln -sf /usr/bin/pip3.9 /usr/bin/pip && \
+    ln -sf /usr/bin/pip3.9 /usr/bin/pip3
+
+# ── 3. Supervisor（pip install）────────────────────────────
+RUN pip3.9 install --no-cache-dir supervisor && \
+    mkdir -p /var/log/supervisor
+
+# ── 4. Python 依赖（pip install）───────────────────────────
+COPY install/docker/requirements.txt /requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r /requirements.txt && \
+    pip install --no-cache-dir \
+        requests_kerberos krbcontext \
+    && rm -rf /root/.cache/pip
+
+# ── 5. kubectl（wget）──────────────────────────────────────
+RUN wget -q https://cube-studio.oss-cn-hangzhou.aliyuncs.com/install/kubectl \
+        -O /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
+
+# ── 6. AI Hub 模型市场数据（wget）──────────────────────────
+RUN wget -q https://cube-studio.oss-cn-hangzhou.aliyuncs.com/aihub/deeplearning/aihub.zip && \
+    mkdir -p /cube-studio/aihub && \
+    unzip -q aihub.zip -d /cube-studio/aihub/ && \
+    rm aihub.zip
+
+# ═══════════════════════════════════════════════════════════════
+# 联网操作到此结束。以下无网络访问
+# ═══════════════════════════════════════════════════════════════
+
+# ── 7. 便捷配置 ────────────────────────────────────────────
+RUN echo "alias ll='ls -alF'" >> ~/.bashrc && \
+    echo "alias la='ls -A'" >> ~/.bashrc && \
+    echo "alias vi='vim'" >> ~/.bashrc
+
+WORKDIR /home/myapp
+USER root
+EXPOSE 80

@@ -1,0 +1,199 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.local-app
+#1 transferring dockerfile: 2.27kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/notebook:jupyter-ubuntu-py312
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 257B done
+#3 DONE 0.0s
+
+#4 [1/7] FROM docker.io/library/notebook:jupyter-ubuntu-py312@sha256:297f2682a9cdeee5e264dcb205b7b4761cbdb798410beb8d797651e25608656c
+#4 resolve docker.io/library/notebook:jupyter-ubuntu-py312@sha256:297f2682a9cdeee5e264dcb205b7b4761cbdb798410beb8d797651e25608656c 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 24.45kB done
+#5 DONE 0.0s
+
+#6 [2/7] RUN /opt/python/bin/python -m venv /home/myapp/py312 &&     /home/myapp/py312/bin/pip install --no-cache-dir --upgrade pip setuptools wheel
+#6 CACHED
+
+#7 [3/7] COPY install/docker/requirements.txt /opt/requirements.txt
+#7 DONE 0.1s
+
+#8 [4/7] COPY py312/wheels/ /opt/wheels/
+#8 DONE 0.2s
+
+#9 [5/7] RUN /home/myapp/py312/bin/pip install --no-index --find-links /opt/wheels -r /opt/requirements.txt
+#9 0.435 Looking in links: /opt/wheels
+#9 0.447 Processing /opt/wheels/flask-3.1.3-py3-none-any.whl (from -r /opt/requirements.txt (line 1))
+#9 0.450 Processing /opt/wheels/flask_appbuilder-5.2.2-py3-none-any.whl (from -r /opt/requirements.txt (line 2))
+#9 0.456 Processing /opt/wheels/Flask_Migrate-4.0.5-py3-none-any.whl (from -r /opt/requirements.txt (line 3))
+#9 0.459 Processing /opt/wheels/flask_compress-1.24-py3-none-any.whl (from -r /opt/requirements.txt (line 4))
+#9 0.461 Processing /opt/wheels/flask_caching-2.5.1-py3-none-any.whl (from -r /opt/requirements.txt (line 5))
+#9 0.463 Processing /opt/wheels/flask_talisman-1.1.0-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 6))
+#9 0.466 Processing /opt/wheels/Flask_SQLAlchemy-2.5.1-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 7))
+#9 0.468 Processing /opt/wheels/Flask_Login-0.6.2-py3-none-any.whl (from -r /opt/requirements.txt (line 8))
+#9 0.471 Processing /opt/wheels/Flask_Limiter-3.5.0-py3-none-any.whl (from -r /opt/requirements.txt (line 9))
+#9 0.473 Processing /opt/wheels/Flask_JWT_Extended-4.6.0-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 10))
+#9 0.476 Processing /opt/wheels/flask_wtf-1.2.1-py3-none-any.whl (from -r /opt/requirements.txt (line 11))
+#9 0.478 Processing /opt/wheels/jinja2-3.1.6-py3-none-any.whl (from -r /opt/requirements.txt (line 12))
+#9 0.480 Processing /opt/wheels/kombu-5.3.7-py3-none-any.whl (from -r /opt/requirements.txt (line 13))
+#9 0.485 Processing /opt/wheels/SQLAlchemy-1.4.54-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 14))
+#9 0.496 Processing /opt/wheels/SQLAlchemy_Utils-0.41.1-py3-none-any.whl (from -r /opt/requirements.txt (line 15))
+#9 0.503 Processing /opt/wheels/werkzeug-3.1.6-py3-none-any.whl (from -r /opt/requirements.txt (line 16))
+#9 0.506 Processing /opt/wheels/MarkupSafe-2.1.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 17))
+#9 0.509 Processing /opt/wheels/WTForms-2.3.3-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 18))
+#9 0.512 Processing /opt/wheels/wtforms_json-0.3.5-py3-none-any.whl (from -r /opt/requirements.txt (line 19))
+#9 0.515 Processing /opt/wheels/flask_cors-6.0.0-py3-none-any.whl (from -r /opt/requirements.txt (line 20))
+#9 0.517 Processing /opt/wheels/flask_babel-4.0.0-py3-none-any.whl (from -r /opt/requirements.txt (line 21))
+#9 0.519 Processing /opt/wheels/greenlet-3.5.5-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (from -r /opt/requirements.txt (line 22))
+#9 0.524 Processing /opt/wheels/celery-5.4.0-py3-none-any.whl (from -r /opt/requirements.txt (line 24))
+#9 0.537 Processing /opt/wheels/gunicorn-23.0.0-py3-none-any.whl (from -r /opt/requirements.txt (line 25))
+#9 0.541 Processing /opt/wheels/humanize-4.8.0-py3-none-any.whl (from -r /opt/requirements.txt (line 26))
+#9 0.544 Processing /opt/wheels/emoji-2.8.0-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 27))
+#9 0.548 Processing /opt/wheels/psycopg2_binary-2.9.10-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 28))
+#9 0.553 Processing /opt/wheels/wechatpy-1.8.18-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 29))
+#9 0.557 Processing /opt/wheels/pycryptodome-3.19.0-cp35-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 30))
+#9 0.563 Processing /opt/wheels/xlrd-2.0.1-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 31))
+#9 0.566 Processing /opt/wheels/pydub-0.25.1-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 32))
+#9 0.568 Processing /opt/wheels/openpyxl-3.1.2-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 33))
+#9 0.571 Processing /opt/wheels/jieba-0.42.1-py3-none-any.whl (from -r /opt/requirements.txt (line 34))
+#9 0.586 Processing /opt/wheels/sseclient_py-1.8.0-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 35))
+#9 0.588 Processing /opt/wheels/simplejson-3.19.1-py3-none-any.whl (from -r /opt/requirements.txt (line 36))
+#9 0.591 Processing /opt/wheels/PySnooper-1.2.0-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 37))
+#9 0.595 Processing /opt/wheels/kubernetes-29.0.0-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 38))
+#9 0.604 Processing /opt/wheels/statsd-4.0.1-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 39))
+#9 0.607 Processing /opt/wheels/redis-5.0.1-py3-none-any.whl (from -r /opt/requirements.txt (line 40))
+#9 0.612 Processing /opt/wheels/PyMySQL-1.1.1-py3-none-any.whl (from -r /opt/requirements.txt (line 41))
+#9 0.616 Processing /opt/wheels/minio-7.1.17-py3-none-any.whl (from -r /opt/requirements.txt (line 42))
+#9 0.623 Processing /opt/wheels/markdown-3.8.1-py3-none-any.whl (from -r /opt/requirements.txt (line 43))
+#9 0.626 Processing /opt/wheels/croniter-1.4.1-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 44))
+#9 0.631 Processing /opt/wheels/contextlib2-21.6.0-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 45))
+#9 0.634 Processing /opt/wheels/parsedatetime-2.6-py3-none-any.whl (from -r /opt/requirements.txt (line 46))
+#9 0.636 Processing /opt/wheels/pylint-3.0.0-py3-none-any.whl (from -r /opt/requirements.txt (line 47))
+#9 0.642 Processing /opt/wheels/bleach-6.0.0-py3-none-any.whl (from -r /opt/requirements.txt (line 48))
+#9 0.646 Processing /opt/wheels/pandas-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 49))
+#9 0.701 Processing /opt/wheels/numpy-1.26.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 50))
+#9 0.720 Processing /opt/wheels/beautifulsoup4-4.12.2-py3-none-any.whl (from -r /opt/requirements.txt (line 51))
+#9 0.723 Processing /opt/wheels/cffi-1.16.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 52))
+#9 0.725 Processing /opt/wheels/clickhouse_driver-0.2.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 53))
+#9 0.728 Processing /opt/wheels/cryptography-45.0.4-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r /opt/requirements.txt (line 54))
+#9 0.735 Processing /opt/wheels/jwcrypto-1.5.6-py3-none-any.whl (from -r /opt/requirements.txt (line 55))
+#9 0.737 Processing /opt/wheels/openai-1.34.0-py3-none-any.whl (from -r /opt/requirements.txt (line 56))
+#9 0.741 Processing /opt/wheels/ldap3-2.9.1-py2.py3-none-any.whl (from -r /opt/requirements.txt (line 57))
+#9 0.744 Processing /opt/wheels/gevent-25.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 58))
+#9 0.751 Processing /opt/wheels/tiktoken-0.9.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 59))
+#9 0.754 Processing /opt/wheels/hdfs-2.7.3-py3-none-any.whl (from -r /opt/requirements.txt (line 60))
+#9 0.756 Processing /opt/wheels/pyarrow-16.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.txt (line 61))
+#9 0.781 Processing /opt/wheels/urllib3-2.6.3-py3-none-any.whl (from -r /opt/requirements.txt (line 62))
+#9 0.784 Processing /opt/wheels/blinker-1.9.0-py3-none-any.whl (from Flask==3.1.3->-r /opt/requirements.txt (line 1))
+#9 0.785 Processing /opt/wheels/click-8.5.0-py3-none-any.whl (from Flask==3.1.3->-r /opt/requirements.txt (line 1))
+#9 0.787 Processing /opt/wheels/itsdangerous-2.2.0-py3-none-any.whl (from Flask==3.1.3->-r /opt/requirements.txt (line 1))
+#9 0.790 Processing /opt/wheels/apispec-6.10.0-py3-none-any.whl (from apispec[yaml]<7,>=6.0.0->flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.792 Processing /opt/wheels/colorama-0.4.6-py2.py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.795 Processing /opt/wheels/email_validator-2.3.0-py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.799 Processing /opt/wheels/jsonschema-4.26.0-py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.802 Processing /opt/wheels/marshmallow-4.3.1-py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.804 Processing /opt/wheels/marshmallow_sqlalchemy-1.5.0-py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.805 Processing /opt/wheels/python_dateutil-2.9.0.post0-py2.py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.807 Processing /opt/wheels/prison-0.2.1-py2.py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.810 Processing /opt/wheels/pyjwt-2.13.0-py3-none-any.whl (from flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.816 Processing /opt/wheels/limits-5.8.0-py3-none-any.whl (from Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 0.819 Processing /opt/wheels/ordered_set-4.1.0-py3-none-any.whl (from Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 0.821 Processing /opt/wheels/rich-13.9.4-py3-none-any.whl (from Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 0.824 Processing /opt/wheels/typing_extensions-4.16.0-py3-none-any.whl (from Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 0.831 Processing /opt/wheels/babel-2.18.0-py3-none-any.whl (from Flask-Babel==4.0.0->-r /opt/requirements.txt (line 21))
+#9 0.843 Processing /opt/wheels/pytz-2026.3.post1-py2.py3-none-any.whl (from Flask-Babel==4.0.0->-r /opt/requirements.txt (line 21))
+#9 0.849 Processing /opt/wheels/alembic-1.19.2-py3-none-any.whl (from Flask-Migrate==4.0.5->-r /opt/requirements.txt (line 3))
+#9 0.852 Processing /opt/wheels/brotli-1.2.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from flask-compress==1.24->-r /opt/requirements.txt (line 4))
+#9 0.856 Processing /opt/wheels/backports_zstd-1.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from flask-compress==1.24->-r /opt/requirements.txt (line 4))
+#9 0.859 Processing /opt/wheels/cachelib-0.17.0-py3-none-any.whl (from flask-caching==2.5.1->-r /opt/requirements.txt (line 5))
+#9 0.862 Processing /opt/wheels/amqp-5.3.1-py3-none-any.whl (from kombu==5.3.7->-r /opt/requirements.txt (line 13))
+#9 0.864 Processing /opt/wheels/vine-5.1.0-py3-none-any.whl (from kombu==5.3.7->-r /opt/requirements.txt (line 13))
+#9 0.866 Processing /opt/wheels/six-1.17.0-py2.py3-none-any.whl (from wtforms-json==0.3.5->-r /opt/requirements.txt (line 19))
+#9 0.870 Processing /opt/wheels/billiard-4.2.4-py3-none-any.whl (from celery==5.4.0->-r /opt/requirements.txt (line 24))
+#9 0.873 Processing /opt/wheels/click_didyoumean-0.3.1-py3-none-any.whl (from celery==5.4.0->-r /opt/requirements.txt (line 24))
+#9 0.874 Processing /opt/wheels/click_repl-0.3.0-py3-none-any.whl (from celery==5.4.0->-r /opt/requirements.txt (line 24))
+#9 0.876 Processing /opt/wheels/click_plugins-1.1.1.2-py2.py3-none-any.whl (from celery==5.4.0->-r /opt/requirements.txt (line 24))
+#9 0.878 Processing /opt/wheels/tzdata-2026.3-py2.py3-none-any.whl (from celery==5.4.0->-r /opt/requirements.txt (line 24))
+#9 0.882 Requirement already satisfied: packaging in /home/myapp/py312/lib/python3.12/site-packages (from gunicorn==23.0.0->-r /opt/requirements.txt (line 25)) (26.3)
+#9 0.884 Processing /opt/wheels/requests-2.34.2-py3-none-any.whl (from wechatpy==1.8.18->-r /opt/requirements.txt (line 29))
+#9 0.886 Processing /opt/wheels/xmltodict-1.0.4-py3-none-any.whl (from wechatpy==1.8.18->-r /opt/requirements.txt (line 29))
+#9 0.888 Processing /opt/wheels/optionaldict-0.1.2-py2.py3-none-any.whl (from wechatpy==1.8.18->-r /opt/requirements.txt (line 29))
+#9 0.892 Processing /opt/wheels/et_xmlfile-2.0.0-py3-none-any.whl (from openpyxl==3.1.2->-r /opt/requirements.txt (line 33))
+#9 0.895 Processing /opt/wheels/certifi-2026.7.22-py3-none-any.whl (from kubernetes==29.0.0->-r /opt/requirements.txt (line 38))
+#9 0.897 Processing /opt/wheels/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from kubernetes==29.0.0->-r /opt/requirements.txt (line 38))
+#9 0.900 Processing /opt/wheels/google_auth-2.57.1-py3-none-any.whl (from kubernetes==29.0.0->-r /opt/requirements.txt (line 38))
+#9 0.905 Processing /opt/wheels/websocket_client-1.9.2-py3-none-any.whl (from kubernetes==29.0.0->-r /opt/requirements.txt (line 38))
+#9 0.907 Processing /opt/wheels/requests_oauthlib-2.0.0-py2.py3-none-any.whl (from kubernetes==29.0.0->-r /opt/requirements.txt (line 38))
+#9 0.909 Processing /opt/wheels/oauthlib-3.3.1-py3-none-any.whl (from kubernetes==29.0.0->-r /opt/requirements.txt (line 38))
+#9 0.915 Processing /opt/wheels/platformdirs-4.11.7-py3-none-any.whl (from pylint==3.0.0->-r /opt/requirements.txt (line 47))
+#9 0.917 Processing /opt/wheels/astroid-3.0.3-py3-none-any.whl (from pylint==3.0.0->-r /opt/requirements.txt (line 47))
+#9 0.920 Processing /opt/wheels/isort-5.13.2-py3-none-any.whl (from pylint==3.0.0->-r /opt/requirements.txt (line 47))
+#9 0.922 Processing /opt/wheels/mccabe-0.7.0-py2.py3-none-any.whl (from pylint==3.0.0->-r /opt/requirements.txt (line 47))
+#9 0.923 Processing /opt/wheels/tomlkit-0.15.1-py3-none-any.whl (from pylint==3.0.0->-r /opt/requirements.txt (line 47))
+#9 0.925 Processing /opt/wheels/dill-0.4.1-py3-none-any.whl (from pylint==3.0.0->-r /opt/requirements.txt (line 47))
+#9 0.928 Processing /opt/wheels/webencodings-0.6.1-py3-none-any.whl (from bleach==6.0.0->-r /opt/requirements.txt (line 48))
+#9 0.933 Processing /opt/wheels/soupsieve-2.9.2-py3-none-any.whl (from beautifulsoup4==4.12.2->-r /opt/requirements.txt (line 51))
+#9 0.935 Processing /opt/wheels/pycparser-3.0-py3-none-any.whl (from cffi==1.16.0->-r /opt/requirements.txt (line 52))
+#9 0.938 Processing /opt/wheels/tzlocal-5.4.4-py3-none-any.whl (from clickhouse-driver==0.2.7->-r /opt/requirements.txt (line 53))
+#9 0.942 Processing /opt/wheels/anyio-4.15.1-py3-none-any.whl (from openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.944 Processing /opt/wheels/distro-1.9.0-py3-none-any.whl (from openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.946 Processing /opt/wheels/httpx-0.28.1-py3-none-any.whl (from openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.949 Processing /opt/wheels/pydantic-2.13.5-py3-none-any.whl (from openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.953 Processing /opt/wheels/sniffio-1.3.1-py3-none-any.whl (from openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.954 Processing /opt/wheels/tqdm-4.70.0-py3-none-any.whl (from openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.959 Processing /opt/wheels/pyasn1-0.6.4-py3-none-any.whl (from ldap3==2.9.1->-r /opt/requirements.txt (line 57))
+#9 0.961 Processing /opt/wheels/zope_event-6.2-py3-none-any.whl (from gevent==25.5.1->-r /opt/requirements.txt (line 58))
+#9 0.963 Processing /opt/wheels/zope_interface-8.6-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl (from gevent==25.5.1->-r /opt/requirements.txt (line 58))
+#9 0.967 Processing /opt/wheels/regex-2026.9.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from tiktoken==0.9.0->-r /opt/requirements.txt (line 59))
+#9 0.972 Processing /opt/wheels/docopt-0.6.2-py2.py3-none-any.whl (from hdfs==2.7.3->-r /opt/requirements.txt (line 60))
+#9 0.977 Processing /opt/wheels/idna-3.19-py3-none-any.whl (from anyio<5,>=3.5.0->openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.985 Processing /opt/wheels/httpcore-1.0.9-py3-none-any.whl (from httpx<1,>=0.23.0->openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.988 Processing /opt/wheels/h11-0.16.0-py3-none-any.whl (from httpcore==1.*->httpx<1,>=0.23.0->openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 0.990 Processing /opt/wheels/attrs-26.1.0-py3-none-any.whl (from jsonschema<5,>=3->flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.992 Processing /opt/wheels/jsonschema_specifications-2025.9.1-py3-none-any.whl (from jsonschema<5,>=3->flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.994 Processing /opt/wheels/referencing-0.37.0-py3-none-any.whl (from jsonschema<5,>=3->flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 0.996 Processing /opt/wheels/rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from jsonschema<5,>=3->flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 1.002 Processing /opt/wheels/annotated_types-0.8.0-py3-none-any.whl (from pydantic<3,>=1.9.0->openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 1.003 Processing /opt/wheels/pydantic_core-2.46.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from pydantic<3,>=1.9.0->openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 1.008 Processing /opt/wheels/typing_inspection-0.4.4-py3-none-any.whl (from pydantic<3,>=1.9.0->openai==1.34.0->-r /opt/requirements.txt (line 56))
+#9 1.013 Processing /opt/wheels/markdown_it_py-4.2.0-py3-none-any.whl (from rich<14,>=12->Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 1.016 Processing /opt/wheels/pygments-2.21.0-py3-none-any.whl (from rich<14,>=12->Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 1.023 Processing /opt/wheels/mako-1.4.1-py3-none-any.whl (from alembic>=1.9.0->Flask-Migrate==4.0.5->-r /opt/requirements.txt (line 3))
+#9 1.032 Processing /opt/wheels/prompt_toolkit-3.0.53-py3-none-any.whl (from click-repl>=0.2.0->celery==5.4.0->-r /opt/requirements.txt (line 24))
+#9 1.036 Processing /opt/wheels/dnspython-2.8.0-py3-none-any.whl (from email-validator>=1.0.5->flask-appbuilder==5.2.2->-r /opt/requirements.txt (line 2))
+#9 1.042 Processing /opt/wheels/pyasn1_modules-0.4.2-py3-none-any.whl (from google-auth>=1.0.1->kubernetes==29.0.0->-r /opt/requirements.txt (line 38))
+#9 1.049 Processing /opt/wheels/deprecated-1.3.1-py2.py3-none-any.whl (from limits>=2.8->Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 1.053 Processing /opt/wheels/wrapt-2.4.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (from deprecated>=1.2->limits>=2.8->Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 1.057 Processing /opt/wheels/mdurl-0.1.2-py3-none-any.whl (from markdown-it-py>=2.2.0->rich<14,>=12->Flask-Limiter==3.5.0->-r /opt/requirements.txt (line 9))
+#9 1.063 Processing /opt/wheels/wcwidth-0.8.3-py3-none-any.whl (from prompt-toolkit>=3.0.36->click-repl>=0.2.0->celery==5.4.0->-r /opt/requirements.txt (line 24))
+#9 1.073 Processing /opt/wheels/charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from requests>=2.4.3->wechatpy==1.8.18->-r /opt/requirements.txt (line 29))
+#9 1.251 Installing collected packages: statsd, sseclient-py, pytz, PySnooper, pydub, parsedatetime, optionaldict, jieba, flask-talisman, docopt, brotli, zope.interface, zope.event, xmltodict, xlrd, wrapt, websocket-client, webencodings, wcwidth, vine, urllib3, tzlocal, tzdata, typing-extensions, tqdm, tomlkit, soupsieve, sniffio, six, simplejson, rpds-py, regex, redis, pyyaml, pymysql, PyJWT, pygments, pycryptodome, pycparser, pyasn1, psycopg2-binary, platformdirs, ordered-set, oauthlib, numpy, mdurl, mccabe, marshmallow, MarkupSafe, markdown, itsdangerous, isort, idna, humanize, h11, gunicorn, greenlet, et-xmlfile, emoji, dnspython, distro, dill, contextlib2, colorama, click, charset_normalizer, certifi, cachelib, blinker, billiard, backports.zstd, Babel, attrs, astroid, apispec, annotated-types, wtforms, werkzeug, typing-inspection, SQLAlchemy, requests, referencing, python-dateutil, pylint, pydantic-core, pyasn1-modules, pyarrow, prompt-toolkit, prison, openpyxl, minio, markdown-it-py, Mako, ldap3, Jinja2, httpcore, gevent, email-validator, deprecated, clickhouse-driver, click-plugins, click-didyoumean, cffi, bleach, beautifulsoup4, anyio, amqp, wtforms-json, wechatpy, tiktoken, SQLAlchemy-Utils, rich, requests-oauthlib, pydantic, pandas, marshmallow-sqlalchemy, limits, kombu, jsonschema-specifications, httpx, hdfs, Flask, cryptography, croniter, click-repl, alembic, openai, jwcrypto, jsonschema, google-auth, Flask-WTF, Flask-SQLAlchemy, Flask-Login, Flask-Limiter, Flask-JWT-Extended, Flask-Cors, flask-compress, flask-caching, Flask-Babel, celery, kubernetes, Flask-Migrate, flask-appbuilder
+#9 19.39 
+#9 19.39 Successfully installed Babel-2.18.0 Flask-3.1.3 Flask-Babel-4.0.0 Flask-Cors-6.0.0 Flask-JWT-Extended-4.6.0 Flask-Limiter-3.5.0 Flask-Login-0.6.2 Flask-Migrate-4.0.5 Flask-SQLAlchemy-2.5.1 Flask-WTF-1.2.1 Jinja2-3.1.6 Mako-1.4.1 MarkupSafe-2.1.5 PyJWT-2.13.0 PySnooper-1.2.0 SQLAlchemy-1.4.54 SQLAlchemy-Utils-0.41.1 alembic-1.19.2 amqp-5.3.1 annotated-types-0.8.0 anyio-4.15.1 apispec-6.10.0 astroid-3.0.3 attrs-26.1.0 backports.zstd-1.7.0 beautifulsoup4-4.12.2 billiard-4.2.4 bleach-6.0.0 blinker-1.9.0 brotli-1.2.0 cachelib-0.17.0 celery-5.4.0 certifi-2026.7.22 cffi-1.16.0 charset_normalizer-3.5.1 click-8.5.0 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 clickhouse-driver-0.2.7 colorama-0.4.6 contextlib2-21.6.0 croniter-1.4.1 cryptography-45.0.4 deprecated-1.3.1 dill-0.4.1 distro-1.9.0 dnspython-2.8.0 docopt-0.6.2 email-validator-2.3.0 emoji-2.8.0 et-xmlfile-2.0.0 flask-appbuilder-5.2.2 flask-caching-2.5.1 flask-compress-1.24 flask-talisman-1.1.0 gevent-25.5.1 google-auth-2.57.1 greenlet-3.5.5 gunicorn-23.0.0 h11-0.16.0 hdfs-2.7.3 httpcore-1.0.9 httpx-0.28.1 humanize-4.8.0 idna-3.19 isort-5.13.2 itsdangerous-2.2.0 jieba-0.42.1 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 jwcrypto-1.5.6 kombu-5.3.7 kubernetes-29.0.0 ldap3-2.9.1 limits-5.8.0 markdown-3.8.1 markdown-it-py-4.2.0 marshmallow-4.3.1 marshmallow-sqlalchemy-1.5.0 mccabe-0.7.0 mdurl-0.1.2 minio-7.1.17 numpy-1.26.4 oauthlib-3.3.1 openai-1.34.0 openpyxl-3.1.2 optionaldict-0.1.2 ordered-set-4.1.0 pandas-2.2.3 parsedatetime-2.6 platformdirs-4.11.7 prison-0.2.1 prompt-toolkit-3.0.53 psycopg2-binary-2.9.10 pyarrow-16.1.0 pyasn1-0.6.4 pyasn1-modules-0.4.2 pycparser-3.0 pycryptodome-3.19.0 pydantic-2.13.5 pydantic-core-2.46.5 pydub-0.25.1 pygments-2.21.0 pylint-3.0.0 pymysql-1.1.1 python-dateutil-2.9.0.post0 pytz-2026.3.post1 pyyaml-6.0.3 redis-5.0.1 referencing-0.37.0 regex-2026.9.3 requests-2.34.2 requests-oauthlib-2.0.0 rich-13.9.4 rpds-py-2026.6.3 simplejson-3.19.1 six-1.17.0 sniffio-1.3.1 soupsieve-2.9.2 sseclient-py-1.8.0 statsd-4.0.1 tiktoken-0.9.0 tomlkit-0.15.1 tqdm-4.70.0 typing-extensions-4.16.0 typing-inspection-0.4.4 tzdata-2026.3 tzlocal-5.4.4 urllib3-2.6.3 vine-5.1.0 wcwidth-0.8.3 webencodings-0.6.1 websocket-client-1.9.2 wechatpy-1.8.18 werkzeug-3.1.6 wrapt-2.4.0 wtforms-2.3.3 wtforms-json-0.3.5 xlrd-2.0.1 xmltodict-1.0.4 zope.event-6.2 zope.interface-8.6
+#9 DONE 19.7s
+
+#10 [6/7] COPY install/docker/entrypoint.sh /entrypoint.sh
+#10 DONE 0.2s
+
+#11 [7/7] RUN chmod +x /entrypoint.sh
+#11 DONE 0.3s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 15.7s done
+#12 exporting manifest sha256:754bc850a2aade95feb0fa8d64add81d7da80bf36db1cc80ceca5829b20aa834 0.0s done
+#12 exporting config sha256:583551acf4c43557d6c70d8d9263d675c52cef1f8c4e28a0d7fbde0f98dd005d 0.0s done
+#12 exporting attestation manifest sha256:c6be030e2967e6beddf5500085bf5ef6c610128ef5b5afd4c61a0ad253087bd8 0.1s done
+#12 exporting manifest list sha256:8b5800ab471e59ae67fea5a214294a5a0127142172592c6cb5cc9a09cd5b5ab1
+#12 exporting manifest list sha256:8b5800ab471e59ae67fea5a214294a5a0127142172592c6cb5cc9a09cd5b5ab1 0.0s done
+#12 naming to docker.io/library/cube312:local done
+#12 unpacking to docker.io/library/cube312:local
+#12 unpacking to docker.io/library/cube312:local 6.2s done
+#12 DONE 22.1s

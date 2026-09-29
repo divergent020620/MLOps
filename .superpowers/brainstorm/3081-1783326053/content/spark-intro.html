@@ -1,0 +1,68 @@
+<h2>PySpark 分布式计算核心概念</h2>
+<p class="subtitle">主题：500 个共享计算节点下的依赖分发策略</p>
+
+<div class="section">
+  <h3>Spark 架构——3 个角色</h3>
+  <div style="display:flex; gap:12px;">
+    <div style="flex:1; background:#f0f5ff; border-radius:8px; padding:14px; font-size:13px;">
+      <b style="font-size:16px;">Driver（驱动器）</b>
+      <p>解析 Python 代码<br/>构建 DAG 执行计划<br/>切分 Task 分配给 Executor<br/>最后收集结果汇总</p>
+      <p style="color:#666;">→ 需要完整 Python 环境</p>
+    </div>
+    <div style="flex:1; background:#f0fff0; border-radius:8px; padding:14px; font-size:13px;">
+      <b style="font-size:16px;">Executor × N（执行器）</b>
+      <p>每个节点上一个 JVM 进程<br/>通过 Py4J 调用 Python<br/>真正执行 map/filter/apply<br/>各 Executor 之间不通信</p>
+      <p style="color:#666;">→ 需要跟 Driver 一致的库</p>
+    </div>
+    <div style="flex:1; background:#fff5f0; border-radius:8px; padding:14px; font-size:13px;">
+      <b style="font-size:16px;">Cluster Manager</b>
+      <p>YARN / K8s / Standalone<br/>管理 500 个节点的资源<br/>分配 Executor 给不同应用<br/>监控心跳、处理故障</p>
+      <p style="color:#666;">→ 别人的集群，你没管理权限</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>朴素例子：一个词频统计的完整执行过程</h3>
+  <div style="text-align:left; font-size:13px; background:#fafafa; border-radius:8px; padding:14px;">
+    <div style="background:#fff; padding:10px; border-radius:4px; margin-bottom:10px; font-family:monospace; font-size:12px;">
+# --- 你写的 Python 代码 ---<br/>
+df = spark.read.text("hdfs:///data/books/*.txt")  # L1 只定义<br/>
+words = df.select(explode(split(df.value, " ")))    # L2 只定义<br/>
+counts = words.groupBy("value").count()             # L3 只定义<br/>
+counts.write.csv("hdfs:///output/")                 # L4 触发执行 ↓
+    </div>
+    <p><b>Spark 内部执行过程：</b></p>
+    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+      <tr style="background:#f0f5ff;"><td style="padding:6px; border:1px solid #ddd;" width="60"><b>Step 1</b></td><td style="padding:6px; border:1px solid #ddd;">L1-L3 构建逻辑计划（DAG）：TextScan → Split → GroupBy → Write</td></tr>
+      <tr><td style="padding:6px; border:1px solid #ddd;" width="60"><b>Step 2</b></td><td style="padding:6px; border:1px solid #ddd;">L4 触发 Action，DAG Scheduler 把计划切成物理 Stage</td></tr>
+      <tr style="background:#f0f5ff;"><td style="padding:6px; border:1px solid #ddd;" width="60"><b>Step 3</b></td><td style="padding:6px; border:1px solid #ddd;">每个 Stage 切分成 N 个 Task（= Partition 数），Task 发给 500 个 Executor 并行跑</td></tr>
+      <tr><td style="padding:6px; border:1px solid #ddd;" width="60"><b>Step 4</b></td><td style="padding:6px; border:1px solid #ddd;">Executor-1 读 book1.txt 切片 → 分词 → 局部统计 → shuffle → 最终结果</td></tr>
+      <tr style="background:#f0f5ff;"><td style="padding:6px; border:1px solid #ddd;" width="60"><b>Step 5</b></td><td style="padding:6px; border:1px solid #ddd;">所有 Executor 结果汇总 → 写入 HDFS</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>核心概念：RDD vs DataFrame、Transformation vs Action、Partition</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;">概念</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">一句话说明</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">RDD</td><td style="padding:6px; border:1px solid #ddd;">底层抽象，分布式对象集合，无 schema</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">DataFrame</td><td style="padding:6px; border:1px solid #ddd;">RDD + Schema + SQL 优化器 = 有列名的分布式表</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">Transformation</td><td style="padding:6px; border:1px solid #ddd;">惰性操作：map/filter/groupBy/join → 只构建计划，不执行</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">Action</td><td style="padding:6px; border:1px solid #ddd;">触发操作：show/collect/count/write → 真正触发分布式计算</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">Partition</td><td style="padding:6px; border:1px solid #ddd;">数据分片，一个 Partition = 一个 Task。Partition 越多并行度越高</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">Shuffle</td><td style="padding:6px; border:1px solid #ddd;">数据跨节点重新分区（groupBy/join 触发），最昂贵的操作</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>500 节点下依赖分发的 4 种策略</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;">策略</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">做法</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">大小</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">适用场景</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;"><b>1. --archives</b></td><td style="padding:6px; border:1px solid #ddd;">conda env 打成 tar.gz，分发到所有 Executor 解压</td><td style="padding:6px; border:1px solid #ddd;">200MB-1GB</td><td style="padding:6px; border:1px solid #ddd;">训练（需要 torch/sklearn）</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;"><b>2. --py-files</b></td><td style="padding:6px; border:1px solid #ddd;">纯 Python 依赖打成 .zip，加入 PYTHONPATH</td><td style="padding:6px; border:1px solid #ddd;">10-50MB</td><td style="padding:6px; border:1px solid #ddd;">轻量依赖</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;"><b>3. Spark MLlib</b></td><td style="padding:6px; border:1px solid #ddd;">用 Spark 内置算法，零额外依赖</td><td style="padding:6px; border:1px solid #ddd;">0</td><td style="padding:6px; border:1px solid #ddd;">LR/RF/KMeans/GBDT</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;"><b>4. 模型广播</b></td><td style="padding:6px; border:1px solid #ddd;">模型文件广播 + UDF 纯 Python/NumPy 推理</td><td style="padding:6px; border:1px solid #ddd;">几MB</td><td style="padding:6px; border:1px solid #ddd;">仅推理</td></tr>
+  </table>
+</div>

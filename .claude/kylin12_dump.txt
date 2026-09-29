@@ -1,0 +1,102 @@
+SHEETS: ['封面', '任务信息', '结果概览', '组件详情', '组件-漏洞详情', '协议详情', '协议兼容', '漏洞信息', '敏感信息']
+
+========================================================================================
+SHEET: 封面 (rows=33, cols=14)
+========================================================================================
+A1=奇安信开源卫士
+A15=kylin
+A16=奇安信开源卫士分析结果报告
+A33=2026-09-04
+
+========================================================================================
+SHEET: 任务信息 (rows=13, cols=2)
+========================================================================================
+A1=任务信息
+A2=任务名称 | B2=kylin
+A3=任务检测文件或地址 | B3=容器镜像-本地 kylin.tar
+A4=任务所属版本
+A5=文件Sha1值 | B5=f2907d86deceac89eff65b176bcfa4ba5fd05d30
+A6=文件Sha256值 | B6=968ff026cc671e21039c4d6dfc6b8c2913f20f22dfc8128a0f0ef3dbdff0d064
+A7=文件Md5值 | B7=2ece356357e5c67ceb2930e1279f636d
+A8=文件上传时间 | B8=2026-09-04
+A9=任务标签
+A10=自定义字段
+A11=创建人 | B11=yuanyt@bosc.cn
+A12=创建时间 | B12=2026-09-04
+A13=完成时间 | B13=2026-09-04
+
+========================================================================================
+SHEET: 结果概览 (rows=32, cols=6)
+========================================================================================
+A1=组件安全分布
+A2=组件等级 | B2=数量
+A3=超危组件 | B3=0.0
+A4=高危组件 | B4=2.0
+A5=中危组件 | B5=0.0
+A6=低危组件 | B6=0.0
+A7=未知风险组件 | B7=0.0
+A8=未知版本组件 | B8=0.0
+A9=无漏洞组件 | B9=0.0
+A11=漏洞等级分布
+A12=组件等级 | B12=数量
+A13=超危漏洞 | B13=0.0
+A14=高危漏洞 | B14=2.0
+A15=中危漏洞 | B15=0.0
+A16=低危漏洞 | B16=0.0
+A17=未知风险漏洞 | B17=0.0
+A19=漏洞利用难度分布
+A20=组件等级 | B20=数量
+A21=容易 | B21=0.0
+A22=一般 | B22=1.0
+A23=困难 | B23=1.0
+A24=未知风险漏洞 | B24=0.0
+A26=许可协议等级分布
+A27=许可协议等级 | B27=数量
+A28=超危许可协议 | B28=0.0
+A29=高危许可协议 | B29=0.0
+A30=中危许可协议 | B30=0.0
+A31=低危许可协议 | B31=1.0
+A32=未知风险许可协议 | B32=0.0
+
+========================================================================================
+SHEET: 组件详情 (rows=4, cols=27)
+========================================================================================
+A1=组件信息 | S1=推荐使用版本 | W1=最新发布版本 | AA1=其他可用版本
+A2=组件名称 | B2=组件版本 | C2=组件等级 | D2=仓库类型 | E2=是否恶意组件 | F2=版本更新日期 | G2=GAV坐标 | H2=开源项目名称 | I2=开源项目版本号 | J2=管控状态 | K2=管控备注 | L2=许可协议 | M2=引入方式 | N2=漏洞分布 | O2=组件类型 | P2=标记状态 | Q2=组件来源 | R2=组件描述 | S2=组件版本 | T2=漏洞分布 | U2=GAV坐标 | V2=版本更新日期 | W2=组件版本 | X2=漏洞分布 | Y2=GAV坐标 | Z2=版本更新日期 | AA2=组件版本
+A3=setuptools | B3=44.1.1 | C3=高危组件 | D3=pypi | E3=否 | F3=2020-05-29 | G3=setuptools:44.1.1 | H3=setuptools | I3=44.1.1 | J3=禁止 | K3=禁止使用高危及以上组件 | L3=MIT | M3=直接引入1处，间接引入0处，不确定0处 | N3=高危漏洞:1 中危漏洞:0 低危漏洞:0 | O3=开源组件 | P3=未标记 | Q3=Source/usr/local/lib/python3.7/site-packages/setuptools-44.1.1.dist-info/METADATA | R3=Easily download, build, install, upgrade, and uninstall Python packages | S3=75.3.3 | U3=setuptools:75.3.3 | V3=2026-01-14 | W3=82.0.1 | Y3=setuptools:82.0.1 | Z3=2026-03-09 | AA3=null
+A4=pip | B4=20.2.2 | C4=高危组件 | D4=pypi | E4=否 | F4=2020-08-11 | G4=pip:20.2.2 | H4=pip | I4=20.2.2 | J4=禁止 | K4=禁止使用高危及以上组件 | L4=MIT | M4=直接引入1处，间接引入0处，不确定0处 | N4=高危漏洞:1 中危漏洞:0 低危漏洞:0 | O4=开源组件 | P4=未标记 | Q4=Source/usr/local/lib/python3.7/site-packages/pip-20.2.2.dist-info/METADATA | R4=The PyPA recommended tool for installing Python packages. | S4=26.0.1 | U4=pip:26.0.1 | V4=2026-02-05 | W4=26.0.1 | Y4=pip:26.0.1 | Z4=2026-02-05 | AA4=null
+
+========================================================================================
+SHEET: 组件-漏洞详情 (rows=4, cols=40)
+========================================================================================
+A1=组件信息 | M1=关联漏洞 | AF1=推荐使用版本 | AJ1=最新发布版本 | AN1=其他可用版本
+A2=组件名称 | B2=组件版本 | C2=组件等级 | D2=更新日期 | E2=GAV坐标 | F2=管控状态 | G2=管控备注 | H2=许可协议 | I2=引入方式 | J2=漏洞等级分布 | K2=漏洞利用难度分布 | L2=组件来源 | M2=QAXOSS编号 | N2=CNNVD编号 | O2=CVE编号 | P2=漏洞等级 | Q2=漏洞名称 | R2=漏洞类型 | S2=CVSS评分 | T2=攻击向量 | U2=漏洞描述 | V2=漏洞利用难度 | W2=自定义漏洞等级 | X2=自定义漏洞修复建议 | Y2=自定义漏洞整改优先级 | Z2=审计状态及说明 | AA2=影响版本 | AB2=解决方案 | AC2=缓解方案 | AD2=发布日期 | AE2=收录日期 | AF2=组件版本 | AG2=漏洞分布 | AH2=GAV坐标 | AI2=版本更新日期 | AJ2=组件版本 | AK2=漏洞分布 | AL2=GAV坐标 | AM2=版本更新日期 | AN2=组件版本
+A3=setuptools | B3=44.1.1 | C3=高危组件 | D3=2020-05-29 | E3=setuptools:44.1.1 | F3=禁止 | G3=禁止使用高危及以上组件 | H3=MIT | I3=直接引入1处，间接引入0处，不确定0处 | J3=高危漏洞:1 中危漏洞:0 低危漏洞:0 | K3=未知:1 困难:3 | L3=Source/usr/local/lib/python3.7/site-packages/setuptools-44.1.1.dist-info/METADATA | M3=QAXOSS-2024-026837 | N3=CNNVD-202407-1480 | O3=CVE-2024-6345 | P3=高危漏洞 | Q3=setuptools 代码注入漏洞 | R3=代码注入 | S3=8.8 | T3=CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H | U3=setuptools是PyPI开源的一个 Python 库。 setuptools 69.1.1及之前版本存在代码注入漏洞，该漏洞源于允许通过下载功能执行远程代码，容易受到代码注入攻击。 | V3=困难 | Z3=状态：待审计 说明：暂无说明 | AA3=setuptools 44.1.1 | AB3=升级版本：v70.0.0;相关commit：https://github.com/pypa/setuptools/commit/88807c7062788254f654ea8c03427adc859321f0;漏洞补丁：https://github.com/pypa/setuptools/commit/88807c7062788254f654ea8c03427adc859321f0;参考方案：Upgrade setuptools to version 70.0.0 or higher. Upgrade Wolfi superset to version 4.0.2-r3 or higher. Upgrade Wolfi reflex to version 0.5.6-r0 or higher. Upgrade Wolfi airflow to version 2.9.3-r1 or higher. Upgrade SLES:15.6 python312-setuptools to version 68.1.2-150600.3.3.1 or higher. Upgrade SLES:15.6 python311-setuptools to version 67.7.2-150400.3.16.1 or higher. Upgrade SLES:15.6 python3-setuptools-wheel to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.6 python3-setuptools-test to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.6 python3-setuptools to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.5 python311-setuptools to version 67.7.2-150400.3.16.1 or higher. Upgrade SLES:15.5 python3-setuptools-wheel to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.5 python3-setuptools-test to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.5 python3-setuptools to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.4 python311-setuptools to version 67.7.2-150400.3.16.1 or higher. Upgrade SLES:15.4 python310-setuptools to version 67.6.1-150400.4.9.1 or higher. Upgrade SLES:15.4 python3-setuptools-wheel to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.4 python3-setuptools-test to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.4 python3-setuptools to version 44.1.1-150400.9.9.1 or higher. Upgrade SLES:15.3 python39-setuptools to version 44.1.1-150300.7.9.1 or higher. Upgrade SLES:15.3 python3-setuptools-wheel to version 40.5.0-150100.6.9.1 or higher. Upgrade SLES:15.3 python3-setuptools-test to version 40.5.0-150100.6.9.1 or higher. Upgrade SLES:15.3 python3-setuptools to version 40.5.0-150100.6.9.1 or higher. Upgrade SLES:15.2 python3-setuptools to version 40.5.0-150100.6.9.1 or higher. Upgrade SLES:15.2 python2-setuptools ...更多来源，请登录系统查看 | AD3=2024-07-15 | AE3=2024-07-17 | AF3=75.3.3 | AH3=setuptools:75.3.3 | AI3=2026-01-14 | AJ3=82.0.1 | AL3=setuptools:82.0.1 | AM3=2026-03-09 | AN3=null
+A4=pip | B4=20.2.2 | C4=高危组件 | D4=2020-08-11 | E4=pip:20.2.2 | F4=禁止 | G4=禁止使用高危及以上组件 | H4=MIT | I4=直接引入1处，间接引入0处，不确定0处 | J4=高危漏洞:1 中危漏洞:0 低危漏洞:0 | K4=未知:2 一般:2 困难:1 | L4=Source/usr/local/lib/python3.7/site-packages/pip-20.2.2.dist-info/METADATA | M4=QAXOSS-2020-007318 | N4=CNNVD-202005-362 | O4=CVE-2018-20225 | P4=高危漏洞 | Q4=Pip 输入验证错误漏洞 | R4=输入验证错误 | S4=7.8 | T4=CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H | U4=Pip是一套用于安装和管理Python软件包的工具。 Pip 存在输入验证错误漏洞。攻击者可借助特制请求利用该漏洞在系统上执行任意代码。 | V4=一般 | Z4=状态：待审计 说明：暂无说明 | AA4=pip 20.2.2 | AB4=参考方案：Pip是一套用于安装和管理Python软件包的工具。
+
+Pip中的--extra-index-url选项存在输入验证错误漏洞。攻击者可借助特制请求利用该漏洞在系统上执行任意代码。目前，供应商发布了安全公告及相关补丁信息，修复了此漏洞。; | AC4=为了解决这个问题，供应商建议对部署使用版本钉住和散列钉住。 | AD4=2020-05-08 | AE4=2021-08-06 | AF4=26.0.1 | AH4=pip:26.0.1 | AI4=2026-02-05 | AJ4=26.0.1 | AL4=pip:26.0.1 | AM4=2026-02-05 | AN4=null
+
+========================================================================================
+SHEET: 协议详情 (rows=3, cols=8)
+========================================================================================
+A1=许可协议信息
+A2=许可协议简称 | B2=许可协议全称 | C2=OSI认证 | D2=FSF认证 | E2=SPDX认证 | F2=风险等级 | G2=影响组件 | H2=文本协议识别来源
+A3=MIT | B3=MIT License | C3=是 | D3=是 | F3=低危许可协议 | G3=pip 20.2.2,setuptools 44.1.1
+
+========================================================================================
+SHEET: 协议兼容 (rows=3, cols=4)
+========================================================================================
+A1=许可协议兼容
+A2=许可协议1 | B2=许可协议2 | C2=是否兼容 | D2=冲突描述
+
+========================================================================================
+SHEET: 漏洞信息 (rows=3, cols=13)
+========================================================================================
+A1=漏洞信息
+A2=QAXOSS编号 | B2=CNNVD编号 | C2=CVE编号 | D2=漏洞等级 | E2=漏洞名称 | F2=漏洞描述 | G2=漏洞引入 | H2=漏洞利用难度 | I2=审计状态及说明 | J2=解决方案 | K2=缓解方案 | L2=发布日期 | M2=收录日期
+
+========================================================================================
+SHEET: 敏感信息 (rows=3, cols=3)
+========================================================================================
+A1=敏感信息
+A2=敏感信息 | B2=敏感信息类型 | C2=文件路径

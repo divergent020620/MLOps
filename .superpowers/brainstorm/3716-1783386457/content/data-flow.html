@@ -1,0 +1,75 @@
+<h2>你现在的模式 vs Spark 模式</h2>
+<p class="subtitle">关键转变：数据不动，计算动</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">现在：拉数据到本地</div>
+    <div class="mockup-body" style="text-align:left; font-size:13px;">
+      <p>HDFS 上 100GB Parquet</p>
+      <p>→ hdfs dfs -get (下载 30分钟)</p>
+      <p>→ 本地 Python/Jupyter</p>
+      <p>→ pd.read_parquet()</p>
+      <p>→ 单机训练/推理</p>
+      <p>→ 结果写回本地</p>
+      <p style="color:#c00;"><b>瓶颈：网络传输 + 单机内存</b></p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Spark 模式：数据不动</div>
+    <div class="mockup-body" style="text-align:left; font-size:13px;">
+      <p>HDFS 上 100GB Parquet</p>
+      <p>→ spark.read.parquet("hdfs://...")</p>
+      <p>→ 500 个 Executor 各自读本地 Partition</p>
+      <p>→ 各自训练/推理</p>
+      <p>→ 结果直接写回 HDFS</p>
+      <p style="color:#0a0;"><b>优势：零数据传输 + 500 节点并行</b></p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>你需要知道的信息（问管理员）</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;">#</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">问题</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">为什么</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">1</td><td style="padding:6px; border:1px solid #ddd;"><b>Spark 版本？</b></td><td style="padding:6px; border:1px solid #ddd;">决定客户端版本，必须匹配</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">2</td><td style="padding:6px; border:1px solid #ddd;"><b>YARN RM 地址？</b>(IP:8032)</td><td style="padding:6px; border:1px solid #ddd;">spark-submit --master yarn://IP:8032</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">3</td><td style="padding:6px; border:1px solid #ddd;"><b>有 Gateway 机器吗？</b>还是从 Notebook 提交？</td><td style="padding:6px; border:1px solid #ddd;">决定提交方式</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">4</td><td style="padding:6px; border:1px solid #ddd;"><b>节点 Python 版本？</b></td><td style="padding:6px; border:1px solid #ddd;">决定 venv 的 Python 版本</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">5</td><td style="padding:6px; border:1px solid #ddd;"><b>GPU 情况？</b></td><td style="padding:6px; border:1px solid #ddd;">训练用 GPU 还是 CPU</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">6</td><td style="padding:6px; border:1px solid #ddd;"><b>Hive Metastore URI？</b></td><td style="padding:6px; border:1px solid #ddd;">有的话可以 spark.sql("SELECT ...")</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>三种读数据方式</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;">方式</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">代码</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">前提</th></tr>
+    <tr style="background:#f0fff0;">
+      <td style="padding:6px; border:1px solid #ddd;"><b>1. HDFS Parquet 路径</b></td>
+      <td style="padding:6px; border:1px solid #ddd; font-family:monospace; font-size:12px;">spark.read.parquet("hdfs://nn:8020/path/")</td>
+      <td style="padding:6px; border:1px solid #ddd;">你已经有了 keytab + 路径</td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #ddd;"><b>2. Hive 表（需要 Metastore）</b></td>
+      <td style="padding:6px; border:1px solid #ddd; font-family:monospace; font-size:12px;">spark.sql("SELECT * FROM db.table WHERE dt='20260701'")</td>
+      <td style="padding:6px; border:1px solid #ddd;">需要 Hive Metastore URI</td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #ddd;"><b>3. JDBC 连 Spark Thrift</b></td>
+      <td style="padding:6px; border:1px solid #ddd; font-family:monospace; font-size:12px;">jdbc:hive2://thrift-server:10000</td>
+      <td style="padding:6px; border:1px solid #ddd;">Java 项目可以不改代码</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>你现在就够用的</h3>
+  <div style="text-align:left; font-size:13px; background:#f0fff0; border-radius:8px; padding:14px;">
+    <p>方式 1 = 你的 keytab + 已知 HDFS 路径，不需要额外信息</p>
+    <pre style="font-size:12px; background:#fff; padding:8px; border-radius:4px;">
+# 拿到 spark-submit 权限后直接跑
+df = spark.read.parquet("hdfs://namenode:8020/你已知的数据集路径/")
+df = spark.read.parquet("hdfs://namenode:8020/user/hive/warehouse/db.db/table/")
+# 剩下的训练/推理都在集群内完成</pre>
+  </div>
+</div>

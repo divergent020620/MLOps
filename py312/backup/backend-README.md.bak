@@ -1,0 +1,29 @@
+# 后端依赖说明
+
+## 本目录内容
+
+- `requirements.txt` —— **原版**(install/docker/requirements.txt,65 行,`==` 精确锁定)
+- 迁移线(交接人)将交付:**`requirements-final.txt`**(py3.12 升级后的锁定版),收到后用它替换
+
+## 原版之外还有这些 pip 包(Dockerfile-base.kylin 裸装,不在 requirements.txt 内)
+
+| 包 | 状态 | py3.12 处置 |
+|---|---|---|
+| supervisor | 未锁版 | 升级 `==` 锁定(迁移线出) |
+| requests_kerberos | 未锁版 | 升级 `==` 锁定 |
+| krbcontext | 未锁版 | 升级 `==` 锁定 |
+| pyarrow(requirements.txt 最后一行,>=14.0.0) | 未锁死 | 改 `==`(迁移线出) |
+| pip / setuptools / wheel(升级语句) | 无记录 | venv 创建时已含 pip,不额外装 |
+
+## M1 后端装配时你只需要
+
+1. `requirements-final.txt`(迁移线交付)
+2. 风险包 wheel:sasl / thrift-sasl / gmssl(迁移线行外编译,仅 3 个)
+3. 行内 pypi 源直装(见组装交接文档 M1)
+
+## HDFS/Kerberos 相关(后端必需,行内原料)
+
+- **`/etc/krb5.conf`**:必需——后端代码(`myapp/utils/hdfs_client.py`)直接调用 `kinit` 做 HDFS 认证,运行时读该文件格式
+- **keytab**(旧链为 `ai_general.keytab`):与 krb5.conf 配套
+- **hadoop-conf/**(core-site.xml/hdfs-site.xml 等):仅当 HDFS 客户端用 libhdfs/pyarrow 才需要;一般属于部署挂载,不打进镜像(与旧链一致:旧链 `Dockerfile.kylin` 只 COPY keytab + krb5.conf)
+- 上述三个均为**行内部署原料**,组装阶段不放占位;由部署配置(COPY 到 `/etc/` 或 volume 挂载)注入——和旧链 `install/docker/Dockerfile.kylin` 做法一致

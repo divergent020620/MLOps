@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cube Studio 代码骨架设计（函数层面）</title>
+<style>
+  :root{
+    --bg:#f0f2f5; --surface:#fff; --text:#1a1a2e; --text2:#6b7280;
+    --border:#e5e7eb; --border2:#d1d5db;
+    --primary:#4f46e5; --primary-l:#e0e7ff;
+    --frontend:#ec4899; --frontend-l:#fce7f3;
+    --backend:#f59e0b;  --backend-l:#fef3c7;
+    --data:#10b981;     --data-l:#d1fae5;
+    --infra:#3b82f6;    --infra-l:#dbeafe;
+    --async:#8b5cf6;    --async-l:#ede9fe;
+    --danger:#ef4444;   --danger-l:#fee2e2;
+    --code-bg:#1e293b;  --code-fg:#e2e8f0;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,"Courier New",monospace;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+    --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+    --radius:10px; --radius-sm:6px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.65; padding:24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .layout{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:242px minmax(0,1fr);gap:24px;align-items:start}
+
+  /* ── Header ─────────────────────────────────────────── */
+  .header{
+    grid-column:1/-1;
+    background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 55%,#a855f7 100%);
+    border-radius:var(--radius);padding:30px 34px;color:#fff;
+    box-shadow:var(--shadow-md);margin-bottom:0;
+  }
+  .header h1{font-size:1.65rem;font-weight:700;letter-spacing:-.02em}
+  .header .sub{font-size:.93rem;opacity:.9;margin-top:6px}
+  .header .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .header .meta span{
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);
+    padding:3px 11px;border-radius:20px;font-size:.76rem;font-weight:500;
+    backdrop-filter:blur(4px);
+  }
+
+  /* ── TOC ────────────────────────────────────────────── */
+  .toc{
+    position:sticky;top:24px;background:var(--surface);border-radius:var(--radius);
+    padding:16px 14px;box-shadow:var(--shadow);max-height:calc(100vh - 48px);overflow-y:auto;
+  }
+  .toc h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--text2);
+    font-weight:700;margin-bottom:10px;padding-left:8px}
+  .toc a{
+    display:block;padding:6px 9px;border-radius:var(--radius-sm);font-size:.845rem;
+    color:var(--text2);text-decoration:none;border-left:2.5px solid transparent;
+    transition:all .15s;line-height:1.4;
+  }
+  .toc a:hover{background:var(--bg);color:var(--text)}
+  .toc a.active{background:var(--primary-l);color:var(--primary);font-weight:600;border-left-color:var(--primary)}
+  .toc a.sub{padding-left:20px;font-size:.79rem}
+  .toc hr{border:none;border-top:1px solid var(--border);margin:9px 0}
+
+  /* ── Cards ──────────────────────────────────────────── */
+  main{display:flex;flex-direction:column;gap:20px;min-width:0}
+  section.card{
+    background:var(--surface);border-radius:var(--radius);padding:24px 28px;
+    box-shadow:var(--shadow);border-left:4px solid transparent;scroll-margin-top:24px;
+  }
+  section.card.c-frontend{border-left-color:var(--frontend)}
+  section.card.c-backend{border-left-color:var(--backend)}
+  section.card.c-data{border-left-color:var(--data)}
+  section.card.c-infra{border-left-color:var(--infra)}
+  section.card.c-async{border-left-color:var(--async)}
+  section.card.c-primary{border-left-color:var(--primary)}
+  section.card.c-danger{border-left-color:var(--danger)}
+
+  h2.sec{font-size:1.22rem;font-weight:700;letter-spacing:-.01em;margin-bottom:4px;
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  h2.sec .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:26px;height:26px;padding:0 7px;background:var(--primary);color:#fff;
+    border-radius:var(--radius-sm);font-size:.78rem;font-weight:700;flex:none;
+    align-self:center;
+  }
+  h2.sec .en{font-size:.78rem;color:var(--text2);font-weight:400}
+  .lead{color:var(--text2);font-size:.9rem;margin-bottom:16px;line-height:1.6}
+
+  h3.sub{font-size:1rem;font-weight:700;margin:22px 0 10px;padding-left:10px;
+    border-left:3px solid var(--primary);line-height:1.3}
+  h3.sub:first-of-type{margin-top:14px}
+  h4.sub2{font-size:.9rem;font-weight:700;margin:16px 0 8px;color:var(--text)}
+  p{margin:10px 0;font-size:.9rem}
+  ul,ol{margin:10px 0 10px 22px;font-size:.9rem}
+  li{margin:5px 0}
+  li::marker{color:var(--text2)}
+
+  code{
+    font-family:var(--mono);font-size:.83em;background:#eef2f7;color:#3730a3;
+    padding:1.5px 5px;border-radius:4px;word-break:break-word;
+  }
+  a.codelink{color:var(--primary);text-decoration:none;font-family:var(--mono);font-size:.82em;
+    background:var(--primary-l);padding:1.5px 6px;border-radius:4px;font-weight:500}
+  a.codelink:hover{text-decoration:underline}
+
+  pre{
+    background:var(--code-bg);color:var(--code-fg);padding:16px 18px;border-radius:var(--radius-sm);
+    overflow-x:auto;margin:12px 0;font-size:.795rem;line-height:1.62;
+    font-family:var(--mono);white-space:pre;tab-size:4;
+  }
+  pre .c{color:#7c8ba1}
+  pre .k{color:#c792ea}
+  pre .s{color:#a5e075}
+  pre .n{color:#ffcb6b}
+  pre .hl{color:#82aaff;font-weight:600}
+  pre .star{color:#ff9cac;font-weight:700}
+  pre.plain{background:#f8fafc;color:#334155;border:1px solid var(--border)}
+
+  /* ── Tables ─────────────────────────────────────────── */
+  .tw{overflow-x:auto;margin:12px 0;border-radius:var(--radius-sm);border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:.845rem;background:var(--surface)}
+  th{
+    background:#f8fafc;text-align:left;padding:9px 12px;font-weight:700;color:var(--text);
+    border-bottom:2px solid var(--border);white-space:nowrap;font-size:.79rem;
+    text-transform:uppercase;letter-spacing:.03em;
+  }
+  td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafbff}
+  td.mono,th.mono{font-family:var(--mono);font-size:.795rem}
+  td.num{font-family:var(--mono);color:var(--text2);font-size:.79rem;white-space:nowrap}
+  td.nowrap{white-space:nowrap}
+
+  /* ── Callouts ───────────────────────────────────────── */
+  .callout{
+    border-radius:var(--radius-sm);padding:12px 16px;margin:14px 0;font-size:.87rem;
+    border-left:3px solid;display:flex;gap:10px;align-items:flex-start;
+  }
+  .callout .ico{font-size:1rem;line-height:1.45;flex:none}
+  .callout.warn{background:var(--backend-l);border-color:var(--backend);color:#78350f}
+  .callout.danger{background:var(--danger-l);border-color:var(--danger);color:#7f1d1d}
+  .callout.info{background:var(--infra-l);border-color:var(--infra);color:#1e3a5f}
+  .callout.ok{background:var(--data-l);border-color:var(--data);color:#064e3b}
+  .callout.idea{background:var(--async-l);border-color:var(--async);color:#4c1d95}
+  .callout b{font-weight:700}
+  .callout code{background:rgba(255,255,255,.6);color:inherit}
+
+  /* ── chips ──────────────────────────────────────────── */
+  .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.72rem;
+    font-weight:600;font-family:var(--mono);white-space:nowrap}
+  .chip.fe{background:var(--frontend-l);color:#9d174d}
+  .chip.be{background:var(--backend-l);color:#92400e}
+  .chip.da{background:var(--data-l);color:#065f46}
+  .chip.in{background:var(--infra-l);color:#1e40af}
+  .chip.as{background:var(--async-l);color:#5b21b6}
+  .chip.pr{background:var(--primary-l);color:#3730a3}
+  .chip.dg{background:var(--danger-l);color:#991b1b}
+  .chip.gy{background:#f1f5f9;color:#475569}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+
+  /* ── special blocks ─────────────────────────────────── */
+  .chain{
+    background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:14px 18px;margin:12px 0;
+    font-family:var(--mono);font-size:.795rem;line-height:1.75;overflow-x:auto;
+  }
+  .chain b{color:var(--primary);font-weight:700}
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:14px 0}
+  .stat{background:#f8fafc;border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:12px 14px;text-align:center}
+  .stat .v{font-size:1.35rem;font-weight:700;color:var(--primary);font-family:var(--mono);line-height:1.2}
+  .stat .l{font-size:.74rem;color:var(--text2);margin-top:3px}
+
+  footer{grid-column:1/-1;text-align:center;color:var(--text2);font-size:.78rem;padding:16px 0 4px}
+
+  @media(max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .toc{position:static;max-height:none;display:none}
+    body{padding:14px}
+    section.card{padding:20px 18px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ══ Header ══ -->
+  <header class="header">
+    <h1>Cube Studio 代码骨架设计（函数层面）</h1>
+    <div class="sub">谁调用谁、每个函数干什么 —— 不是文件清单，是骨架</div>
+    <div class="meta">
+      <span>分支 final</span>
+      <span>后端 Python / Flask + FAB</span>
+      <span>前端 React ×3</span>
+      <span>编排 K8s + Argo + Istio</span>
+      <span>阅读对象：接手 / 审计 / 信创改造</span>
+    </div>
+  </header>
+
+  <!-- ══ TOC ══ -->
+  <nav class="toc">
+    <h2>目录</h2>
+    <a href="#s0">0 · 一句话概括骨架</a>
+    <a href="#s1">1 · 运行时拓扑</a>
+    <a href="#s2">2 · 启动链路</a>
+    <a href="#s3" class="active">3 · 配置体系 ★</a>
+    <hr>
+    <a href="#s4">4 · Web 层骨架</a>
+    <a href="#s4-1" class="sub">4.1 三件套模式</a>
+    <a href="#s4-2" class="sub">4.2 基类清单</a>
+    <a href="#s4-3" class="sub">4.3 元数据组装机</a>
+    <a href="#s4-4" class="sub">4.4 请求生命周期</a>
+    <a href="#s5">5 · 权限层</a>
+    <a href="#s6">6 · K8s 层 ★</a>
+    <a href="#s6-1" class="sub">6.1 K8s 类</a>
+    <a href="#s6-2" class="sub">6.2 三件套</a>
+    <a href="#s6-3" class="sub">6.3 辅助工具</a>
+    <a href="#s7">7 · 异步层</a>
+    <a href="#s8">8 · 数据层</a>
+    <a href="#s9">9 · 前端骨架</a>
+    <a href="#s10">10 · 四条关键调用链</a>
+    <a href="#s11">11 · 设计观察与风险</a>
+    <a href="#sa">附 · 文件导航</a>
+  </nav>
+
+  <main>
+
+  <!-- ══════ 0 ══════ -->
+  <section class="card c-primary" id="s0">
+    <h2 class="sec"><span class="num">0</span>一句话概括骨架</h2>
+    <p class="lead">整个平台是「一个镜像 + 五个角色 + 三层后端 + 两条回写路径」。</p>
+
+    <div class="chain">
+<b>5 个 K8s Deployment</b>（同一镜像，靠 command 分叉）
+  ├─ kubeflow-dashboard          → bash /entrypoint.sh        → gunicorn → Flask
+  ├─ kubeflow-dashboard-schedule → celery beat
+  ├─ kubeflow-dashboard-worker   → celery worker
+  ├─ kubeflow-watch              → supervisord → 两个 k8s watch 循环
+  └─ kubeflow-dashboard-frontend → nginx（静态 + 反代）
+
+<b>后端三层</b>
+  View 层  myapp/views/*.py        每个业务模块 = Filter + Base + Api 三件套
+      ↓ 调用
+  K8s 层   utils/py/py_k8s.py      一个 K8s 类，约 70 个方法；核心是三件套
+      ↓ 写入
+  Model 层 myapp/models/*.py       SQLAlchemy 表对象 + 一堆「展示用」方法
+
+<b>回写路径两条（互补）</b>
+  Celery beat 定时轮询（tasks/schedules.py）
+  k8s watch   事件驱动（tools/watch_workflow.py / watch_service.py）
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="v">5</div><div class="l">Deployment</div></div>
+      <div class="stat"><div class="v">38</div><div class="l">views 文件</div></div>
+      <div class="stat"><div class="v">25</div><div class="l">models 文件</div></div>
+      <div class="stat"><div class="v">~70</div><div class="l">K8s 类方法</div></div>
+      <div class="stat"><div class="v">10</div><div class="l">CRD 类型</div></div>
+      <div class="stat"><div class="v">8</div><div class="l">生效定时任务</div></div>
+    </div>
+  </section>
+
+  <!-- ══════ 1 ══════ -->
+  <section class="card c-infra" id="s1">
+    <h2 class="sec"><span class="num">1</span>运行时拓扑 <span class="en">install/kubernetes/cube/base/deploy-*.yaml</span></h2>
+    <p class="lead">四个后端 Deployment <b>同镜像、同 ConfigMap，只靠 <code>command</code> 分叉角色</b>。</p>
+
+    <div class="tw"><table>
+      <thead><tr><th>Deployment</th><th class="mono">replicas</th><th>容器名</th><th>command</th><th>角色</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">kubeflow-dashboard</td><td class="num">2</td><td class="mono">kubeflow-dashboard</td><td class="mono">bash /entrypoint.sh</td><td>Web API</td></tr>
+        <tr><td class="mono">kubeflow-dashboard-schedule</td><td class="num">1</td><td class="mono">kubeflow-dashboard-schedule</td><td class="mono">celery …:celery_app beat</td><td>定时投递</td></tr>
+        <tr><td class="mono">kubeflow-dashboard-worker</td><td class="num">2</td><td class="mono">kubeflow-dashboard-worker</td><td class="mono">celery … worker --pool=prefork -Ofair -c 20</td><td>异步执行</td></tr>
+        <tr><td class="mono">kubeflow-watch</td><td class="num">1</td><td class="mono" style="color:#b45309;font-weight:700">kubeflow-watch-workflow</td><td class="mono">supervisord -c …/supervisord.conf</td><td>事件监听</td></tr>
+        <tr><td class="mono">kubeflow-dashboard-frontend</td><td class="num">2</td><td class="mono">kubeflow-dashboard-frontend</td><td class="mono">（nginx start.sh）</td><td>静态 + 反代</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><b><code>kubeflow-watch</code> 的容器名是 <code>kubeflow-watch-workflow</code></b>，不是 <code>kubeflow-dashboard</code>。
+      排查用 <code>kubectl logs deploy/kubeflow-watch -c kubeflow-watch-workflow</code>。</div>
+    </div>
+
+    <p>四个后端 Deployment <b>都挂同一个 ConfigMap</b> <code>kubeflow-dashboard-config</code>
+      （<a class="codelink" href="#">deploy-backend.yaml:150</a>、<a class="codelink" href="#">deploy-schedule.yaml:130</a>、
+      <a class="codelink" href="#">deploy-worker.yaml:149</a>、<a class="codelink" href="#">deploy-watch.yaml:128</a>）。</p>
+
+    <div class="callout danger">
+      <span class="ico">🔴</span>
+      <div><b>这意味着：改错一份 config.py，四个角色一起崩。</b></div>
+    </div>
+
+    <h3 class="sub">nginx 路由（<code>install/docker/dockerFrontend/nginx.80.conf</code>）</h3>
+<pre class="plain">location = /                  → 转发
+location /frontend/           → root /data/web       静态资源（React 产物）
+location /static/appbuilder/  → root /data/web       后端 FAB 静态 + 三个前端产物
+location /                    → proxy_pass http://kubeflow-dashboard.infra/</pre>
+    <p>前端产物落盘位置（<code>install/docker/Dockerfile.kylin:16</code>）：</p>
+<pre>COPY myapp/static/appbuilder/frontend  /data/web/frontend</pre>
+  </section>
+
+  <!-- ══════ 2 ══════ -->
+  <section class="card c-backend" id="s2">
+    <h2 class="sec"><span class="num">2</span>启动链路 <span class="en">install/docker/entrypoint.sh（83 行）</span></h2>
+
+    <div class="tw"><table>
+      <thead><tr><th class="mono">行</th><th>动作</th><th>关键函数 / 命令</th></tr></thead>
+      <tbody>
+        <tr><td class="num">8-20</td><td>建 4 组软链</td><td class="mono">static/mnt → /data/k8s/kubeflow/pipeline/workspace<br>static/dataset / static/aihub → /cube-studio/aihub / static/global</td></tr>
+        <tr><td class="num">24</td><td>建库</td><td class="mono">python myapp/create_db.py → init_db()</td></tr>
+        <tr><td class="num">28-47</td><td><b>HA：Redis 分布式锁</b>内跑迁移</td><td class="mono">见下方</td></tr>
+        <tr><td class="num">50</td><td>建管理员</td><td class="mono">myapp fab create-admin（|| true）</td></tr>
+        <tr><td class="num">53</td><td>灌初始数据</td><td class="mono">myapp init（|| true）</td></tr>
+        <tr><td class="num">56-64</td><td>幂等补表（FAB5 新增表如 <code>user_attribute</code>）</td><td class="mono">db.create_all() + Model.metadata.create_all()</td></tr>
+        <tr><td class="num">66-84</td><td><b>STAGE 分叉</b></td><td class="mono">见 2.2</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">2.1 Redis 锁细节 —— HA 改造的核心</h3>
+<pre><span class="c"># entrypoint.sh:28-47</span>
+key  = <span class="s">'cube:db-upgrade-lock'</span>
+占锁 = r.set(key, hostname, <span class="hl">nx=True, ex=120</span>)   <span class="c"># 只有拿到锁的 pod 执行 myapp db upgrade</span>
+重试 = range(30) × sleep(2)                    <span class="c"># 最长等 60s，超时后「继续」不阻塞启动</span>
+释放 = finally: r.delete(key)</pre>
+
+    <h3 class="sub">2.2 配置加载（详见 §3）</h3>
+<pre><span class="c"># myapp/__init__.py:36-37</span>
+CONFIG_MODULE = os.environ.get(<span class="s">"MYAPP_CONFIG"</span>, <span class="s">"myapp.config"</span>)
+app.config.from_object(CONFIG_MODULE)          <span class="c"># 默认 → myapp/config.py</span></pre>
+    <p><code>app = Flask(__name__)</code> 定义在 <code>__init__.py:31</code>，是模块级全局单例；gunicorn 用 <code>myapp:app</code> 直接引用。</p>
+
+    <h3 class="sub">2.3 STAGE 分叉（<code>entrypoint.sh:66-84</code>）</h3>
+    <div class="tw"><table>
+      <thead><tr><th class="mono">STAGE</th><th>行为</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">build</td><td>三个前端各自 <code>npm install &amp;&amp; npm run build</code>，然后退出</td></tr>
+        <tr><td class="mono">dev</td><td><code>python myapp/check_tables.py</code> → <code>python myapp/run.py</code>（Flask dev server）</td></tr>
+        <tr><td class="mono">prod</td><td><code>python myapp/check_tables.py</code> → <code>gunicorn --workers 20 --worker-class=gevent --timeout 300 myapp:app</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ══════ 3 ══════ -->
+  <section class="card c-danger" id="s3">
+    <h2 class="sec"><span class="num">3</span>配置体系：为什么 config.py 有四个副本 <span class="en">★ 最容易踩坑</span></h2>
+
+    <h3 class="sub">3.1 加载机制</h3>
+<pre>镜像里 <span class="hl">/home/myapp/myapp/config.py</span>   ← 0 字节（空文件）
+        ↑ 被 subPath 挂载「覆盖」
+ConfigMap <span class="n">kubeflow-dashboard-config</span> 的 config.py 键
+        ↓
+CONFIG_MODULE = os.environ.get(<span class="s">"MYAPP_CONFIG"</span>, <span class="s">"myapp.config"</span>)
+app.config.from_object(<span class="s">"myapp.config"</span>)</pre>
+
+    <p><code>MYAPP_CONFIG</code> <b>在 K8s manifest 里从未设置</b> → 恒为默认值 <code>myapp.config</code>
+      → 实际生效的就是「被 ConfigMap 覆盖后的 <code>/home/myapp/myapp/config.py</code>」。</p>
+
+    <p>同一个套路在本地 docker-compose 里也有一份（<code>install/docker/docker-compose.yml:68</code>）：</p>
+<pre>- ./config.py:/home/myapp/myapp/config.py</pre>
+
+    <div class="callout ok">
+      <span class="ico">✅</span>
+      <div><b>结论：</b>ConfigMap（生产）与 bind mount（开发）是同一种设计的两种投递方式。</div>
+    </div>
+
+    <h3 class="sub">3.2 四个副本对照（实测行数 / md5）</h3>
+    <div class="tw"><table>
+      <thead><tr><th>文件</th><th class="mono">行数</th><th>用途</th><th>K8s 生产生效？</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">install/kubernetes/cube/overlays/config/config.py</td><td class="num" style="color:#065f46;font-weight:700">921</td><td>kustomize <code>configMapGenerator</code> 的源</td><td><b style="color:#065f46">✅ 就是它</b></td></tr>
+        <tr><td class="mono">install/docker/config.py</td><td class="num">935</td><td>docker-compose 的源</td><td>❌</td></tr>
+        <tr><td class="mono">py312/backup/config.py.install-docker.bak</td><td class="num">927</td><td>迁移备份</td><td>❌</td></tr>
+        <tr><td class="mono">py312/backup/config.py.k8s-overlay.bak</td><td class="num">913</td><td>迁移备份</td><td>❌</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>四份 md5 各不相同</b>。同名的 <code>entrypoint.sh</code>、<code>project.py</code> 也是多副本
+      （<code>overlays/config/project.py</code> 与 <code>install/docker/project.py</code> 内容一致，但都 ≠ <code>myapp/project.py</code>）。</p>
+
+    <h3 class="sub">3.3 ConfigMap 是怎么「被设计出来」的</h3>
+    <p><code>install/kubernetes/cube/overlays/kustomization.yml</code>：</p>
+<pre><span class="k">configMapGenerator</span>:
+- <span class="k">name</span>: kubeflow-dashboard-config
+  <span class="k">files</span>:
+  - config/config.py
+  - config/entrypoint.sh
+  - config/project.py</pre>
+    <ul>
+      <li>仓库里<b>没有任何 <code>kind: ConfigMap</code> 的 yaml</b>，它是 <code>kustomize build</code> 现生成的</li>
+      <li><code>configMapGenerator</code> 默认给名字加<b>内容哈希后缀</b>（如 <code>kubeflow-dashboard-config-kkg59f648t</code>），并同步改写 deployment 里的引用 → 配置一变自动滚动更新</li>
+      <li>⚠️ 该文件里注释掉的手动命令生成的名字<b>不带哈希</b>，和 deployment 引用对不上 —— <b>改了等于没改</b></li>
+    </ul>
+
+    <div class="callout danger">
+      <span class="ico">💥</span>
+      <div><b>根因提示：</b><code>config.py</code> 是<b>代码</b>（含 <code>import</code>、类定义），不是 key=value 配置。
+      把它放进 ConfigMap，就注定「镜像内版本」与「ConfigMap 版本」要手动同步。<br>
+      历史上那次 <code>import imp</code> CrashLoop 就是这么来的 —— py3.12 移除了 <code>imp</code>，镜像里改了、ConfigMap 里没改，启动即挂。<br>
+      旁边那个 <code>deploy-config</code> 才是正确示范：纯 <code>literals</code>，永远不冲突。</div>
+    </div>
+
+    <h3 class="sub">3.4 配置里的两个「注册表」</h3>
+    <div class="tw"><table>
+      <thead><tr><th>常量</th><th class="mono">位置</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">CRD_INFO</td><td class="num">config.py:601</td><td><b>10</b> 个自定义资源：<code>workflow</code> / <code>mpijob</code> / <code>tfjob</code> / <code>xgbjob</code> / <code>pytorchjob</code> / <code>virtualservice</code> / <code>vcjob</code> / <code>sparkjob</code> / <code>paddlejob</code> / <code>mxjob</code>，各带 <code>group / version / plural / kind / timeout</code></td></tr>
+        <tr><td class="mono">beat_schedule</td><td class="num">config.py:530</td><td>11 条定时任务（3 条被注释 → <b>8 条生效</b>，在 <code>CeleryConfig</code> 内），见 §7.1</td></tr>
+      </tbody>
+    </table></div>
+    <p><code>timeout</code> 是<b>过期清理阈值</b>（如 workflow 为 <code>60*60*24*2</code> 秒），供 <code>delete_workflow</code> 使用。</p>
+  </section>
+
+  <!-- ══════ 4 ══════ -->
+  <section class="card c-frontend" id="s4">
+    <h2 class="sec"><span class="num">4</span>Web 层骨架 <span class="en">myapp/views/</span></h2>
+
+    <h3 class="sub" id="s4-1">4.1 三件套模式 —— 贯穿全部 38 个 view 文件</h3>
+    <p>以 <code>view_notebook.py</code> 为例，每个业务模块都是同一个骨架：</p>
+<pre><span class="k">class</span> <span class="hl">Notebook_Filter</span>(MyappFilter):          <span class="c"># ① 查询过滤器</span>
+    <span class="k">def</span> apply(self, query, func): ...        <span class="c">#    :47</span>
+
+<span class="k">class</span> <span class="hl">Notebook_ModelView_Base</span>():             <span class="c"># ② 纯 mixin，不继承 FAB，装全部业务逻辑</span>
+    <span class="k">def</span> set_column(self, notebook=<span class="k">None</span>)      <span class="c">#    :85   动态生成表单列</span>
+    <span class="k">def</span> pre_add(self, item)                  <span class="c">#    :194  新增前加工</span>
+    <span class="k">def</span> pre_update(self, item)               <span class="c">#    :249  修改前加工</span>
+    <span class="k">def</span> post_add(self, item)                 <span class="c">#    :270  新增后落 K8s</span>
+    <span class="k">def</span> pre_delete(self, item)               <span class="c">#    :844  删除前清 K8s</span>
+    <span class="star">@expose_api</span>(url=<span class="s">'/entry/jupyter'</span>)        <span class="c">#    :309  自定义路由</span>
+    <span class="k">def</span> entry_jupyter(self): ...
+
+<span class="k">class</span> <span class="hl">Notebook_ModelView_Api</span>(                <span class="c"># ③ 组合成真正注册的 View</span>
+        Notebook_ModelView_Base,
+        MyappModelRestApi):
+    ...</pre>
+
+    <div class="callout idea">
+      <span class="ico">💡</span>
+      <div><b>为什么拆出 <code>_Base</code>？</b> 因为一个 Base 可以配多个 Api：<br>
+      <code>Notebook</code> 有 <code>Notebook_ModelView_Api</code> 和 <code>Notebook_ModelView_SDK_Api</code>（<code>:889</code> / <code>:898</code>）；<br>
+      <code>Pipeline</code> 有 <code>Pipeline_ModelView_Api</code> 和 <code>Pipeline_ModelView_Home_Api</code>（<code>:1309</code> / <code>:1334</code>）。<br>
+      同一套业务逻辑，挂到不同 URL 前缀 / 不同权限。</div>
+    </div>
+
+    <h4 class="sub2">生命周期钩子全清单</h4>
+    <p>在 <code>baseApi.py:259-309</code> 定义为空实现，子类按需覆盖：</p>
+<pre class="plain">pre_show / pre_show_res
+pre_add / post_add / pre_add_req / pre_add_res / pre_add_web
+pre_update / post_update / pre_update_req / pre_update_res / pre_update_web
+pre_list_req / pre_list_res / post_list
+pre_delete / post_delete</pre>
+
+    <h3 class="sub" id="s4-2">4.2 基类清单</h3>
+
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div><b>FAB 版本 = 5.2.2</b>（<code>install/docker/requirements.txt:2</code>，由 <code>Dockerfile-base:40-43</code> 装入）—— 不是 4.x。这决定了下面的继承链。</div>
+    </div>
+
+<pre><span class="hl">MyappModelRestApi</span> (baseApi.py:241)
+  → ModelRestApi        (FAB 5.2.2  flask_appbuilder/api/__init__.py:855)
+    → BaseApi           (同上 :253)
+      → AbstractViewApi (flask_appbuilder/baseviews.py:76)
+        → object</pre>
+
+    <div class="tw"><table>
+      <thead><tr><th>类</th><th class="mono">位置</th><th>继承</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">BaseMyappView</td><td class="num">base.py:271</td><td class="mono">BaseView</td><td>所有自定义视图的基类</td></tr>
+        <tr><td class="mono">MyappFilter</td><td class="num">base.py:476</td><td class="mono">BaseFilter</td><td>查询过滤器基类</td></tr>
+        <tr><td class="mono"><b>MyappModelRestApi</b></td><td class="num">baseApi.py:241</td><td class="mono">ModelRestApi（FAB 5.2.2）</td><td><b>REST API 主基类</b>，见 4.3</td></tr>
+        <tr><td class="mono">MyappFormRestApi</td><td class="num">baseFormApi.py:84</td><td class="mono">BaseView</td><td>表单式 API</td></tr>
+        <tr><td class="mono">MyappSQLAInterface</td><td class="num">baseSQLA.py:4</td><td class="mono">SQLAInterface</td><td>模型接口</td></tr>
+        <tr><td class="mono">MyappListWidget</td><td class="num">base.py:303</td><td class="mono">ListWidget</td><td>列表控件</td></tr>
+        <tr><td class="mono">CompactCRUDMixin</td><td class="num">base.py:320</td><td class="mono">BaseCRUDView</td><td>折进详情页的紧凑 CRUD</td></tr>
+        <tr><td class="mono">YamlExportMixin</td><td class="num">base.py:398</td><td class="mono">object</td><td><code>yaml_export</code> 动作</td></tr>
+        <tr><td class="mono">DeleteMixin</td><td class="num">base.py:413</td><td class="mono">object</td><td><code>_delete</code> / <code>muldelete</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>装饰器 / 模块函数（<code>base.py</code>）：<code>has_access</code>(:55)、<code>has_access_api</code>(:99)、<code>api</code>(:206)、<code>handle_api_exception</code>(:222)、<code>validate_json</code>(:390)、<code>check_ownership</code>(:517)、<code>bind_field</code>(:563)。</p>
+
+    <div class="callout danger">
+      <span class="ico">🔴</span>
+      <div><b><code>MyappModelView</code> 这个类不存在</b>（全库 grep 零命中）—— CLAUDE.md 里写的它的定义是错的。
+      业务视图实际继承的是 <code>自己的_Base + MyappModelRestApi</code> 组合。</div>
+    </div>
+
+    <p><b><code>baseApi.py</code> 自己重新实现了一批 FAB 工具，而不是 import FAB 的</b>：
+      <code>expose</code>(:181)、<code>rison</code>(:117)、<code>safe</code>(:104)、<code>merge_response_func</code>(:201)、<code>json_response</code>(:226)。
+      权限走 <code>myapp.views.base.has_access_api</code>，<b>全程不用 FAB 的 <code>@protect()</code></b>。</p>
+
+    <h3 class="sub" id="s4-3">4.3 MyappModelRestApi：一台「元数据组装机」 ★</h3>
+    <p>这是全仓库设计最特别的地方。<b>前端不硬编码表单，改为向后端要描述。</b></p>
+<pre>GET /&lt;model&gt;/_info          <span class="c">← baseApi.py:990，挂了 30 层装饰器</span>
+        │
+   <span class="star">@merge_response_func</span>(merge_more_info,            <span class="s">'more_info'</span>)
+   <span class="star">@merge_response_func</span>(merge_ops_data,             API_IMPORT_DATA_RIS_KEY)
+   <span class="star">@merge_response_func</span>(merge_cols_width,           API_COLS_WIDTH_RIS_KEY)
+   <span class="star">@merge_response_func</span>(merge_base_permissions,     API_PERMISSIONS_RIS_KEY)
+   <span class="star">@merge_response_func</span>(merge_user_permissions,     API_USER_PERMISSIONS_RIS_KEY)
+   <span class="star">@merge_response_func</span>(merge_add_field_info,       API_ADD_COLUMNS_RIS_KEY)
+   <span class="star">@merge_response_func</span>(merge_edit_field_info,      API_EDIT_COLUMNS_RIS_KEY)
+   <span class="star">@merge_response_func</span>(merge_show_fieldsets_info,  ...)
+   <span class="star">@merge_response_func</span>(merge_search_filters,       ...)
+   <span class="star">@merge_response_func</span>(merge_route_info,           ...)
+   <span class="c">... 共 30 个</span>
+        ↓
+   <span class="k">def</span> api_info(self, **kwargs)                     <span class="c"># :1018  累加成一个响应体</span></pre>
+
+    <p><code>merge_response_func</code> 定义在 <code>baseApi.py:201</code>，机制是「给被装饰的函数挂上
+      <code>_response_key_func_mappings = {key: merge_func}</code>」，请求时把 30 个 merge 函数依次跑一遍。
+      <b>消费方是前端 <code>ADUGTemplate.tsx</code> —— 见 §9.3。</b></p>
+
+    <h4 class="sub2">每个 merge_* 贡献响应体里的一个键</h4>
+    <div class="tw"><table>
+      <thead><tr><th>函数</th><th class="mono">行</th><th>贡献</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">merge_list_columns</td><td class="num">870</td><td>列表列定义</td></tr>
+        <tr><td class="mono">merge_add_field_info</td><td class="num">661</td><td>新增表单字段（类型、校验、下拉选项）</td></tr>
+        <tr><td class="mono">merge_edit_field_info</td><td class="num">678</td><td>编辑表单字段</td></tr>
+        <tr><td class="mono">merge_search_filters</td><td class="num">752</td><td>搜索条件（含关系字段远程搜索）</td></tr>
+        <tr><td class="mono">merge_base_permissions</td><td class="num">624</td><td>基础权限位</td></tr>
+        <tr><td class="mono">merge_user_permissions</td><td class="num">630</td><td><b>当前用户</b>的权限位</td></tr>
+        <tr><td class="mono">merge_columns_info</td><td class="num">892</td><td>列宽 / 固定列等展示属性</td></tr>
+        <tr><td class="mono">merge_route_info</td><td class="num">931</td><td>前端路由</td></tr>
+        <tr><td class="mono">merge_related_field_info</td><td class="num">938</td><td>关联字段（外键下拉）</td></tr>
+      </tbody>
+    </table></div>
+    <p>底层支撑：<code>make_ui_info</code>(:1987) → <code>filed2ui</code>(:2090) → <code>_get_field_info</code>(:2167) → <code>_get_fields_info</code>(:2257)。
+      <code>_init_titles</code> / <code>_init_label_columns</code> / <code>_init_properties</code> / <code>_init_model_schemas</code> / <code>_init_cols_width</code>（:408-535）在类初始化时准备字段元数据。</p>
+
+    <h4 class="sub2">CRUD 主路径（全部 <code>@expose</code>，是 FAB 原生路由的重写）</h4>
+    <div class="tw"><table>
+      <thead><tr><th>方法</th><th class="mono">行</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">get(pk)</td><td class="num">1075</td><td>单条详情，前置 <code>check_item_permissions</code></td></tr>
+        <tr><td class="mono">get_list()</td><td class="num">1137</td><td>列表，前置 <code>_handle_page_args</code> / <code>_handle_order_args</code> / <code>_handle_filters_args</code></td></tr>
+        <tr><td class="mono">post()</td><td class="num">1317</td><td>新增</td></tr>
+        <tr><td class="mono">put(pk)</td><td class="num">1387</td><td>修改</td></tr>
+        <tr><td class="mono">delete(pk)</td><td class="num">1480</td><td>删除</td></tr>
+        <tr><td class="mono">_muldelete(items)</td><td class="num">1814</td><td>批量删除</td></tr>
+        <tr><td class="mono">single_action / multi_action</td><td class="num">1516 / 1547</td><td>自定义动作</td></tr>
+        <tr><td class="mono">upload / download / download_template</td><td class="num">1622 / 1697 / 1578</td><td>文件</td></tr>
+        <tr><td class="mono">echart</td><td class="num">1594</td><td>图表数据</td></tr>
+        <tr><td class="mono">favorite(pk)</td><td class="num">1772</td><td>收藏</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub" id="s4-4">4.4 一次请求的生命周期</h3>
+<pre class="plain">HTTP 请求
+  ↓
+@app.before_request          myapp/__init__.py   鉴权：白名单 / myapp_username cookie / Authorization header
+  ↓
+Flask-AppBuilder 路由 → View 方法（如 MyappPipelineRestApi.get_list）
+  ↓
+[前置钩子]  pre_list_req / pre_show / check_item_permissions
+  ↓
+[项目过滤]  security_manager.get_join_projects_id()  → 查询限定在用户所属项目组
+  ↓
+SQLAlchemy 查询 model（models/*.py）
+  ↓
+[后置钩子]  post_list / merge_*   （组装元数据）
+  ↓
+@app.after_request           myapp/__init__.py   写回 myapp_username cookie + 响应头
+  ↓
+JSON 响应</pre>
+  </section>
+
+  <!-- ══════ 5 ══════ -->
+  <section class="card c-data" id="s5">
+    <h2 class="sec"><span class="num">5</span>权限层 <span class="en">myapp/security.py</span></h2>
+
+    <div class="tw"><table>
+      <thead><tr><th>类</th><th class="mono">行</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">MyUser</td><td class="num">58</td><td>扩展 FAB <code>User</code>；<code>is_admin()</code>(:79)、<code>secret</code>(:86)</td></tr>
+        <tr><td class="mono">MyRole</td><td class="num">111</td><td>扩展 FAB <code>Role</code></td></tr>
+        <tr><td class="mono"><b>MyappSecurityManager</b></td><td class="num">263</td><td><b>权限中枢</b>，继承 FAB <code>SecurityManager</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h4 class="sub2">MyappSecurityManager 关键函数</h4>
+    <div class="tw"><table>
+      <thead><tr><th>函数</th><th class="mono">行</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">register_views()</td><td class="num">332</td><td>注册所有 View 到 FAB（菜单 / 权限的源头）</td></tr>
+        <tr><td class="mono">before_request()</td><td class="num">278</td><td>请求级鉴权</td></tr>
+        <tr><td class="mono">load_user_from_header()</td><td class="num">288</td><td>header 鉴权（<code>Authorization</code>）</td></tr>
+        <tr><td class="mono">add_org_user()</td><td class="num">358</td><td>建用户并绑项目组</td></tr>
+        <tr><td class="mono">auth_user_remote_org_user()</td><td class="num">399</td><td>远程用户（LDAP / SSO）认证</td></tr>
+        <tr><td class="mono">has_access / can_access</td><td class="num">463 / 476</td><td>权限判定</td></tr>
+        <tr><td class="mono">user_view_menu_names()</td><td class="num">484</td><td>当前用户的权限集合</td></tr>
+        <tr><td class="mono">sync_role_definitions()</td><td class="num">527</td><td>同步内置角色（Admin / Gamma / Public）</td></tr>
+        <tr><td class="mono">set_perm / add_pv_role / merge_perm</td><td class="num">609 / 660 / 519</td><td>权限授予</td></tr>
+        <tr style="background:#fffbeb"><td class="mono"><b>get_join_projects_id(session)</b></td><td class="num">678</td><td><b>★ 多租户隔离核心：当前用户能看哪些项目组</b></td></tr>
+        <tr><td class="mono">get_join_projects()</td><td class="num">689</td><td>同上，返回对象</td></tr>
+        <tr><td class="mono">get_create_pipeline_ids()</td><td class="num">698</td><td>用户可管理的流水线</td></tr>
+        <tr><td class="mono">get_all_namespace / get_all_notebook_namespace<br>get_all_pipeline_namespace / get_all_service_namespace<br>get_all_automl_namespace</td><td class="num">708-752</td><td>按「用户所属项目组」换算出的 K8s 命名空间白名单（<b>防越权看别人的 pod</b>）</td></tr>
+      </tbody>
+    </table></div>
+    <p>角色：<code>Admin</code> / <code>Gamma</code> / <code>Public</code>；<code>ROBOT_PERMISSION_ROLES</code> 是角色黑名单。</p>
+  </section>
+
+  <!-- ══════ 6 ══════ -->
+  <section class="card c-infra" id="s6">
+    <h2 class="sec"><span class="num">6</span>K8s 层骨架 <span class="en">myapp/utils/py/py_k8s.py · 2629 行 ★ 核心</span></h2>
+
+    <h3 class="sub" id="s6-1">6.1 一个类就是一套「集群操作 SDK」</h3>
+<pre><span class="k">class</span> <span class="hl">K8s</span>():                                             <span class="c"># :21</span>
+    <span class="k">def</span> _create_api_client(self, file_path)              <span class="c"># :23</span>
+    <span class="k">def</span> __init__(self, file_path=<span class="k">None</span>, cluster_name=<span class="s">''</span>)  <span class="c"># :45</span></pre>
+
+    <p>调用方统一先造客户端：</p>
+<pre>k8s_client = K8s(task.pipeline.project.cluster.get(<span class="s">'KUBECONFIG'</span>, <span class="s">''</span>))</pre>
+    <p><code>cluster</code> 来自 <code>Pipeline.project.cluster</code>，最终由 <code>config.py</code> 的 <code>CLUSTERS</code> 字典按 <code>ENVIRONMENT</code>
+      映射到 kubeconfig 路径 —— <b>这就是多集群的实现方式</b>。</p>
+
+    <p>约 70 个方法，按职责分族：</p>
+    <div class="tw"><table>
+      <thead><tr><th>族</th><th>方法（行号）</th></tr></thead>
+      <tbody>
+        <tr style="background:#fffbeb"><td><b>构造核心</b></td><td class="mono"><b>get_volume_mounts</b>(884) → <b>make_container</b>(1119) → <b>make_pod</b>(1241)</td></tr>
+        <tr><td>工作负载工厂</td><td class="mono">create_debug_pod(1366)、create_deployment(1584)、create_ReplicationController(1515)、create_statefulset(1651)、create_job(2529)、create_cronjob(2478)、create_pod(1491)、create_crd(1486)</td></tr>
+        <tr><td>查询 Pod</td><td class="mono">get_pods(218)、get_running_pods(75)、get_pod_event(283)、get_pod_humanized(304)、get_pod_ip(320)、get_pod_metrics(2136)、get_pod_log_stream(2183)、download_pod_log(2212)</td></tr>
+        <tr><td>查询 Job / CRD</td><td class="mono">get_crd(599)、get_one_crd(568)、get_crd_status(536)、get_crd_all_namespaces(651)、get_job_event(294)</td></tr>
+        <tr><td>查询 Node</td><td class="mono">get_node(434)、get_node_event(419)、get_node_metrics(2120)、get_all_node_allocated_resources(352)、label_node(505)</td></tr>
+        <tr><td>删除</td><td class="mono">delete_pods(334)、delete_workflow(714)、delete_service(856)、delete_deployment(1552)、delete_statefulset(1628)、delete_job(2564)、delete_cronjob(2519)、delete_configmap(1958)、delete_hpa(1983)、delete_istio_ingress(1739)、delete_volcano(1942)</td></tr>
+        <tr><td>网络 / 服务</td><td class="mono">create_service(1686)、create_headless_service(1721)、create_istio_ingress(1758)</td></tr>
+        <tr><td>存储 / 命名空间</td><td class="mono">get_pvc(2308)、create_workspace_pv_pvc(2341)、create_namespace(2325)、create_configmap(1968)、create_namespace_sa_rbac(2417)</td></tr>
+        <tr><td>密钥</td><td class="mono">apply_hubsecret(1416)、apply_secret(1464)</td></tr>
+        <tr><td>伸缩</td><td class="mono">create_hpa(2000)、scale_deployment(1575)</td></tr>
+        <tr><td>交互</td><td class="mono">exec_command(2164)、terminal_start(2286)</td></tr>
+        <tr><td>单位换算</td><td class="mono">to_memory_GB(2099)、to_cpu(2110)、to_local_time(2278)、get_uesd_gpu(2226)</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>模块级另有：</p>
+    <ul>
+      <li><code>class K8SStreamThread(threading.Thread)</code>（:2574）—— WebSocket 终端日志推送</li>
+      <li><code>def check_status_time(status, hour=8)</code>（:2603）—— Argo workflow 各节点耗时统计</li>
+    </ul>
+
+    <h3 class="sub" id="s6-2">6.2 三件套：所有 pod 都从这三个函数出来 ★</h3>
+<pre>业务视图（view_task / view_notebook / view_serving / view_inference …）
+    │
+    ├─ k8s_client = K8s(kubeconfig)                      <span class="c"># :45   选集群</span>
+    │
+    ├─ <span class="hl">get_volume_mounts</span>(volume_mount, username)         <span class="c"># :884  @staticmethod</span>
+    │     <span class="s">'pvc名:/挂载点,pvc名2:/挂载点2'</span> → (k8s_volumes, k8s_volume_mounts)
+    │     还负责把「项目共享 / 用户私有」卷按 username 展开
+    │
+    ├─ <span class="hl">make_container</span>(name, command, args, volume_mount, working_dir,
+    │                 resource_memory, resource_cpu, resource_gpu,
+    │                 image_pull_policy, image, env, privileged, username,
+    │                 ports, health, hostPort, resource_rdma, security_context)   <span class="c"># :1119</span>
+    │     ① 调 get_volume_mounts
+    │     ② env 字符串/dict → V1EnvVar 列表
+    │     ③ 追加公共注入：K8S_NODE_NAME / K8S_POD_NAMESPACE / K8S_POD_IP /
+    │        K8S_HOST_IP / K8S_POD_NAME（用 field_ref，不用手写）
+    │     → V1Container
+    │
+    └─ <span class="star">make_pod</span>(namespace, name, labels, command, args, volume_mount, working_dir,
+                node_selector, resource_memory, resource_cpu, resource_gpu,
+                image_pull_policy, image_pull_secrets, image, hostAliases, env,
+                privileged, accounts, username, ports=<span class="k">None</span>,
+                restart_policy=<span class="s">'OnFailure'</span>, scheduler_name=<span class="s">'default-scheduler'</span>,
+                node_name=<span class="s">''</span>, health=<span class="k">None</span>, annotations={}, hostPort=[],
+                resource_rdma=0, sidecar=[], security_context=<span class="k">None</span>)              <span class="c"># :1241</span>
+          ④ 选调度器：GPU 空 → conf[<span class="s">'GPU_SCHEDULERNAME'</span>]；kube-batch / volcano 打 annotation
+          ⑤ node_selector 字符串 <span class="s">'k=v;k2=v2'</span> → dict
+          ⑥ get_gpu(resource_gpu) → (数量, 卡型, 资源名)，卡型写进 nodeSelector[<span class="s">'gpu-type'</span>]
+          ⑦ 组装 V1PodSpec
+          → <span class="hl">V1Pod</span>（<b>唯一注入点</b>：DNS、hostAliases、资源、卷、env、容忍全在这里）</pre>
+
+    <div class="callout idea">
+      <span class="ico">💡</span>
+      <div><b>「唯一注入点」的含义：</b><code>create_debug_pod</code> / <code>create_deployment</code> / <code>create_job</code> /
+      <code>create_statefulset</code> / <code>create_ReplicationController</code> <b>全都内部调 <code>make_pod</code></b>。<br>
+      要给<b>所有</b>业务 pod 加东西（如 DNS 配置、hostAliases），只改 <code>make_pod</code> 一处。</div>
+    </div>
+
+    <h3 class="sub" id="s6-3">6.3 辅助工具 <span class="en">myapp/utils/core.py</span></h3>
+    <p>被 py_k8s 和 views 大量复用的纯函数：</p>
+    <div class="tw"><table>
+      <thead><tr><th>函数</th><th class="mono">行</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">merge_volume_mount(*args)</td><td class="num">2189</td><td>多段挂载串合并去重（<code>view_notebook.py:239,610</code> 用它追加 <code>kubeflow-dataset(pvc-ro):/mnt/datasets</code>）</td></tr>
+        <tr><td class="mono">get_k8s_env()</td><td class="num">2207</td><td>汇总全局注入到业务 pod 的环境变量</td></tr>
+        <tr><td class="mono">get_node_selector(node_selector)</td><td class="num">2272</td><td>机器选择器解析</td></tr>
+        <tr><td class="mono">check_resource_memory / cpu / gpu<br>check_resource</td><td class="num">1407-1565</td><td>资源规格校验与归一</td></tr>
+        <tr><td class="mono">get_cpu / get_gpu / get_rdma</td><td class="num">1589 / 1610 / 1662</td><td>资源字符串解析</td></tr>
+        <tr><td class="mono">sort_expand_index / fix_task_position</td><td class="num">1700 / 1730</td><td>DAG 布局与任务排序</td></tr>
+        <tr><td class="mono">validate_job_args / validate_task_args</td><td class="num">591 / 646</td><td>任务参数校验</td></tr>
+        <tr><td class="mono">job_template_args_definition / dag_json_demo<br>nni_parameters_demo</td><td class="num">499 / 494 / 556</td><td>前端用的模板 JSON</td></tr>
+        <tr><td class="mono">timeout（类，上下文管理器）</td><td class="num">748</td><td>超时控制</td></tr>
+        <tr><td class="mono">get_celery_app(config)</td><td class="num">998</td><td>由 <code>CeleryConfig</code> 建 Celery 单例</td></tr>
+        <tr><td class="mono">setup_cache(app, cache_config)</td><td class="num">949</td><td>Redis 缓存</td></tr>
+        <tr><td class="mono">pic2html / table_html / read_zip_csv<br>download_file</td><td class="num">1342 / 1973 / 1960 / 2162</td><td>结果渲染与文件</td></tr>
+        <tr><td class="mono">send_MIME_email / send_email_smtp</td><td class="num">924 / 851</td><td>邮件</td></tr>
+        <tr><td class="mono">run_shell / split_url / get_not_black_port<br>checkip</td><td class="num">1893 / 1912 / 1938 / 1577</td><td>杂项</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div><code>core.py</code> 上半部分（JSON 序列化、<code>merge_extra_filters</code>、<code>get_since_until</code>、<code>MediumText</code> 等）
+      是从 Apache Superset fork 来的，与 Cube 业务无关；<b>Cube 自己的东西集中在 1300 行以后</b>。</div>
+    </div>
+  </section>
+
+  <!-- ══════ 7 ══════ -->
+  <section class="card c-async" id="s7">
+    <h2 class="sec"><span class="num">7</span>异步层：两条互补的回写路径 <span class="en">myapp/tasks/ + myapp/tools/</span></h2>
+
+    <h3 class="sub">7.1 路径一：Celery beat 定时轮询</h3>
+<pre><span class="c"># myapp/tasks/celery_app.py —— 只有 17 行</span>
+celery_app = get_celery_app(conf)        <span class="c"># 委托给 utils/core.py:998</span></pre>
+    <p>调度表定义在 <b><code>config.py</code> 的 <code>CeleryConfig.beat_schedule</code></b>（:530）。
+      <b>共 11 条，其中 3 条被注释掉 → 实际生效 8 条</b>：</p>
+    <div class="tw"><table>
+      <thead><tr><th>任务名</th><th>实现（行号）</th><th>周期</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">task.delete_workflow</td><td class="mono">schedules.py:131</td><td class="mono">minute='1' → <b>每小时 :01</b></td><td>删过期 workflow（按 <code>CRD_INFO.timeout</code>）</td></tr>
+        <tr><td class="mono">task.make_timerun_config</td><td class="mono">schedules.py:387</td><td class="mono">minute='*/5'</td><td>生成定时任务的 yaml</td></tr>
+        <tr><td class="mono">task.delete_old_data</td><td class="mono">schedules.py:666</td><td class="mono">minute='1', hour='1' 每天 01:01</td><td>清旧数据</td></tr>
+        <tr><td class="mono">task.check_pipeline_run</td><td class="mono">schedules.py:853</td><td class="mono">minute='10', hour='11' 每天 11:10</td><td>检查流水线运行时长 + 资源用量</td></tr>
+        <tr><td class="mono">task.delete_debug_docker</td><td class="mono">schedules.py:218</td><td class="mono">minute='30', hour='23'</td><td>清 debug pod / 停空闲 notebook / 下线异常服务</td></tr>
+        <tr><td class="mono">task.watch_gpu</td><td class="mono">schedules.py:929</td><td class="mono">minute='10', hour='8-23/2'</td><td>推 GPU 使用率（08:10→22:10）</td></tr>
+        <tr><td class="mono">task.watch_pod_utilization</td><td class="mono">schedules.py:954</td><td class="mono">minute='10', hour='11'</td><td>推低负载 service pod</td></tr>
+        <tr><td class="mono">task.check_pod_terminating</td><td class="mono">schedules.py:1189</td><td class="mono">minute='*/10'</td><td>发现 Terminating 卡住的 pod 并告警</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>被注释的 3 条</b>：<code>task_delete_notebook</code>(原 04:01)、<code>task_push_workspace_size</code>(原 10:10)、
+      <code>task_adjust_node_resource</code>(原 <code>*/10</code>)。函数实现都还在，只是不调度。</p>
+    <p>装饰器风格统一为 <code>@celery_app.task(name="task.xxx", bind=True)</code>，<b>全仓没有一处 <code>@shared_task</code></b>。</p>
+
+    <div class="callout danger">
+      <span class="ico">💥</span>
+      <div><b>本地跑起来一个定时任务都不会触发</b> —— <code>install/docker/config_local.py:19-27</code>
+      把 <code>CELERY_CONFIG</code> 整个替换成一个<b>没有 <code>beat_schedule</code></b> 的普通 dict。
+      排查"定时任务不生效"先看这里。</div>
+    </div>
+
+    <h4 class="sub2">任务定义分在两处，别找错</h4>
+    <div class="tw"><table>
+      <thead><tr><th>文件</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">myapp/tasks/schedules.py<br>(1222 行)</td><td>8 个 beat 任务 + <b><code>upload_workflow</code></b>(:596) + 三个未调度任务 <code>delete_notebook</code>(:183) / <code>push_workspace_size</code>(:899) / <code>adjust_node_resource</code>(:991)<br>非 task 辅助：<code>delete_old_crd</code>(:46)、<code>deliver_message</code>(:324)、<code>next_schedules</code>(:347)、<code>upload_timerun</code>(:470)、<code>delDir</code>(:639)、<code>get_run_time</code>(:713)、<code>check_pipeline_time</code>(:736)、<code>check_pipeline_resource</code>(:777)</td></tr>
+        <tr><td class="mono">myapp/tasks/async_task.py<br>(366 行)</td><td><code>check_docker_commit</code>(:27)、<code>check_notebook_commit</code>(:59)、<b><code>upgrade_service</code></b>(:99，蓝绿发布)、<code>update_dataset</code>(:287)、<code>get_k8s_resource</code>(:338，Redis 缓存刷新)</td></tr>
+        <tr><td class="mono">myapp/tasks/hdfs_tasks.py<br>(402 行)</td><td>只有 1 个任务 <code>download_hdfs_dataset</code>(:28)，内部用 <code>ThreadPoolExecutor</code> 分片下载 + <b>流式按 row-group 合并 parquet</b>（避免整文件 OOM）；辅助 <code>_update_status</code>(:379) / <code>_update_progress</code>(:400)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><code>CeleryConfig.target_annotations</code>（<code>config.py:454-525</code>）里有一条
+      <b><code>task.exec_command</code>，全仓找不到实现</b> —— 死配置项。</div>
+    </div>
+
+    <p>所有任务用 <code>myapp/utils/celery.py:15 session_scope(nullpool=True)</code> 开 DB 会话。</p>
+
+    <p><b>健康检查：</b><code>deploy-schedule.yaml:141</code> 用 <code>python3 myapp/tools/check_celery.py</code> 做 liveness。
+      <code>deploy-watch.yaml:140</code> 的探针是凌晨 3 点主动 <code>exit 1</code> —— 强制重启（因为 watch 在容器重启时偶发挂）。</p>
+
+    <h3 class="sub">7.2 路径二：k8s watch 事件驱动</h3>
+    <p><code>supervisord.conf</code> 同时拉起两个常驻进程，<b>两个都是 <code>kubernetes.watch.Watch()</code> 长轮询</b>：</p>
+<pre>  <span class="hl">[program:watch-workflow]</span>  python myapp/tools/watch_workflow.py
+  <span class="hl">[program:watch-service]</span>   python myapp/tools/watch_service.py</pre>
+
+    <h4 class="sub2">watch_workflow.py —— 监听 Workflow CRD</h4>
+<pre>listen_workflow()                       <span class="c"># 主循环：w.stream(list_cluster_custom_object)</span>
+  └─ <span class="hl">deal_event</span>(event, workflow_info, namespace)          <span class="c"># :359</span>
+       ├─ check_crd_exist(...)                            <span class="c"># :353  K8s 里还在吗</span>
+       ├─ 拼 back_object（name/namespace/status/status_more…）
+       │    status_more = check_status_time(object[<span class="s">'status'</span>])   <span class="c"># py_k8s:2603</span>
+       ├─ save_workflow(crd, dbsession)                   <span class="c"># :95   写 Workflow 表</span>
+       ├─ check_has_push(crd, dbsession)                  <span class="c"># :153  防重复推送</span>
+       ├─ deliver_message(workflow, dbsession)            <span class="c"># :47   发通知</span>
+       ├─ save_history(workflow, dbsession)               <span class="c"># :341</span>
+       ├─ save_monitoring(workflow, dbsession)            <span class="c"># :285</span>
+       ├─ push_task_time(workflow, dbsession)             <span class="c"># :210</span>
+       └─ push_resource_rec(workflow, dbsession)          <span class="c"># :166</span></pre>
+
+    <h4 class="sub2">watch_service.py —— 监听所有 Pod</h4>
+<pre>listen_service()          <span class="c"># 主循环：w.stream(list_pod_for_all_namespaces, timeout_seconds=60)</span>
+  └─ 事件类型 MODIFIED 且 container_statuses[0].state.terminated
+       ├─ 由 labels[<span class="s">'app'</span>] 反查 InferenceService 表
+       ├─ 只在 5 秒内发生的事才推（避免陈年事件）
+       └─ cache.get/set(pod_name, 1, timeout=3600) 去重后 push_message(...)</pre>
+
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div>两个循环里都写着注释：<code># 不能使用异步io，因为stream会阻塞</code>。</div>
+    </div>
+  </section>
+
+  <!-- ══════ 8 ══════ -->
+  <section class="card c-data" id="s8">
+    <h2 class="sec"><span class="num">8</span>数据层 <span class="en">myapp/models/ · 25 个文件</span></h2>
+
+    <h3 class="sub">8.0 先记住三件事</h3>
+    <ol>
+      <li><b>没有 ORM 统一基类</b>，没有 <code>to_dict</code> / <code>from_dict</code>，<b>没有软删除</b>。全库搜
+        <code>deleted|is_delete|to_dict|from_dict</code> 在 models 下只命中 <code>helpers.py</code> 的导入导出工具。</li>
+      <li><b><code>models/__init__.py</code> 是空的</b> —— 不做 re-export，各 view 直接 <code>from myapp.models.model_x import X</code>。
+        所以"某张表在哪"要靠文件名猜。</li>
+      <li>事实上的"组合基类"是四个 mixin：</li>
+    </ol>
+    <div class="tw"><table>
+      <thead><tr><th>mixin</th><th class="mono">位置</th><th>提供</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">MyappModelBase</td><td class="num">base.py:7</td><td>只有一个 <code>label_columns</code> 中文列名字典（9-311 行）+ <code>get_default_node_selector(node_selector, resource_gpu, model_type)</code>（316-336 行，按 GPU 数改 nodeSelector，注入 <code>org=public</code>）。<b>除 <code>PlatformConfig</code> 外每个 model 都继承它</b></td></tr>
+        <tr><td class="mono">AuditMixinNullable</td><td class="num">helpers.py:278</td><td><code>created_on</code>/<code>changed_on</code> 列 + <code>created_by_fk</code>/<code>changed_by_fk</code>（FK→<code>ab_user.id</code>，用 <code>declared_attr</code> 生成）+ 展示属性 <code>creator</code>(341) / <code>changed_by_</code>(346) / <code>changed_on_humanized</code>(356) / <code>modified</code>(365)</td></tr>
+        <tr><td class="mono">ImportMixin</td><td class="num">helpers.py:32</td><td>靠类属性 <code>export_parent</code> / <code>export_children</code> 驱动的递归导入导出：<code>export_schema</code>(65)、<code>import_from_dict</code>(96)、<code>export_to_dict</code>(196)、<code>override</code>(238)、<code>copy</code>(243)、<code>reset_ownership</code>(254)</td></tr>
+        <tr><td class="mono">ExtraJSONMixin</td><td class="num">helpers.py:384</td><td>定义了 <code>extra_json</code> 列，<b>全库无任何 model 使用</b>（死代码）</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><b><code>ImportMixin</code> 的实际接线只有 3 处</b>：<code>Task.export_parent="pipeline"</code>（<code>model_job.py:542</code>）、
+      <code>Project_User.export_parent="project"</code>（<code>model_team.py:233</code>）、
+      <code>Project.export_children=["user"]</code>（<code>model_team.py:35</code>）。<br>
+      <b><code>Pipeline</code> 虽然继承 <code>ImportMixin</code>，但没有 <code>export_children=["task"]</code></b>
+      —— 导出 pipeline <b>不会</b>递归带上 task。<code>ETL_Pipeline</code> 的两行也被注释掉了（<code>model_etl_pipeline.py:33,72</code>）。</div>
+    </div>
+
+    <h3 class="sub">8.1 表清单（类 → <code>__tablename__</code>）</h3>
+    <div class="tw"><table>
+      <thead><tr><th>文件</th><th>类（行号）→ 表名</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">base.py</td><td class="mono">MyappModelBase(7) — 非 Model，纯 mixin</td></tr>
+        <tr><td class="mono">helpers.py</td><td class="mono">ImportMixin(32) / AuditMixinNullable(278) / QueryResult(370) / ExtraJSONMixin(384) — 均非 Model</td></tr>
+        <tr><td class="mono">model_job.py</td><td class="mono">Repository(36)→repository、Images(56)→images、Job_Template(86)→job_template、<b>Pipeline(163)→pipeline</b>、<b>Task(512)→task</b>、RunHistory(617)→<b>run</b>、Crd(656)→<b>无表名（被注释，纯 mixin）</b>、Workflow(719)→workflow</td></tr>
+        <tr><td class="mono">model_team.py</td><td class="mono">Project(27)→project、Project_User(211)→project_user</td></tr>
+        <tr><td class="mono">model_notebook.py</td><td class="mono">Notebook(27)→notebook</td></tr>
+        <tr><td class="mono">model_serving.py</td><td class="mono">service_common(22) — 纯 mixin；Service(34)→service、InferenceService(202)→inferenceservice</td></tr>
+        <tr><td class="mono">model_service_pipeline.py</td><td class="mono">Service_Pipeline(26)→service_pipeline</td></tr>
+        <tr><td class="mono">model_dataset.py</td><td class="mono">Dataset(18)→dataset</td></tr>
+        <tr><td class="mono">model_aihub.py</td><td class="mono">Aihub(19)→aihub</td></tr>
+        <tr><td class="mono">model_chat.py</td><td class="mono">Chat(16)→chat、ChatLog(56)→chat_log</td></tr>
+        <tr><td class="mono">model_docker.py</td><td class="mono">Docker(20)→docker</td></tr>
+        <tr><td class="mono">model_etl_pipeline.py</td><td class="mono">ETL_Pipeline(19)→etl_pipeline、ETL_Task(56)→etl_task</td></tr>
+        <tr><td class="mono">model_nni.py</td><td class="mono">NNI(25)→nni</td></tr>
+        <tr><td class="mono">model_train_model.py</td><td class="mono">Training_Model(20)→<b>model</b></td></tr>
+        <tr><td class="mono">model_platform_config.py</td><td class="mono">PlatformConfig(13)→platform_config（单例，id=1，DNS / hostAliases）</td></tr>
+        <tr><td class="mono">model_metadata.py</td><td class="mono">Metadata_table(20)→metadata_table</td></tr>
+        <tr><td class="mono">model_metadata_metric.py</td><td class="mono">Metadata_metric(18)→metadata_metric</td></tr>
+        <tr><td class="mono">model_dimension.py</td><td class="mono">Dimension_table(17)→dimension</td></tr>
+        <tr><td class="mono">model_announcement.py</td><td class="mono">Announcement(15)→announcement</td></tr>
+        <tr><td class="mono">model_sqllab_query.py</td><td class="mono">Sqllab_Query(14)→<b>sqlab_query</b>（表名拼写就是少一个 <code>l</code>，不是笔误）</td></tr>
+        <tr><td class="mono">favorite.py</td><td class="mono">Favorite(19)→favorite</td></tr>
+        <tr><td class="mono">log.py</td><td class="mono">Log(27)→logs</td></tr>
+        <tr><td class="mono">user_attributes.py</td><td class="mono">UserAttribute(10)→user_attribute</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div>注意三处表名和类名对不上：<code>RunHistory</code>→<code>run</code>、<code>Training_Model</code>→<code>model</code>、
+      <code>Sqllab_Query</code>→<code>sqlab_query</code>。写原生 SQL 或查 migration 时容易踩。</div>
+    </div>
+
+    <h3 class="sub">8.2 核心三张表与它们的方法</h3>
+
+    <h4 class="sub2">Pipeline（<code>pipeline</code> 表，model_job.py:163）</h4>
+    <p>关键字段：<code>name</code>、<code>project_id</code>(FK→project)、<b><code>dag_json</code></b>(Text，默认 <code>'{}'</code>，上下游关系)、
+      <code>global_env</code>、<code>schedule_type</code>(once/crontab)、<code>cron_time</code>、<code>run_id</code>、<code>pipeline_argo_id</code>、
+      <code>parallelism</code>、<code>max_active_runs</code>、<code>alert_status</code>、<code>alert_user</code>、<code>parameter</code>、<code>node_selector</code>、<code>expand</code></p>
+    <div class="tw"><table>
+      <thead><tr><th>方法</th><th class="mono">行</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">get_tasks(dbsession)</td><td class="num">285</td><td>取本流水线所有 Task</td></tr>
+        <tr><td class="mono">delete_old_task(dbsession)</td><td class="num">290</td><td>清理不再在 dag_json 里的 Task</td></tr>
+        <tr><td class="mono">get_workflow()</td><td class="num">303</td><td>取对应 Workflow</td></tr>
+        <tr><td class="mono">fix_dag_json(dbsession)</td><td class="num">324</td><td><b>修复 DAG</b>（补齐断链的上下游）</td></tr>
+        <tr><td class="mono">fix_position() / fix_expand(dbsession)</td><td class="num">383 / 408</td><td>布局与扩展参数修正</td></tr>
+        <tr><td class="mono">sort(tasks)</td><td class="num">258</td><td>拓扑排序</td></tr>
+        <tr><td class="mono">clone()</td><td class="num">490</td><td>复制流水线</td></tr>
+        <tr><td class="mono">run_pipeline() / status() / log() / pod()</td><td class="num">206-235</td><td>展示用 URL</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4 class="sub2">Task（<code>task</code> 表，model_job.py:512）</h4>
+    <p>关键字段：<code>job_template_id</code>(FK→job_template)、<code>pipeline_id</code>(FK→pipeline)、<code>namespace</code>、
+      <code>working_dir</code>、<code>command</code>、<code>args</code>、<code>volume_mount</code>(默认 <code>'kubeflow-user-workspace(pvc):/mnt'</code>)、
+      <code>node_selector</code>、<code>resource_memory/cpu/gpu/rdma</code>、<code>timeout</code>、<code>retry</code>、<code>outputs</code>、<code>monitoring</code>、<code>expand</code>、<code>skip</code></p>
+    <p>方法：<code>debug()</code>(549)、<code>run()</code>(553)、<code>clear()</code>(557)、<code>log()</code>(561)、
+      <code>get_node_selector()</code>(564)、<code>job_args_demo()</code>(590)、<code>clone()</code>(596)</p>
+
+    <h4 class="sub2">Job_Template（<code>job_template</code> 表，model_job.py:86）</h4>
+    <p><code>images_id</code>(FK)、<code>host_aliases</code>、<code>env</code>、<code>volume_mount</code>、<code>privileged</code>、<code>accounts</code>、<code>expand</code>；
+      方法 <code>get_env(name, default)</code>(:134)、<code>clone()</code>(:143)。</p>
+
+    <div class="chain">
+<b>关系链</b>
+Pipeline ──1:N──▶ Task ──N:1──▶ Job_Template ──N:1──▶ Images ──N:1──▶ Repository
+Pipeline ──1:N──▶ Workflow      （watch 回写的运行实例）</div>
+
+    <h3 class="sub">8.3 设计观察</h3>
+    <p>模型类里塞了大量 <b>HTML 生成 / 展示方法</b>：<code>args_html</code>、<code>expand_html</code>、<code>dag_json_html</code>、
+      <code>parameter_html</code>、<code>pipeline_file_html</code>、<code>monitoring_html</code>、<code>name_title</code>、<code>status_url</code>、<code>create_time</code>……</p>
+    <p>这是 FAB <code>ModelView</code> 的列渲染约定（列名 <code>xxx_html</code> 会被当富文本渲染）。</p>
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><b>代价：</b>Model 层不是纯数据层 —— 这些方法也被 <code>_init_*</code> 元数据组装逻辑间接依赖，改动需谨慎。</div>
+    </div>
+  </section>
+
+  <!-- ══════ 9 ══════ -->
+  <section class="card c-frontend" id="s9">
+    <h2 class="sec"><span class="num">9</span>前端骨架 <span class="en">三个独立 React 应用</span></h2>
+
+    <div class="tw"><table>
+      <thead><tr><th>应用</th><th>路径</th><th>角色</th><th>构建</th><th>产物落盘</th></tr></thead>
+      <tbody>
+        <tr><td>主平台</td><td class="mono">myapp/frontend</td><td>全平台 UI</td><td class="mono">node scripts/start.js / npm run buildSelf</td><td class="mono">/data/web/frontend</td></tr>
+        <tr><td>Vision</td><td class="mono">myapp/vision</td><td>流水线 DAG 编辑器</td><td class="mono">react-app-rewired build</td><td class="mono">static/appbuilder/vison</td></tr>
+        <tr><td>VisionPlus</td><td class="mono">myapp/visionPlus</td><td>数据 ETL 编辑器</td><td class="mono">react-app-rewired build</td><td class="mono">static/appbuilder/visonPlus</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">9.1 主平台入口链路</h3>
+<pre>src/index.tsx
+  ├─ cookies.get(<span class="s">'myapp_username'</span>)        <span class="c"># 未登录 → handleTips.gotoLogin()</span>
+  ├─ setTheme(globalConfig.theme)
+  └─ ReactDOM.render(&lt;BrowserRouter basename={process.env.REACT_APP_BASE_ROUTER || <span class="s">'/'</span>}&gt;&lt;App /&gt;&lt;/BrowserRouter&gt;)
+        ↓
+     <span class="hl">src/App.tsx</span>                            <span class="c"># 480 行</span>
+       ├─ useEffect → 请求后端 <span class="star">GET /menu</span> → res.data
+       ├─ formatRoute([...remoteRoute])     <span class="c"># 后端菜单 → react-router RouteObject[]</span>
+       ├─ tarRoute = [...dynamicRoute, ...routerConfigPlus]   <span class="c"># 后端动态 + 本地静态合并</span>
+       └─ useRoutes(tarRoute)
+        ↓
+     src/routerConfig.tsx                   <span class="c"># 本地路由（securitySettingConfig 等兜底）</span></pre>
+
+    <h3 class="sub">9.2 后端驱动菜单 ★</h3>
+    <p>前端菜单<b>不是写死的</b>，而是后端 <code>home.py</code> 的 <code>menu()</code>
+      （<code>myapp/views/home.py:64</code>，<b>约 650 行</b>）动态生成一棵 <code>IAppMenuItem[]</code> 树。
+      每个菜单项带 <code>menu_type</code>：</p>
+    <div class="tw"><table>
+      <thead><tr><th class="mono">menu_type</th><th>前端行为（App.tsx:173-177）</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">iframe</td><td>内嵌页面（如 <code>/users/list/</code> 这类 FAB 原生页面）</td></tr>
+        <tr><td class="mono">out_link</td><td><code>window.open(url, 'blank')</code></td></tr>
+        <tr><td class="mono">in_link</td><td>站内跳转</td></tr>
+        <tr><td class="mono">（默认）</td><td><code>navigate(path)</code> 走 React 路由</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout idea">
+      <span class="ico">💡</span>
+      <div><b>加一个业务模块 = 后端注册 View + <code>register_views()</code> + <code>menu()</code> 里加分支</b>，前端不需要改代码。<br>
+      这也解释了为什么 <code>menu()</code> 是个 650 行的巨型函数 —— 它是全平台的导航中枢。</div>
+    </div>
+
+    <h3 class="sub">9.3 ★ 与后端 <code>/_info</code> 咬合的通用 CRUD</h3>
+    <p>这是理解整个前后端配合的关键，和 §4.3 是同一件事的两半：</p>
+<pre>后端 <span class="hl">MyappModelRestApi.api_info()</span>          baseApi.py:1018
+     拼出 30 个键（columns / filters / add_field / permissions / route …）
+        ↓  GET /&lt;model&gt;/_info
+前端 src/api/kubeflowApi.ts
+     getADUGTemplateList / getADUGTemplateDetail
+     actionADUGTemplateAdd / Update / Delete / Single / Muliple
+     actionTabsModal / DownData / Favorite / CancelFavorite
+     <span class="star">★ 全部接收一个 url 参数</span> —— 后端任意 ModelView 都能驱动
+        ↓
+前端 <span class="hl">src/pages/ADUGTemplate.tsx</span>            （2076 行，通用 CRUD 页面）
+     照后端描述渲染表格 + 表单 + 搜索</pre>
+    <div class="callout idea">
+      <span class="ico">💡</span>
+      <div><b>「一套页面模板服务所有业务模块」是成立的</b> —— 加一个新模型，后端注册 View 就有 <code>/_info</code>，
+      前端<b>不用写页面</b>。这就是 §4.3 那 30 个 <code>merge_*</code> 值得存在的原因。</div>
+    </div>
+
+    <h3 class="sub">9.4 目录与关键实现</h3>
+    <div class="tw"><table>
+      <thead><tr><th>路径</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">src/index.tsx</td><td>入口：登录态判断 → <code>ConfigProvider</code> → <code>BrowserRouter</code></td></tr>
+        <tr><td class="mono">src/App.tsx</td><td><b>根组件 <code>AppWrapper</code></b>（顶栏 + 左菜单 + 路由出口），480 行</td></tr>
+        <tr><td class="mono">src/routerConfig.tsx</td><td>路由表 + 菜单→路由转换（<code>formatRoute</code> / <code>getDefaultOpenKeys</code>）</td></tr>
+        <tr><td class="mono">src/api/index.tsx</td><td>axios 实例 + <code>handleTips</code> 通知队列（去重 + 500ms 节流）</td></tr>
+        <tr><td class="mono">src/api/kubeflowApi.ts</td><td>通用 CRUD API 层（见 9.3）</td></tr>
+        <tr><td class="mono">src/api/interface/</td><td>TS 类型（<code>baseInterface.ts</code>、<code>kubeflowInterface.ts</code>…）</td></tr>
+        <tr><td class="mono">src/components/</td><td>18 个通用组件：<code>TableBox/</code>、<code>ModalForm/</code>、<code>DynamicForm/</code>、<code>TabsModal/</code>、<code>JsonEditor/</code>、<code>EchartCore/</code>、<code>Spreadsheet/</code>、<code>MixSearch/</code>、<code>FileUploadPlus/</code> …</td></tr>
+        <tr><td class="mono">src/pages/</td><td><code>ADUGTemplate.tsx</code>(2076) / <code>CommonPipeline/</code> / <code>HDFS*/</code> / <code>Home/</code> / <code>PlatformConfig/</code> / <code>UserCenter/</code> / <code>IframeTemplate.tsx</code> / <code>OutLinkTemplate.tsx</code> / <code>Page404.tsx</code></td></tr>
+        <tr><td class="mono">src/store/index.ts</td><td><b>只有 <code>configure({enforceActions:'always'})</code>，没有实际 store</b></td></tr>
+        <tr><td class="mono">src/locales/</td><td>i18n（<code>react-i18next</code>，zh-CN / en）</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4 class="sub2">menu_type → 组件映射</h4>
+    <p><code>App.tsx</code> 的 <code>renderMenu()</code> / <code>renderNavTopMenu()</code>，antd 三级 <code>SubMenu → Menu.ItemGroup → Menu.Item</code>：</p>
+    <div class="tw"><table>
+      <thead><tr><th class="mono">menu_type</th><th>渲染成</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">iframe</td><td><code>IframeTemplate</code></td></tr>
+        <tr><td class="mono">out_link</td><td><code>OutLinkTemplate</code>（<code>window.open</code>）</td></tr>
+        <tr><td class="mono">innerRoute</td><td>本地页面</td></tr>
+        <tr><td class="mono">（默认）</td><td><b><code>ADUGTemplate</code></b> —— 通用 CRUD</td></tr>
+      </tbody>
+    </table></div>
+
+    <p><b>路由是 react-router v6</b>（<code>useRoutes</code> / <code>RouteObject</code> / <code>useNavigate</code>），不是 v5 的 <code>&lt;Switch&gt;</code>。
+      最终路由表 = <b>后端菜单树 ∪ 本地静态路由</b>：</p>
+    <ul>
+      <li>后端：<code>getAppMenu()</code>（<code>api/kubeflowApi.ts:6</code>）拉 <code>IAppMenuItem[]</code>，<code>formatRoute()</code> 做 DFS，把 <code>name</code> 链拼成 path 并生成 <code>breadcrumbs</code></li>
+      <li>本地：<code>routerConfigPlus</code>（<code>/</code>、<code>/showData</code>、<code>/showOutLink</code>、<code>/user</code>、<code>*</code>→<code>Page404</code>）+ <code>innerDynamicRouterConfig</code>（<code>dataSearch</code> / <code>commonRelation</code> / <code>hdfsBrowser</code> / <code>hdfsConfig</code> / <code>platformConfig</code>）</li>
+    </ul>
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><b>权限过滤在后端做</b>（菜单按用户由 FAB 生成），前端只过滤 <code>hidden</code>/<code>disable</code>。
+      <code>routerConfig.tsx</code> 里那段前端 admin 过滤 <code>securitySettingConfig</code> 的逻辑<b>已被注释掉</b>。</div>
+    </div>
+
+    <h3 class="sub">9.5 请求层的三个坑</h3>
+    <p><code>src/api/index.tsx</code>（174 行）：</p>
+    <ol>
+      <li><b>axios 实例没有设 <code>baseURL</code></b> —— 第 5 行的 <code>const baseApi = process.env.REACT_APP_BASE_URL || 'http://localhost/'</code> 是
+        <b>死代码，从未被使用</b>。开发期靠 <code>src/setupProxy.js</code> 代理到 <code>http://localhost</code>
+        （代理 <code>**/api/**</code>、<code>/myapp</code>、<code>/login</code>、<code>/users</code>、<code>/roles</code>、<code>/static/appbuilder</code>、<code>/pipeline_modelview</code>、<code>/project_modelview</code>）。</li>
+      <li><b>鉴权靠 <code>myapp_username</code> cookie</b>，不是 <code>Authorization</code> header（缺 cookie 且不在 <code>/login</code> → 跳登录并 reject）。</li>
+      <li><b>成功判定</b>是 <code>data.error_code === 0 || data.ret === 0</code>；响应头 <code>api_flashes</code>（数组 <code>[type, content]</code>）由响应拦截器取出弹通知
+        —— 这个头正是后端 <code>MyappModelRestApi.response()</code>（<code>baseApi.py:379</code>，header 设在 <code>:403</code>）塞的。</li>
+    </ol>
+    <p>状态管理：<b>依赖了 mobx（<code>mobx@6</code> + <code>mobx-react-lite</code>），但没有实际全局 store</b>，页面状态一律 <code>useState</code>。<b>无 redux。</b></p>
+    <p><code>vision</code> / <code>visionPlus</code> 结构类似，多出 <code>routes/</code>、<code>models/</code>、<code>types/</code>。</p>
+  </section>
+
+  <!-- ══════ 10 ══════ -->
+  <section class="card c-primary" id="s10">
+    <h2 class="sec"><span class="num">10</span>四条关键调用链</h2>
+
+    <h3 class="sub">A · 用户点「运行任务流」</h3>
+<pre>前端 POST /pipeline/run_pipeline/&lt;pipeline_id&gt;
+  ↓
+<span class="hl">Pipeline_ModelView_Base.run_pipeline</span>(pipeline_id)       <span class="c">view_pipeline.py:1091</span>
+  ├─ check_pipeline_perms(user_fun)                        <span class="c">:1032  权限</span>
+  ├─ pipeline_args_check(item)                             <span class="c">:776   参数校验</span>
+  ├─ 读 Task + Job_Template，渲染 jinja2 模板（{{uuid}}/{{pipeline_id}}…）
+  ├─ 生成 Argo Workflow CRD（yaml）
+  ├─ K8s(kubeconfig).create_crd(group=<span class="s">'argoproj.io'</span>, …, plural=<span class="s">'workflows'</span>)   <span class="c">py_k8s:1486</span>
+  └─ 写 Pipeline.run_id / RunHistory
+  ↓
+（异步）watch_workflow.listen_workflow() 收到事件 → deal_event() → 回写 Workflow 表 + 推送</pre>
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div>单任务的调试入口是另一条：<code>Task_ModelView_Base.run_task(task_id)</code>（<code>view_task.py:659</code>）
+      → <code>run_pod(...)</code>（:413）→ <code>K8s.create_debug_pod(...)</code>（py_k8s:1366）。</div>
+    </div>
+
+    <h3 class="sub">B · 用户打开 Jupyter</h3>
+<pre><span class="hl">Notebook_ModelView_Base.entry_jupyter</span>()                     <span class="c">view_notebook.py:309</span>
+  ├─ set_column(notebook)                                   <span class="c">:85    动态表单列</span>
+  ├─ core.merge_volume_mount(item.volume_mount,
+  │       <span class="s">'kubeflow-dataset(pvc-ro):/mnt/datasets'</span>)          <span class="c">:239   ★ 无条件追加只读数据集卷</span>
+  ├─ K8s(kubeconfig).create_deployment(...)                  <span class="c">py_k8s:1584</span>
+  │     └─ make_pod(...)                                     <span class="c">py_k8s:1241</span>
+  │           └─ make_container(...)                         <span class="c">py_k8s:1119</span>
+  │                 └─ get_volume_mounts(volume_mount, username)  <span class="c">py_k8s:884</span>
+  └─ 写 Notebook 表</pre>
+
+    <h3 class="sub">C · 容器启动（每个后端 pod 都走一遍）</h3>
+<pre>entrypoint.sh
+  ├─ 建软链 → create_db.py → Redis 锁内 db upgrade → fab create-admin → myapp init
+  ├─ <span class="hl">cli.init()</span>                                    <span class="c">cli.py:40（唯一注册的 CLI 命令）</span>
+  │     ├─ :43  appbuilder.add_permissions(update_perms=True)
+  │     │       add_role('Gamma'/'Public'/'Admin') + sync_role_definitions()
+  │     ├─ :56  add_project(...) × 22 —— 1 个 org『public』+ 21 个 job-template 分类
+  │     ├─ :123 create_template(repository_id, project_name, image_name, …)
+  │     │       不存在则建 Images 行，再建 Job_Template
+  │     ├─ :210 Repository 'hubsecret' → :229 init-job-template.json（经 replace_git）
+  │     ├─ :373 init-pipeline.json      → Pipeline + 其 Task 节点
+  │     ├─ :434 init-dataset.csv        → Dataset（utf-8-sig 读取）
+  │     ├─ :478 init-train-model.json   → Training_Model
+  │     ├─ :494 init-service.json       → Service
+  │     ├─ :544 init-inference.json     → InferenceService
+  │     ├─ :612 init-aihub.json         → Aihub
+  │     ├─ :675 init-chat.json          → Chat
+  │     ├─ :728 【仅中文环境且表为空】灌 ~30 行数据目录元数据
+  │     ├─ :777 init-etl-pipeline.json  → ETL_Pipeline（workflow 默认 'airflow'）
+  │     ├─ :802 init-automl.json        → NNI
+  │     ├─ :837 在线镜像构建记录（用 conf 的 USER_IMAGE / REPOSITORY_ORG）
+  │     ├─ :869 init-image.json         → Images（已存在同名则跳过）
+  │     ├─ :897 建一个 'admin-jupyter' Notebook
+  │     └─ :924 subprocess python myapp/example/pipeline/ml/init.py（示例数据）
+  └─ STAGE=prod → gunicorn … myapp:app</pre>
+
+    <div class="callout ok">
+      <span class="ico">✅</span>
+      <div><b>每个块都包在只 print 的 try/except 里，且大多有"是否已存在"判断 → <code>init</code> 可重复执行，永不中断进程。</b></div>
+    </div>
+
+    <p><code>cli.py:33 replace_git(content)</code> 做两处字符串替换（先 <code>json.dumps</code> 再 <code>json.loads</code>）：</p>
+    <ul>
+      <li><code>https://github.com/tencentmusic/cube-studio/tree/master</code> → <code>conf['GIT_URL'].strip('/')</code></li>
+      <li><code>ccr.ccs.tencentyun.com/cube-studio</code> → <code>conf['REPOSITORY_ORG'].strip('/')</code></li>
+    </ul>
+    <p><b>这是把种子数据改指到本地 git / 行内镜像仓库的地方</b> —— 换环境时必须检查。</p>
+
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div><code>cli.py</code> 里<b>只定义了 <code>init</code> 一个命令</b>。<code>myapp db upgrade</code> 来自 Flask-Migrate、
+      <code>myapp fab create-admin</code> 来自 FAB，都是扩展注册到 Flask app 上的，不在这份文件里。</div>
+    </div>
+
+    <h3 class="sub">D · 状态回写（两条路径同时工作）</h3>
+<pre><span class="hl">路径一（实时，事件驱动）</span>  tools/watch_workflow.py
+   Watch(Workflow CRD) → deal_event → save_workflow / save_history / save_monitoring
+                                     / deliver_message → Workflow 表
+
+<span class="hl">路径二（兜底，定时）</span>     tasks/schedules.py
+   celery beat → task.check_pipeline_run / task.delete_workflow / …
+               → 读 K8s → 修正 DB</pre>
+  </section>
+
+  <!-- ══════ 11 ══════ -->
+  <section class="card c-danger" id="s11">
+    <h2 class="sec"><span class="num">11</span>设计观察与风险点</h2>
+    <div class="tw"><table>
+      <thead><tr><th class="num">#</th><th>观察</th><th>影响</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td><b><code>config.py</code> 是代码不是配置</b>，且存在 4 个互相不一致的副本</td><td>镜像与 ConfigMap 版本漂移 → 历史 CrashLoop 根因。改配置<b>必须两份一起改</b></td></tr>
+        <tr><td class="num">2</td><td>ConfigMap 名字带内容哈希后缀</td><td>手动 <code>kubectl create configmap</code> 生成的名字对不上，改了不生效。必须走 <code>kustomize build | kubectl apply -f -</code></td></tr>
+        <tr><td class="num">3</td><td><code>MyappModelRestApi</code> 的 30 层 <code>merge_response_func</code> 装饰器</td><td>加字段要同步改多个 <code>merge_*</code>，容易漏；但换来前端零硬编码表单</td></tr>
+        <tr><td class="num">4</td><td><code>home.py:menu()</code> 约 650 行的巨型函数</td><td>新增模块要动它；是导航中枢，改错全站菜单塌</td></tr>
+        <tr><td class="num">5</td><td>Model 层含大量 <code>*_html</code> 展示方法，且<b>没有统一基类、没有 <code>to_dict</code>、没有软删除</b></td><td>数据层不纯，元数据组装逻辑间接依赖，重构需谨慎</td></tr>
+        <tr><td class="num">6</td><td><code>K8s</code> 类约 70 个方法集中于一个 2629 行文件</td><td>是<b>唯一</b>集群交互出口（好处）；但单文件过大，拆分时须保留 <code>make_pod</code> 的单一注入点语义</td></tr>
+        <tr><td class="num">7</td><td><code>deploy-watch.yaml:140</code> 凌晨 3 点主动自杀式探针</td><td><b>有意为之</b>的每日回收（watch 偶发挂死），排障时别误判为 OOM</td></tr>
+        <tr><td class="num">8</td><td><code>get_volume_mounts</code> 是 <code>@staticmethod</code>，却依赖调用方传入 <code>username</code> 做卷展开</td><td>传错 username 会挂到别人的卷上，是<b>越权风险点</b></td></tr>
+        <tr><td class="num">9</td><td><code>myapp/project.py</code> 同时承载 <code>push_message</code> 与 <code>MyCustomRemoteUserView</code> / <code>Myauthdbview</code> 登录视图</td><td>职责混杂；且它也是被 ConfigMap 覆盖的第三个文件</td></tr>
+        <tr><td class="num">10</td><td><b><code>adjust_node_resource</code> 在 per-cluster 循环里 <code>return</code></b>（<code>schedules.py:1122/1130/1142/1152</code>）</td><td>只在<b>第一个</b>集群生效。虽然该任务当前未被调度（见 §7.1），但重启它前必须先修</td></tr>
+        <tr><td class="num">11</td><td><code>config_local.py:19-27</code> 把 <code>CELERY_CONFIG</code> 换成<b>没有 <code>beat_schedule</code></b> 的 dict</td><td><b>本地 docker-compose 一个定时任务都不触发</b>。排查"定时任务不生效"先看这里</td></tr>
+        <tr><td class="num">12</td><td><code>CeleryConfig.target_annotations</code> 里的 <code>task.exec_command</code>（<code>config.py:518-524</code>）<b>全仓无实现</b></td><td>死配置项</td></tr>
+        <tr><td class="num">13</td><td><b><code>Pipeline</code> 继承 <code>ImportMixin</code> 却没有 <code>export_children=["task"]</code></b></td><td>导出 pipeline <b>不会</b>递归带上 task。<code>ETL_Pipeline</code> 的两行也被注释掉了</td></tr>
+        <tr><td class="num">14</td><td>表名与类名不一致：<code>RunHistory</code>→<code>run</code>、<code>Training_Model</code>→<code>model</code>、<code>Sqllab_Query</code>→<code>sqlab_query</code>（拼写就少一个 <code>l</code>）</td><td>写原生 SQL / 查 migration 时容易踩</td></tr>
+        <tr><td class="num">15</td><td><code>models/__init__.py</code> 为空，不做 re-export</td><td>"某张表在哪个文件"只能靠文件名猜，IDE 跳转差</td></tr>
+        <tr><td class="num">16</td><td>前端 axios 实例<b>没有 <code>baseURL</code></b>，<code>api/index.tsx:5</code> 那行 <code>baseApi</code> 是死代码；鉴权靠 <code>myapp_username</code> cookie</td><td>换环境 / 加前缀时，代理人容易改错地方</td></tr>
+        <tr><td class="num">17</td><td>前端依赖 mobx 但<b>没有实际全局 store</b></td><td>看 <code>store/</code> 目录会误以为有状态中心</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ══════ 附 ══════ -->
+  <section class="card c-primary" id="sa">
+    <h2 class="sec"><span class="num">附</span>文件导航（速查）</h2>
+<pre class="plain">myapp/
+├── __init__.py          Flask app 单例 + 钩子 + 配置加载        ★ 入口
+├── run.py               dev server
+├── cli.py               只有 `myapp init` 一个命令               ★ 初始化
+│                        （db upgrade / fab 来自扩展，不在这里）
+├── config.py            0 字节（被 ConfigMap 覆盖）
+├── create_db.py         init_db()
+├── check_tables.py      check_tables()
+├── security.py          MyUser / MyRole / MyappSecurityManager ★ 权限
+├── project.py           push_message + 登录视图
+├── exceptions.py        MyappException 家族
+├── forms.py             自定义 WTForms 字段控件
+├── views/               38 个 view；base.py + baseApi.py 是基类 ★ Web 层
+├── models/              25 个文件，表对象                       ★ 数据层
+├── utils/
+│   ├── py/py_k8s.py     K8s 类（2629 行）                      ★ K8s 层
+│   ├── py/py_network.py Istio VirtualService
+│   ├── py/py_prometheus.py 指标查询
+│   ├── core.py          纯工具函数（Cube 部分在 1300 行后）
+│   ├── celery.py        session_scope()
+│   ├── cache.py         缓存装饰器
+│   └── log.py           DBEventLogger
+├── tasks/
+│   ├── celery_app.py    17 行，转发给 core.get_celery_app
+│   ├── schedules.py     8 个 beat 任务 + upload_workflow         ★ 异步
+│   ├── async_task.py    check_docker_commit / check_notebook_commit
+│   │                    / upgrade_service(蓝绿) / update_dataset
+│   │                    / get_k8s_resource
+│   └── hdfs_tasks.py    download_hdfs_dataset（流式合并 parquet）
+├── tools/
+│   ├── watch_workflow.py  监听 Workflow CRD                    ★ 事件回写
+│   ├── watch_service.py   监听 Pod
+│   ├── supervisord.conf   把上面两个拉起来
+│   └── check_celery.py    celery 健康检查
+├── bin/myapp            CLI 入口（FlaskGroup）
+├── frontend/ vision/ visionPlus/   三个 React 应用             ★ 前端
+├── static/              构建产物 + 运行时软链目标
+└── init/                灌库用的 json/csv</pre>
+  </section>
+
+  <footer>
+    Cube Studio 代码骨架设计（函数层面）· 行号基于 <code>final</code> 分支当前工作区，会随改动漂移，请以函数名为准
+  </footer>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var sections = links.map(function(a){
+    var id = a.getAttribute('href').slice(1);
+    return document.getElementById(id);
+  }).filter(Boolean);
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0];
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i];
+    }
+    links.forEach(function(a){ a.classList.remove('active'); });
+    if (current){
+      var hit = links.filter(function(a){ return a.getAttribute('href') === '#' + current.id; })[0];
+      if (hit) hit.classList.add('active');
+    }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>

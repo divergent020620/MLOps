@@ -1,0 +1,47 @@
+# PodDisruptionBudget — 防止维护操作时所有副本被同时驱逐
+# HA: 保证至少 1 个 Pod 始终可用
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kubeflow-dashboard-frontend-pdb
+  namespace: infra
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: kubeflow-dashboard-frontend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kubeflow-dashboard-pdb
+  namespace: infra
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: kubeflow-dashboard
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kubeflow-dashboard-worker-pdb
+  namespace: infra
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: kubeflow-dashboard-worker
+---
+# Celery Beat 是单实例，不能多副本。PDB 用 minAvailable: 0 允许 drain 时短暂不可用
+# （定时任务只延迟执行，不会丢失）
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kubeflow-dashboard-schedule-pdb
+  namespace: infra
+spec:
+  minAvailable: 0
+  selector:
+    matchLabels:
+      app: kubeflow-dashboard-schedule

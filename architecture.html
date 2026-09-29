@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cube Studio - 架构图与数据流</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --text: #1a1a2e;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --primary: #4f46e5;
+    --primary-light: #e0e7ff;
+    --frontend: #ec4899;
+    --frontend-light: #fce7f3;
+    --backend: #f59e0b;
+    --backend-light: #fef3c7;
+    --data: #10b981;
+    --data-light: #d1fae5;
+    --infra: #3b82f6;
+    --infra-light: #dbeafe;
+    --async: #8b5cf6;
+    --async-light: #ede9fe;
+    --external: #ef4444;
+    --external-light: #fee2e2;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 24px;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .header .subtitle {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    border-radius: calc(var(--radius) - 4px);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all .2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Architecture Diagram */
+  .arch-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .layer {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid transparent;
+  }
+  .layer.frontend  { border-left-color: var(--frontend); }
+  .layer.backend   { border-left-color: var(--backend); }
+  .layer.async     { border-left-color: var(--async); }
+  .layer.data      { border-left-color: var(--data); }
+  .layer.infra     { border-left-color: var(--infra); }
+
+  .layer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .layer-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-frontend { background: var(--frontend-light); color: var(--frontend); }
+  .badge-backend  { background: var(--backend-light); color: #b45309; }
+  .badge-async    { background: var(--async-light); color: var(--async); }
+  .badge-data     { background: var(--data-light); color: #065f46; }
+  .badge-infra    { background: var(--infra-light); color: var(--infra); }
+
+  .layer-title {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .component {
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .2s;
+    position: relative;
+  }
+  .component:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .comp-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .icon-frontend { background: var(--frontend-light); color: var(--frontend); }
+  .icon-backend  { background: var(--backend-light); color: #b45309; }
+  .icon-async    { background: var(--async-light); color: var(--async); }
+  .icon-data     { background: var(--data-light); color: #065f46; }
+  .icon-infra    { background: var(--infra-light); color: var(--infra); }
+  .icon-external { background: var(--external-light); color: var(--external); }
+
+  .comp-name { font-weight: 500; }
+  .comp-desc { font-size: 0.75rem; color: var(--text-secondary); margin-left: auto; }
+
+  /* Arrows between layers */
+  .arrows {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 4px 0;
+  }
+  .arrow-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .arrow-line {
+    width: 2px;
+    height: 16px;
+    background: linear-gradient(to bottom, var(--text-secondary), transparent);
+    border-radius: 1px;
+  }
+  .arrow-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* Data Flow Diagram */
+  .flow-diagram {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .flow-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .flow-card.full { grid-column: 1 / -1; }
+
+  .flow-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flow-card h3 .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot.pipeline { background: var(--primary); }
+  .dot.notebook { background: var(--frontend); }
+  .dot.serving  { background: var(--data); }
+  .dot.startup  { background: var(--async); }
+
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    transition: all .2s;
+  }
+  .flow-step:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: #d1d5db;
+  }
+  .step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-content strong { display: block; font-weight: 600; }
+  .step-content span { color: var(--text-secondary); font-size: 0.8rem; }
+
+  .flow-arrow {
+    text-align: center;
+    color: var(--primary);
+    font-size: 1.2rem;
+    padding: 2px 0;
+  }
+
+  /* K8s Pod Injection */
+  .injection-box {
+    background: #fef9c3;
+    border: 1px dashed #eab308;
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-top: 12px;
+    font-size: 0.83rem;
+  }
+  .injection-box strong {
+    color: #a16207;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .injection-box ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .injection-box li {
+    background: #fef08a;
+    color: #854d0e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  /* Multi-tenancy */
+  .tenant-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .tenant-item {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-align: center;
+    font-size: 0.83rem;
+  }
+  .tenant-item strong { display: block; color: #166534; }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .stat-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .flow-diagram { grid-template-columns: 1fr; }
+    .components { flex-direction: column; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .layer, .flow-card, .stat { box-shadow: none; break-inside: avoid; }
+    .tabs { display: none; }
+    .panel { display: block !important; margin-bottom: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🧊 Cube Studio 架构图 & 数据流</h1>
+    <p class="subtitle">一站式云原生机器学习平台 — MLOps Platform Architecture</p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats">
+    <div class="stat"><div class="stat-value">3</div><div class="stat-label">前端应用 (React)</div></div>
+    <div class="stat"><div class="stat-value">4</div><div class="stat-label">后端部署 (Deployments)</div></div>
+    <div class="stat"><div class="stat-value">4</div><div class="stat-label">K8s 命名空间</div></div>
+    <div class="stat"><div class="stat-value">3</div><div class="stat-label">存储引擎</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('arch')">🏗️ 系统架构</button>
+    <button class="tab" onclick="switchTab('flow')">🔄 核心数据流</button>
+  </div>
+
+  <!-- ==================== Panel 1: Architecture ==================== -->
+  <div id="panel-arch" class="panel active">
+
+    <div class="arch-diagram">
+
+      <!-- Layer 1: Frontend -->
+      <div class="layer frontend">
+        <div class="layer-header">
+          <span class="layer-badge badge-frontend">Frontend · 前端</span>
+          <span class="layer-title">React 单页应用 + Nginx 静态服务</span>
+        </div>
+        <div class="components">
+          <div class="component">
+            <div class="comp-icon icon-frontend">M</div>
+            <div>
+              <div class="comp-name">myapp/frontend</div>
+              <div class="comp-desc">主平台 UI · React 17 + Ant Design 4 + TypeScript</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-frontend">V</div>
+            <div>
+              <div class="comp-name">myapp/vision</div>
+              <div class="comp-desc">AI Pipeline 可视化 DAG 编辑器</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-frontend">V+</div>
+            <div>
+              <div class="comp-name">myapp/visionPlus</div>
+              <div class="comp-desc">数据 ETL Pipeline 可视化编辑器</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-frontend">N</div>
+            <div>
+              <div class="comp-name">Nginx</div>
+              <div class="comp-desc">反向代理 + 静态文件服务 · 端口 80</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrows">
+        <div class="arrow-group">
+          <div class="arrow-line"></div>
+          <div class="arrow-label">HTTP REST API / Cookie Auth</div>
+        </div>
+      </div>
+
+      <!-- Layer 2: Backend -->
+      <div class="layer backend">
+        <div class="layer-header">
+          <span class="layer-badge badge-backend">Backend · 后端</span>
+          <span class="layer-title">Flask + Flask-AppBuilder + Celery Workers</span>
+        </div>
+        <div class="components">
+          <div class="component">
+            <div class="comp-icon icon-backend">D</div>
+            <div>
+              <div class="comp-name">Dashboard</div>
+              <div class="comp-desc">主 API 服务 · Gunicorn 20 workers (gevent)</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-backend">S</div>
+            <div>
+              <div class="comp-name">Schedule</div>
+              <div class="comp-desc">Celery Beat 定时调度器 · 周期任务管理</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-backend">W</div>
+            <div>
+              <div class="comp-name">Worker</div>
+              <div class="comp-desc">Celery Worker · 异步任务执行</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-backend">Wa</div>
+            <div>
+              <div class="comp-name">Watch</div>
+              <div class="comp-desc">K8s Watch 状态同步 · Workflow 状态回写</div>
+            </div>
+          </div>
+        </div>
+        <div class="components" style="margin-top:10px">
+          <div class="component">
+            <div class="comp-icon icon-backend">C</div>
+            <div>
+              <div class="comp-name">config.py</div>
+              <div class="comp-desc">全局配置中心 · CRD_INFO · CLUSTERS · GLOBAL_ENV</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-backend">I</div>
+            <div>
+              <div class="comp-name">__init__.py</div>
+              <div class="comp-desc">应用工厂 · RBAC · CORS · CSRF · Talisman</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-backend">K</div>
+            <div>
+              <div class="comp-name">py_k8s.py</div>
+              <div class="comp-desc">统一 Pod 注入点 · DNS · HostAliases · 资源限制</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-backend">E</div>
+            <div>
+              <div class="comp-name">entrypoint.sh</div>
+              <div class="comp-desc">容器启动 · STAGE 控制 · Redis 分布式锁</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrows">
+        <div class="arrow-group">
+          <div class="arrow-line"></div>
+          <div class="arrow-label">SQLAlchemy ORM / Redis Protocol</div>
+        </div>
+      </div>
+
+      <!-- Layer 3: Data -->
+      <div class="layer data">
+        <div class="layer-header">
+          <span class="layer-badge badge-data">Data · 数据层</span>
+          <span class="layer-title">持久化存储 & 缓存</span>
+        </div>
+        <div class="components">
+          <div class="component">
+            <div class="comp-icon icon-data">M</div>
+            <div>
+              <div class="comp-name">MySQL 8.0</div>
+              <div class="comp-desc">主数据库 · SQLAlchemy ORM · Alembic 迁移</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-data">R</div>
+            <div>
+              <div class="comp-name">Redis</div>
+              <div class="comp-desc">缓存 · Celery Broker · 分布式锁 (DB 迁移)</div>
+            </div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-data">H</div>
+            <div>
+              <div class="comp-name">HDFS</div>
+              <div class="comp-desc">分布式文件系统 · Keytab 认证</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrows">
+        <div class="arrow-group">
+          <div class="arrow-line"></div>
+          <div class="arrow-label">Kubernetes API (kubeconfig)</div>
+        </div>
+      </div>
+
+      <!-- Layer 4: Infra -->
+      <div class="layer infra">
+        <div class="layer-header">
+          <span class="layer-badge badge-infra">Infrastructure · 基础设施</span>
+          <span class="layer-title">Kubernetes 集群 + 自定义资源编排</span>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">K8s 命名空间</div>
+          <div class="components">
+            <div class="component">
+              <div class="comp-icon icon-infra">P</div>
+              <div><div class="comp-name">pipeline</div><div class="comp-desc">Argo Workflows 任务 Pod</div></div>
+            </div>
+            <div class="component">
+              <div class="comp-icon icon-infra">J</div>
+              <div><div class="comp-name">jupyter</div><div class="comp-desc">Notebook / VSCode 环境</div></div>
+            </div>
+            <div class="component">
+              <div class="comp-icon icon-infra">S</div>
+              <div><div class="comp-name">service</div><div class="comp-desc">推理服务 + 内部服务</div></div>
+            </div>
+            <div class="component">
+              <div class="comp-icon icon-infra">A</div>
+              <div><div class="comp-name">automl</div><div class="comp-desc">NNI 超参搜索</div></div>
+            </div>
+            <div class="component">
+              <div class="comp-icon icon-infra">AH</div>
+              <div><div class="comp-name">aihub</div><div class="comp-desc">AI Hub 预置模型</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="injection-box" style="margin-top:14px">
+          <strong>🔧 py_k8s.py 统一注入点 — 所有业务 Pod 在此配置</strong>
+          <ul>
+            <li>DNS Config</li>
+            <li>HostAliases</li>
+            <li>Resource Limits</li>
+            <li>Volume Mounts</li>
+            <li>GLOBAL_ENV 模板变量</li>
+            <li>Container Runtime Socket</li>
+            <li>ImagePullSecrets</li>
+            <li>NodeSelector / Affinity</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="arrows">
+        <div class="arrow-group">
+          <div class="arrow-line"></div>
+          <div class="arrow-label">Container Runtime (nerdctl / docker)</div>
+        </div>
+      </div>
+
+      <!-- Layer 5: External -->
+      <div class="layer" style="border-left-color: var(--external);">
+        <div class="layer-header">
+          <span class="layer-badge" style="background: var(--external-light); color: var(--external);">External · 外部</span>
+          <span class="layer-title">辅助服务 & 镜像仓库</span>
+        </div>
+        <div class="components">
+          <div class="component">
+            <div class="comp-icon icon-external">R</div>
+            <div><div class="comp-name">Container Registry</div><div class="comp-desc">镜像仓库 · 192.168.11.12 · Harbor / CCR</div></div>
+          </div>
+          <div class="component">
+            <div class="comp-icon icon-external">IS</div>
+            <div><div class="comp-name">Istio</div><div class="comp-desc">服务网格 · VirtualService 流量路由 · Prometheus 指标</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-Tenancy -->
+      <div class="layer" style="border-left-color: #6366f1;">
+        <div class="layer-header">
+          <span class="layer-badge" style="background: #e0e7ff; color: #4f46e5;">Multi-Tenancy · 多租户</span>
+          <span class="layer-title">RBAC 权限模型 & 团队隔离</span>
+        </div>
+        <div class="tenant-box">
+          <div class="tenant-item"><strong>Admin</strong>平台管理员</div>
+          <div class="tenant-item"><strong>Gamma</strong>普通用户</div>
+          <div class="tenant-item"><strong>Public</strong>只读角色</div>
+          <div class="tenant-item"><strong>Project (org)</strong>团队/组织隔离</div>
+          <div class="tenant-item"><strong>Project_User</strong>用户-项目关联</div>
+          <div class="tenant-item"><strong>LDAP / REMOTE_USER</strong>外部认证集成</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== Panel 2: Data Flow ==================== -->
+  <div id="panel-flow" class="panel">
+
+    <div class="flow-diagram">
+
+      <!-- Flow 1: Pipeline Execution -->
+      <div class="flow-card">
+        <h3><span class="dot pipeline"></span> Pipeline 执行流程</h3>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>用户创建 Pipeline</strong>
+              <span>前端 DAG 编辑器 → 定义 Task 节点 → 每个 Task 引用一个 Job_Template</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>提交运行</strong>
+              <span>POST /pipeline/run → home.py run_pipeline() → 解析 DAG JSON</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>生成 Argo Workflow CRD</strong>
+              <span>DAG → Argo Workflow YAML (DAG/Steps 模板) → 提交到 K8s pipeline 命名空间</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>py_k8s.py 注入 Pod 配置</strong>
+              <span>make_pod() → DNS + HostAliases + GLOBAL_ENV 模板渲染 + 资源限制 + Volume 挂载</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>K8s 调度执行</strong>
+              <span>Argo Controller → 创建 Pod → 容器运行 → GLOBAL_ENV 变量 ({{pipeline_id}}, {{creator}}, {{uuid}} 等)</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>Watch 状态同步</strong>
+              <span>Watch 部署 → 轮询 Workflow 状态 → 回写 MySQL (Pipeline/Task 状态)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flow 2: Notebook Lifecycle -->
+      <div class="flow-card">
+        <h3><span class="dot notebook"></span> Notebook 生命周期</h3>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>用户创建 Notebook</strong>
+              <span>选择镜像 + 资源配置 (CPU/GPU/Memory) + 挂载数据集</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>view_notebook.py 处理</strong>
+              <span>创建 Notebook DB 记录 → 调用 py_k8s.py create_deployment()</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>K8s 创建 Pod</strong>
+              <span>jupyter 命名空间 → Jupyter/VSCode 容器 → NodePort/Ingress 暴露</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>用户访问</strong>
+              <span>浏览器 → Nginx 反代 → K8s Service → Notebook Pod</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>自动回收</strong>
+              <span>Celery Beat schedules.py → 检查空闲超时 → 自动停止/删除</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flow 3: Model Serving -->
+      <div class="flow-card">
+        <h3><span class="dot serving"></span> 模型推理服务</h3>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>训练完成 → 模型注册</strong>
+              <span>Training_Model 表记录模型元数据 + 模型文件路径 (HDFS/本地)</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>创建 InferenceService</strong>
+              <span>选择模型 + 资源配置 + 扩缩容策略 → view_inferenceserving.py</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>K8s 部署推理 Pod</strong>
+              <span>service 命名空间 → Deployment / StatefulSet → 模型加载</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Istio VirtualService 路由</strong>
+              <span>py_network.py → 创建 VirtualService CRD → 流量路由 + 金丝雀发布</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>外部调用</strong>
+              <span>Istio Gateway → VirtualService → 推理 Pod → 返回预测结果</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flow 4: Container Startup -->
+      <div class="flow-card">
+        <h3><span class="dot startup"></span> 容器启动流程 (entrypoint.sh)</h3>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>创建符号链接</strong>
+              <span>workspace / dataset / aihub 目录映射</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>初始化数据库</strong>
+              <span>python create_db.py → 创建所有表</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Redis 分布式锁</strong>
+              <span>SET cube:db-upgrade-lock NX EX 120 → 获取锁 → 最多重试 30 次</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>数据库迁移</strong>
+              <span>myapp db upgrade (Alembic) → 释放 Redis 锁</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>创建管理员 & 初始化</strong>
+              <span>fab create-admin → myapp init → 种子数据 (模板/流水线/数据集)</span>
+            </div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>STAGE 分支</strong>
+              <span>build → npm build 前端 | dev → Flask runserver | prod → Gunicorn</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Request Flow -->
+      <div class="flow-card full">
+        <h3><span class="dot" style="background: var(--primary);"></span> 完整请求链路</h3>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:0.83rem;padding:8px 0;">
+          <span style="background:#fce7f3;color:#be185d;padding:4px 10px;border-radius:12px;font-weight:500;">Browser</span>
+          <span style="color:#9ca3af;">→</span>
+          <span style="background:#fce7f3;color:#be185d;padding:4px 10px;border-radius:12px;font-weight:500;">Nginx :80</span>
+          <span style="color:#9ca3af;">→</span>
+          <span style="background:#fef3c7;color:#b45309;padding:4px 10px;border-radius:12px;font-weight:500;">Flask before_request</span>
+          <span style="color:#9ca3af;">→</span>
+          <span style="background:#fef3c7;color:#b45309;padding:4px 10px;border-radius:12px;font-weight:500;">Auth (Cookie/Header)</span>
+          <span style="color:#9ca3af;">→</span>
+          <span style="background:#fef3c7;color:#b45309;padding:4px 10px;border-radius:12px;font-weight:500;">View Handler</span>
+          <span style="color:#9ca3af;">→</span>
+          <span style="background:#dbeafe;color:#1d4ed8;padding:4px 10px;border-radius:12px;font-weight:500;">K8s API</span>
+          <span style="color:#9ca3af;">→</span>
+          <span style="background:#dbeafe;color:#1d4ed8;padding:4px 10px;border-radius:12px;font-weight:500;">Pod Running</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+          <div style="background:#fef3c7;border-radius:8px;padding:12px;font-size:0.82rem;">
+            <strong style="color:#b45309;">认证方式 (before_request)</strong>
+            <ul style="margin: 6px 0 0 16px; color: var(--text-secondary);">
+              <li><code>myapp_username</code> Cookie (跨域)</li>
+              <li><code>Authorization</code> Header</li>
+              <li>白名单: /static, /login, /health</li>
+              <li>支持 DB / LDAP / REMOTE_USER</li>
+            </ul>
+          </div>
+          <div style="background:#dbeafe;border-radius:8px;padding:12px;font-size:0.82rem;">
+            <strong style="color:#1d4ed8;">GLOBAL_ENV 模板变量</strong>
+            <ul style="margin: 6px 0 0 16px; color: var(--text-secondary);">
+              <li><code>{{pipeline_id}}</code> — 流水线 ID</li>
+              <li><code>{{creator}}</code> — 创建者</li>
+              <li><code>{{uuid.uuid4().hex}}</code> — 唯一 ID</li>
+              <li><code>{{step_name}}</code> — 步骤名称</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelector(`.tab[onclick="switchTab('${name}')"]`).classList.add('active');
+}
+</script>
+</body>
+</html>

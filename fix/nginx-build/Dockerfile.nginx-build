@@ -1,0 +1,123 @@
+# ============================================================================
+# Cube Studio — 行外 nginx 源码编译（用于替换麒麟源 RPM nginx）
+#
+# 目的：产出一个**不含 perl / libXpm / libtiff 依赖**的 nginx 二进制。
+#
+# 背景（实测证据，2026-09-20）：
+#   麒麟源 `yum install nginx` 硬依赖 nginx-all-modules 元包，连带拉入：
+#     nginx-mod-http-perl         → requires libperl.so.5.28 / perl(:MODULE_COMPAT_5.28.3)
+#                                   → perl + perl-libs            【超危 ×2】
+#     nginx-mod-http-image-filter → requires gd / libgd.so.3
+#                                   → gd-2.3.0 requires libXpm.so.4(), libtiff.so.5()
+#                                   → libXpm + libtiff            【高危 ×2】
+#   对照：基座 kylin.tar 扫描（kylin12.xlsx）超危 0 / 高危 2（仅 setuptools+pip），
+#         前端 fe-test-v1.tar 扫描（kylin-nginx.xlsx）超危 2 / 高危 4。
+#         差值 4 个组件全部来自 nginx 的模块元包。
+#
+#   这两个模块在 nginx 源码里**默认都不编译**，本 Dockerfile 保持默认即可。
+#
+# ★★ glibc 约束（最容易踩的坑）★★
+#   目标运行环境 = 麒麟 V10 SP3 = glibc 2.28。
+#   glibc 只保证向后兼容（旧环境编译的能跑在新环境上，反之不行）。
+#   所以必须在 **glibc <= 2.28** 的环境编译：
+#     ✅ rockylinux:8 / almalinux:8   → glibc 2.28（默认，正好匹配）
+#     ✅ centos:7                     → glibc 2.17（更保守，也可以）
+#     ❌ ubuntu:22.04                 → glibc 2.35，产物在麒麟上跑不起来
+#     ❌ debian:12                    → glibc 2.36，同上
+#
+#   运行时依赖（麒麟侧必须存在，一般都有）：
+#     libssl.so.1.1 / libcrypto.so.1.1（OpenSSL 1.1.1 系列，注意**不是** 3.x）
+#     libpcre2-8.so.0 / libz.so.1
+#   动态链接是有意为之：运行时用的是**麒麟自己的 OpenSSL**，信创角度比自带 crypto 更稳。
+#
+# 构建：
+#   bash fix/nginx-build/build_nginx.sh 1.28.0
+# 或手工：
+#   docker build --network=host \
+#     --build-arg NGINX_VERSION=1.28.0 \
+#     -t cube-nginx-builder:local \
+#     -f fix/nginx-build/Dockerfile.nginx-build .
+# ============================================================================
+
+ARG BUILD_BASE=rockylinux:8
+FROM ${BUILD_BASE}
+
+# ★ 版本请用当前最新**稳定版**（stable）。不要编 1.21.x——
+#   扫描器会做二进制指纹识别，编个老版本等于白忙。
+ARG NGINX_VERSION=1.28.0
+# 可选：填 nginx.org 公布的 tarball SHA256，构建时校验，便于审计留痕
+ARG NGINX_SHA256=
+
+ENV LANG=C.UTF-8
+
+# ── 编译依赖 ────────────────────────────────────────────────────────────────
+# 只装编译期需要的东西。注意这里装的是 Rock/Alma 的 pcre2/openssl 开发包，
+# 只用于拿到头文件与 ABI；运行时实际链接的是麒麟的同名 .so。
+RUN yum install -y --setopt=install_weak_deps=False \
+        gcc make tar gzip wget ca-certificates \
+        pcre2-devel zlib-devel openssl-devel \
+    && yum clean all && rm -rf /var/cache/yum
+
+WORKDIR /build
+
+# ── 下载源码 ────────────────────────────────────────────────────────────────
+RUN set -eux; \
+    wget -q "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" -O nginx.tar.gz; \
+    if [ -n "${NGINX_SHA256}" ]; then \
+        echo "${NGINX_SHA256}  nginx.tar.gz" | sha256sum -c -; \
+    else \
+        echo "!! 未提供 NGINX_SHA256，跳过完整性校验"; \
+        echo "   建议补上：--build-arg NGINX_SHA256=<nginx.org 公布值>"; \
+    fi; \
+    tar xzf nginx.tar.gz; \
+    rm -f nginx.tar.gz
+
+# ── configure：只编业务实际用到的模块 ───────────────────────────────────────
+# 刻意**不**启用的模块（这是整个方案的核心）：
+#   --with-http_perl_module          → perl / perl-libs        【超危】
+#   --with-http_image_filter_module  → gd → libXpm / libtiff   【高危】
+#   --with-http_xslt_module          → libxslt / libxml2       （顺手不带）
+#   --with-mail / --with-stream      → 配置里没用到，且会引入额外依赖
+#
+# 启用的模块对应现有配置的实际用法（install/docker/dockerFrontend/nginx.conf
+# 与 nginx.80.conf）：ssl（备用）、gzip_static、realip（Istio 后取真实 IP）、
+# stub_status（监控）。limit_conn 是内建模块，不需要开关。
+RUN set -eux; \
+    cd "nginx-${NGINX_VERSION}"; \
+    ./configure \
+        --prefix=/usr/local/nginx \
+        --sbin-path=/usr/local/nginx/sbin/nginx \
+        --conf-path=/etc/nginx/nginx.conf \
+        --pid-path=/var/run/nginx.pid \
+        --error-log-path=/var/log/nginx/error.log \
+        --http-log-path=/var/log/nginx/access.log \
+        --with-http_ssl_module \
+        --with-http_v2_module \
+        --with-http_realip_module \
+        --with-http_gzip_static_module \
+        --with-http_stub_status_module \
+        --with-threads \
+        --with-cc-opt="-O2 -fstack-protector-strong" \
+        --with-ld-opt="-Wl,-z,relro -Wl,-z,now" \
+    ; \
+    make -j"$(nproc)"; \
+    make install; \
+    strip /usr/local/nginx/sbin/nginx
+
+# ── 构建期自检：产物绝不能链接 perl / gd / libXpm / libtiff ─────────────────
+# 任何一个命中直接让构建失败，避免产出坏镜像（和 py312 Dockerfile 的冒烟断言同一思路）
+RUN set -eux; \
+    echo "════ ldd 结果 ════"; \
+    ldd /usr/local/nginx/sbin/nginx; \
+    echo "════ 禁用组件检查 ════"; \
+    if ldd /usr/local/nginx/sbin/nginx | grep -iE "perl|libgd|libtiff|libXpm|libxslt|libxml2"; then \
+        echo "!!! 失败：产物链接了被禁组件"; exit 1; \
+    fi; \
+    echo "OK：无 perl / gd / libXpm / libtiff / libxslt 依赖"; \
+    echo "════ 最高 glibc 符号版本（必须 <= 2.28）════"; \
+    objdump -T /usr/local/nginx/sbin/nginx \
+        | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -3; \
+    echo "════ 版本 ════"; \
+    /usr/local/nginx/sbin/nginx -v
+
+CMD ["/bin/bash"]

@@ -1,0 +1,65 @@
+<h2>PySpark 分布式计算 —— 核心概念</h2>
+<p class="subtitle">500 个共享计算节点，重点解决依赖分发问题</p>
+
+<div class="section">
+  <h3>Spark 架构</h3>
+  <div style="display:flex; gap:16px;">
+    <div style="flex:1; background:#f0f5ff; border-radius:8px; padding:14px;">
+      <b>Driver（主节点）</b>
+      <ul style="font-size:13px;">
+        <li>解析代码、构建 DAG 执行计划</li>
+        <li>分配 Task 给 Executor</li>
+        <li>收集结果</li>
+        <li><b>依赖：</b>需要完整 Python 环境</li>
+      </ul>
+    </div>
+    <div style="flex:1; background:#f0fff0; border-radius:8px; padding:14px;">
+      <b>Executor × 500（工作节点）</b>
+      <ul style="font-size:13px;">
+        <li>执行 Task（map/filter/apply）</li>
+        <li>每个 Executor 是独立 JVM 进程</li>
+        <li>通过 Py4J 调用 Python</li>
+        <li><b>依赖：</b>需要 Python + 与 Driver 一致的库</li>
+      </ul>
+    </div>
+    <div style="flex:1; background:#fff5f0; border-radius:8px; padding:14px;">
+      <b>Cluster Manager</b>
+      <ul style="font-size:13px;">
+        <li>YARN / K8s / Standalone</li>
+        <li>管理节点资源分配</li>
+        <li>这 500 个节点由别人的集群管理</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>你面临的核心问题</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr><th style="padding:8px; text-align:left; border:1px solid #ddd;">问题</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">说明</th></tr>
+    <tr><td style="padding:8px; border:1px solid #ddd;">❌ 不能装依赖</td><td style="padding:8px; border:1px solid #ddd;">500个节点是别人的，不能 pip install torch/numpy/scipy</td></tr>
+    <tr><td style="padding:8px; border:1px solid #ddd;">⚠️ 最多有 Python</td><td style="padding:8px; border:1px solid #ddd;">节点上只有基础 Python，没有 ML 库</td></tr>
+    <tr><td style="padding:8px; border:1px solid #ddd;">📦 依赖要分发</td><td style="padding:8px; border:1px solid #ddd;">每次提交任务时把依赖打包分发到 500 个 Executor</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>解法：依赖打包 + 运行时分发</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:8px; text-align:left; border:1px solid #ddd;">方案</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">原理</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">包大小</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">适用</th></tr>
+    <tr><td style="padding:8px; border:1px solid #ddd;"><b>--archives</b> (conda env zip)</td><td style="padding:8px; border:1px solid #ddd;">整个 conda 环境打成 tar.gz，解压到每个 Executor</td><td style="padding:8px; border:1px solid #ddd;">200MB~1GB</td><td style="padding:8px; border:1px solid #ddd;">完整 ML 环境</td></tr>
+    <tr><td style="padding:8px; border:1px solid #ddd;"><b>--py-files</b> (zip/egg)</td><td style="padding:8px; border:1px solid #ddd;">纯 Python 包打成 zip，加入 PYTHONPATH</td><td style="padding:8px; border:1px solid #ddd;">10~50MB</td><td style="padding:8px; border:1px solid #ddd;">纯 Python 依赖</td></tr>
+    <tr><td style="padding:8px; border:1px solid #ddd;"><b>Spark MLlib 原生</b></td><td style="padding:8px; border:1px solid #ddd;">Spark 内置算法，无需额外依赖</td><td style="padding:8px; border:1px solid #ddd;">0</td><td style="padding:8px; border:1px solid #ddd;">LR/RF/GBDT/KMeans</td></tr>
+    <tr><td style="padding:8px; border:1px solid #ddd;"><b>PySpark UDF + 模型文件</b></td><td style="padding:8px; border:1px solid #ddd;">模型文件广播 + 纯 Python 推理代码</td><td style="padding:8px; border:1px solid #ddd;">几MB</td><td style="padding:8px; border:1px solid #ddd;">仅推理</td></tr>
+  </table>
+</div>
+
+<h3>推荐组合策略</h3>
+<div class="mockup">
+  <div class="mockup-body" style="font-size:13px; text-align:left;">
+    <p><b>训练场景：</b><code>--archives</code> 分发 conda 环境（含 torch/sklearn）<br/>
+    <small>→ 虽然 200MB+，但分发给 500 节点一次，后续 Task 复用解压好的环境</small></p>
+    <p><b>推理场景：</b>模型广播 + 纯 NumPy 推理代码<br/>
+    <small>→ 模型 .pkl / .onnx 文件 &lt;10MB，广播到所有 Executor，无需大型依赖</small></p>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+# ============================================================================
+# 构建后端声明 —— 刻意只依赖 setuptools
+#
+# ★ 为什么不写 hatch-jupyter-builder：
+#   官方模板用 hatch-jupyter-builder 在 **pip 构建时**跑 npm。
+#   行内没有 node，那条路走不通。
+#   本方案把 node 构建**前置到行外**（build_jupyter_ext.sh），
+#   预构建产物随包分发，于是 pip build 退化成纯 Python 打包 —— 行内零依赖。
+#
+# 注意：元数据只由 setup.py 提供，这里**不写 [project] 段**，
+#       否则 setuptools 会因两处元数据冲突而报错。
+# ============================================================================
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"

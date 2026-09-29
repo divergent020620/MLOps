@@ -1,0 +1,39 @@
+# ============================================================================
+# 便携完整测试镜像 cube312-test(kubeflow-dashboard:cube312-test)
+# 用途: 拿到 192.168.11.11 集群(或任何节点)独立试跑整个后端
+# 底: notebook:jupyter-ubuntu-py312(py3.12.13 @ /opt/python)——用户确认 ubuntu 亦可
+# 结构: venv(150 wheels 全量)+ myapp 源码 + config.py/entrypoint.sh(默认, K8s 可再挂载覆盖)
+# ============================================================================
+FROM notebook:jupyter-ubuntu-py312
+
+ENV PYTHONPATH=/home/myapp
+ENV MYAPP_HOME=/home/myapp
+
+# 1) venv + 全量离线 wheel(主依赖)
+COPY install/docker/requirements.txt /opt/requirements.txt
+COPY py312/wheels/ /opt/wheels/
+RUN /opt/python/bin/python -m venv /home/myapp/py312 && \
+    /home/myapp/py312/bin/pip install --quiet --no-index --find-links /opt/wheels -r /opt/requirements.txt && \
+    rm -rf /root/.cache
+
+# 2) myapp 源码 + 默认配置/入口(K8s 用 ConfigMap 挂载覆盖, 与生产机制一致)
+COPY myapp /home/myapp/myapp
+COPY install/docker/config.py /home/myapp/myapp/config.py
+COPY install/docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh /home/myapp/myapp/bin/myapp
+# 基座默认 WORKDIR=/mnt, entrypoint 用相对路径(myapp/create_db.py 等), 必须切到 /home/myapp
+WORKDIR /home/myapp
+
+# 3) PATH(应用 venv 置顶)与默认 STAGE(测试跑 prod)
+ENV PATH=/home/myapp/py312/bin:/home/myapp/myapp/bin:$PATH
+ENV STAGE=prod
+# 3a) DB/Redis 占位(测试直跑可改; K8s 部署时由 ConfigMap 的 env 覆盖; 密码不写进镜像)
+ENV MYSQL_SERVICE=mysql+pymysql://root:root@127.0.0.1:3306/cubestudio \
+    REDIS_HOST=127.0.0.1 REDIS_PORT=6379 ENVIRONMENT=dev
+
+# 4) 构建期断言(依赖树+语法; 完整 import myapp 需 DB, 归入运行时冒烟)
+RUN /home/myapp/py312/bin/python -c \
+      "import flask, flask_sqlalchemy, flask_appbuilder, sqlalchemy, pandas, pyarrow, kubernetes, gevent, celery, supervisor; print('deps OK')" && \
+    /home/myapp/py312/bin/python -m compileall -q /home/myapp/myapp && echo "compile OK"
+
+CMD ["bash", "/entrypoint.sh"]

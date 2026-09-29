@@ -1,0 +1,61 @@
+# ============================================================================
+# 行内 M1 后端镜像(py3.12)构建 Dockerfile
+#
+# ⚠️ 路径要求(重要)!
+# Dockerfile 的 COPY 路径全部相对 **build context 根目录**, 构建前必须把
+# 分散在交接包各处的材料统一收集到一个目录(cube312-build/), 布局如下:
+#
+#   cube312-build/                  ← build context(**只在这个目录执行 docker build**)
+#   ├── Dockerfile.backend-py312   ← 本文件(从 fix/交接/backend/ 拷入)
+#   ├── myapp/                     ← 从 交接包根 拷入(当前仓库 myapp/)
+#   ├── offline-wheels/            ← 从 fix/交接/materials/offline-wheels/ 拷入(6 个 whl)
+#   ├── requirements-final.txt     ← 从 fix/交接/backend/ 拷入
+#   ├── requirements-kerberos.txt  ← 从 fix/交接/backend/ 拷入
+#   ├── ai_general.keytab          ← 从 交接包根 拷入(真实配置)
+#   └── krb5.conf                  ← 从 交接包根 拷入(真实配置)
+#
+# 准备命令见: 总交接文档-行内上线流程.md §2-③(一键 copy)
+#
+# 基于: M0 基础基座(10.240.125.39/cube-studio/kubeflow-dashboard:app-base-test-v1)
+#       (M0 已含: kinit 二进制 + libkadm5srv 库 + fontconfig/wqy-microhei + 行内 py3.12)
+# 构建: docker build -t 10.240.125.39/cube-studio/kubeflow-dashboard:app-p312-v1 \
+#         -f Dockerfile.backend-py312 .   (在 cube312-build/ 内执行)
+# ============================================================================
+
+FROM 10.240.125.39/cube-studio/kubeflow-dashboard:app-base-test-v1
+
+# ── 材料 COPY ──
+COPY requirements-final.txt /tmp/requirements-final.txt
+COPY requirements-kerberos.txt /tmp/requirements-kerberos.txt
+COPY offline-wheels/ /tmp/ow/
+COPY myapp /home/myapp/myapp
+COPY ai_general.keytab /home/myapp/ai_general.keytab
+COPY krb5.conf /etc/krb5.conf
+
+# ── venv + 依赖(顺序不可乱, 见行内build操作手册) ──
+RUN python3.12 -m venv /opt/appenv && \
+    # ① SPNEGO 原生后端(离线)
+    /opt/appenv/bin/pip install --quiet --no-index --find-links /tmp/ow gssapi decorator && \
+    # ② Kerberos 组(行内源, 必须 --no-deps)
+    /opt/appenv/bin/pip install --quiet --no-deps --trusted-host 10.208.29.10 \
+        --index-url http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple \
+        -r /tmp/requirements-kerberos.txt && \
+    # ③ 主依赖(行内源, 全 wheel)
+    /opt/appenv/bin/pip install --quiet --only-binary=:all: --trusted-host 10.208.29.10 \
+        --index-url http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple \
+        -r /tmp/requirements-final.txt && \
+    # ④ 4 个 sdist-only 纯 py 包(离线)
+    /opt/appenv/bin/pip install --quiet --no-index --find-links /tmp/ow wtforms_json jieba hdfs docopt && \
+    rm -rf /tmp/ow /tmp/requirements-*.txt /root/.cache
+
+# ── 环境(与旧链一致: PATH 应用环境在前, PYTHONPATH=/home/myapp) ──
+ENV PATH=/opt/appenv/bin:/home/myapp/myapp/bin:$PATH
+ENV PYTHONPATH=/home/myapp
+ENV MYAPP_HOME=/home/myapp
+
+# ── 冒烟构建期断言(任何一个失败则镜像构建失败, 不会产出坏镜像) ──
+RUN /opt/appenv/bin/python -c "import myapp; print('myapp import OK')" && \
+    /opt/appenv/bin/python -c "import gssapi; from hdfs.ext.kerberos import KerberosClient; KerberosClient('http://x:50070', timeout=10); print('HDFS-Kerberos OK')"
+
+# ── 启动入口: 不 COPY(与旧链一致, entrypoint.sh 由 K8s ConfigMap 挂载覆盖) ──
+CMD ["bash", "/entrypoint.sh"]

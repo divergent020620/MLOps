@@ -1,0 +1,73 @@
+# ============================================================================
+# M3 jupyter 镜像 —— Python 依赖清单（JupyterLab 4 线）
+#
+# 对应《组装交接文档》M3 节「材料(等交接人交付)」第 1 条。
+#
+# 用法（行内，走行内 pip 源）：
+#   /opt/nbenv/bin/pip install --only-binary=:all: \
+#     --trusted-host 10.208.29.10 \
+#     --index-url "http://<user>:<pass>@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple" \
+#     -r jupyter-requirements.txt
+#
+# ★ 版本策略说明（重要）
+#   下面是 **范围约束**，不是死钉。原因：
+#     本清单在行外用 Python 3.14 起草，行内目标环境是 **Python 3.12**，
+#     两侧可解析出的具体版本不完全一致。硬钉 == 会在行内直接解析失败。
+#   行内装完后请**立刻冻结真实版本**并回传（这一步不要省）：
+#     /opt/nbenv/bin/pip freeze > jupyter-requirements-frozen-py312.txt
+#   那份 frozen 才是送评/复现的依据；本文件只保证「装得上、跑得对」。
+#
+#   若行内镜像上某个范围解析不出来 → 完整报错交回，不要自行降级（见 M3 边界条款）。
+# ============================================================================
+
+# ── JupyterLab 4 核心 ───────────────────────────────────────────
+# JL4 是本次迁移的目标版本；cube_studio_dataset 2.0.0 按 JL4 API 编写
+jupyterlab>=4.2.0,<5
+notebook>=7.2.0,<8
+jupyter_server>=2.14.0,<3
+jupyterlab_server>=2.27.0,<3
+jupyter_client>=8.6.0,<9
+
+# ── 内核与前端交互 ──────────────────────────────────────────────
+ipykernel>=6.29.0,<7
+ipywidgets>=8.1.0,<9
+jupyterlab_widgets>=3.0.0,<4
+
+# ── 数据集加载（dataset_helper.load_dataset 依赖） ──────────────
+# dataset_helper 用 pd.read_parquet 读 /mnt/<user>/datasets/*/data.parquet
+# → pandas 是接口，pyarrow 是 parquet 引擎，两个都不能省
+pandas>=2.2.0,<3
+pyarrow>=16.0.0,<21
+numpy>=1.26.0,<3
+
+# ── 常用科学计算（模板里会 import，按需保留） ───────────────────
+scikit-learn>=1.4.0,<2
+matplotlib>=3.8.0,<4
+
+# ── ★ 刻意不含 HDFS / Kerberos 依赖 ────────────────────────────
+# 「侧边栏看数据集 + 读已下载的数据集」这条链不需要 HDFS：
+#     列表来源 → HTTP 调后端 /dataset_modelview/api/jupyter_list
+#     读数据   → pd.read_parquet('/mnt/<user>/datasets/**/data.parquet')
+#     下载动作 → 发生在后端 celery worker（myapp/tasks/hdfs_tasks.py）
+#
+# 所以这里**不放** hdfs / gssapi / requests_kerberos / krbcontext。
+#
+# ⚠️ 实测教训（2026-09-21）：这两个包放进来会直接让构建失败 ——
+#     ERROR: Could not find a version that satisfies the requirement gssapi<2,>=1.8.0
+#     因为 **gssapi 在 PyPI 上没有 py3.12 的预编译 wheel**，
+#     它必须源码编译（要 gcc）或用自建离线 wheel
+#     （行内那套是 fix/交接/materials/offline-wheels/gssapi-1.9.0-cp312-*.whl）。
+#     在 --only-binary=:all: 环境下它 100% 装不上。
+#
+# 若确有「notebook 内直连 HDFS」需求，见 Dockerfile.notebook-p312 文末的
+# 「如何把 HDFS 加回来」—— 那里写了 gssapi 必须走离线 wheel 单独装。
+
+# ── 说明 ───────────────────────────────────────────────────────
+# * 本清单**不含**任何需要 gcc/node 才能装的包：
+#   全部有 py3.12 的 manylinux wheel（--only-binary=:all: 会强校验这点）。
+#   行内无 node / 无 gcc / 无额外 rpm，这个约束必须守住。
+# * jieba / docopt / decorator / wtforms_json 等不在此列 ——
+#   它们是 **Cube Studio 后端**（kubeflow-dashboard 镜像）的依赖，
+#   不是 notebook 镜像的。别混进这个环境。
+# * 若行内 notebook 还要跑 Spark/Hadoop 客户端，那是另一条线（Dockerfile.spark），
+#   与 JupyterLab 版本无关，单独处理。

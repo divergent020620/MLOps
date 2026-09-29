@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cube Studio 集群盘点 · 精简方案</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --ink:#1a1d21; --ink2:#5a6472; --ink3:#8b95a3;
+    --line:#e3e6ea; --line2:#cdd3da;
+    --keep:#0f7b4f; --keepbg:#e8f6ef; --keepbd:#9ad9bd;
+    --cut:#c0392b;  --cutbg:#fdeceb;  --cutbd:#f0b3ad;
+    --warn:#a8620a; --warnbg:#fdf4e6; --warnbd:#f0d19a;
+    --none:#6b7280; --nonebg:#f1f3f5;
+    --blue:#1f5fa8; --bluebg:#eaf2fb; --bluebd:#b6d0ec;
+    --mono:ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0 0 80px; background:var(--bg); color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+  /* ---------- header ---------- */
+  header{background:#151a21;color:#fff;padding:34px 0 30px;margin-bottom:34px}
+  header h1{margin:0 0 10px;font-size:27px;letter-spacing:.3px;font-weight:650}
+  header .sub{color:#9aa6b5;font-size:14px;margin-bottom:20px}
+  header .verdict{
+    background:#1e2630;border-left:3px solid #d94f3d;border-radius:4px;
+    padding:14px 18px;font-size:14.5px;line-height:1.7;color:#dfe5ec;max-width:1000px
+  }
+  header .verdict b{color:#ff8d78}
+
+  /* ---------- generic ---------- */
+  h2{font-size:20px;margin:44px 0 6px;padding-top:12px;font-weight:640;letter-spacing:.2px}
+  h2 .n{color:var(--ink3);font-weight:500;margin-right:8px;font-family:var(--mono);font-size:16px}
+  h2+.lead{color:var(--ink2);font-size:14px;margin:0 0 18px}
+  h3{font-size:15.5px;margin:26px 0 10px;font-weight:640}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px}
+  code,.mono{font-family:var(--mono);font-size:.88em;background:#eef1f4;border-radius:3px;padding:1px 5px;color:#2b3540}
+  .muted{color:var(--ink2)}
+
+  /* ---------- metrics ---------- */
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0 6px}
+  .m{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+  .m .v{font-size:25px;font-weight:670;font-family:var(--mono);letter-spacing:-.5px;line-height:1.2}
+  .m .k{font-size:12.5px;color:var(--ink2);margin-top:3px}
+  .m.bad .v{color:var(--cut)}
+  .m.ok  .v{color:var(--keep)}
+  .m.dim .v{color:var(--ink3)}
+
+  /* ---------- nodes ---------- */
+  .nodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:13px;margin-top:16px}
+  .node{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .node .hd{padding:11px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .node .nm{font-weight:640;font-size:14.5px}
+  .node .ip{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+  .node .rl{font-size:11.5px;color:var(--ink2);padding:6px 14px 0}
+  .node .bd{padding:8px 14px 13px;font-size:13px}
+  .node .bd ul{margin:0;padding-left:16px}
+  .node .bd li{margin:3px 0}
+  .tag{display:inline-block;font-size:11px;font-family:var(--mono);background:#eef1f4;color:#47525f;border-radius:3px;padding:1px 5px;margin:0 3px 3px 0}
+  .tag.hot{background:var(--cutbg);color:var(--cut);border:1px solid var(--cutbd)}
+  .tag.keep{background:var(--keepbg);color:var(--keep);border:1px solid var(--keepbd)}
+  .tag.plain{background:var(--nonebg);color:var(--none);border:1px solid var(--line2)}
+
+  /* ---------- flow ---------- */
+  .flow{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px;margin-top:16px}
+  .fstep{display:flex;gap:14px;align-items:flex-start;position:relative;padding-bottom:20px}
+  .fstep:last-child{padding-bottom:0}
+  .fstep .bullet{flex:0 0 34px;height:34px;border-radius:50%;background:#eef1f4;border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink2);z-index:1}
+  .fstep.hot .bullet{background:var(--cutbg);border-color:var(--cutbd);color:var(--cut)}
+  .fstep .body{padding-top:5px;min-width:0}
+  .fstep .t{font-weight:620;font-size:14.5px}
+  .fstep .d{font-size:13.5px;color:var(--ink2);margin-top:2px}
+  .fstep::after{content:"";position:absolute;left:16.5px;top:34px;bottom:0;width:1px;background:var(--line2)}
+  .fstep:last-child::after{display:none}
+
+  /* ---------- alert ---------- */
+  .alert{border-radius:8px;padding:15px 18px;margin:18px 0;font-size:14px;line-height:1.7;border:1px solid}
+  .alert.warn{background:var(--warnbg);border-color:var(--warnbd);color:#6d4008}
+  .alert.bad{background:var(--cutbg);border-color:var(--cutbd);color:#7d221a}
+  .alert.info{background:var(--bluebg);border-color:var(--bluebd);color:#143f70}
+  .alert .h{font-weight:660;margin-bottom:4px;display:block}
+
+  /* ---------- ns grid ---------- */
+  .nsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:13px;margin-top:16px}
+  .ns{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .ns.empty{border-style:dashed;background:#fbfcfd}
+  .ns .hd{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .ns.empty .hd{border-bottom-color:var(--line)}
+  .ns .nm{font-family:var(--mono);font-weight:620;font-size:13.5px}
+  .ns .ct{font-size:11.5px;color:var(--ink2);background:#eef1f4;border-radius:10px;padding:1px 8px;white-space:nowrap}
+  .ns .ct.zero{background:var(--nonebg);color:var(--ink3)}
+  .ns .bd{padding:9px 14px 13px}
+  .ns ul{margin:0;padding:0;list-style:none;font-size:13.2px}
+  .ns ul li{padding:2.5px 0;display:flex;gap:7px;align-items:baseline}
+  .ns ul li .dot{flex:0 0 7px;height:7px;border-radius:50%;background:var(--keep);margin-top:6px}
+  .ns ul li .nm2{font-family:var(--mono);font-size:12.4px;color:#2b3540}
+  .ns ul li .rr{font-size:11.5px;color:var(--ink3);margin-left:auto;white-space:nowrap;font-family:var(--mono)}
+  .ns .note{padding:0 14px 13px;font-size:12.5px;color:var(--ink3);font-style:italic}
+
+  /* ---------- table ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13.6px;background:var(--card);margin-top:14px;
+    border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f0f3f6;font-weight:620;font-size:12.5px;color:var(--ink2);letter-spacing:.3px;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.mono,td .mono{font-family:var(--mono);font-size:12.4px}
+  .c{text-align:center}
+  .yes{color:var(--keep);font-weight:640}
+  .no{color:var(--cut);font-weight:640}
+
+  /* ---------- decision ---------- */
+  .dec{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:16px}
+  .dcol{border-radius:8px;border:1px solid;overflow:hidden;background:var(--card)}
+  .dcol.keep{border-color:var(--keepbd)}
+  .dcol.cut{border-color:var(--cutbd)}
+  .dcol.warn{border-color:var(--warnbd)}
+  .dcol .hd{padding:12px 16px;font-weight:650;font-size:14.5px;display:flex;justify-content:space-between;align-items:center}
+  .dcol.keep .hd{background:var(--keepbg);color:var(--keep)}
+  .dcol.cut .hd{background:var(--cutbg);color:var(--cut)}
+  .dcol.warn .hd{background:var(--warnbg);color:var(--warn)}
+  .dcol .bd{padding:6px 16px 16px}
+  .dcol .item{padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .dcol .item:last-child{border-bottom:none}
+  .dcol .item .t{font-weight:620}
+  .dcol .item .t .mono{font-weight:500}
+  .dcol .item .d{color:var(--ink2);font-size:12.8px;margin-top:2px;line-height:1.6}
+
+  /* ---------- 4 backend ---------- */
+  .same{display:flex;align-items:stretch;gap:0;margin-top:16px;flex-wrap:wrap}
+  .imgbox{flex:0 0 210px;background:#151a21;color:#fff;border-radius:8px 0 0 8px;padding:18px;display:flex;flex-direction:column;justify-content:center}
+  .imgbox .l{font-size:11.5px;color:#8b98a8;letter-spacing:.6px;text-transform:uppercase}
+  .imgbox .im{font-family:var(--mono);font-size:12.6px;word-break:break-all;margin-top:6px;color:#9fe8c4}
+  .fork{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:11px;flex:1;margin-left:11px}
+  .cmd{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:13px 15px;font-size:13.3px}
+  .cmd .nm{font-weight:640;font-family:var(--mono);font-size:12.6px;margin-bottom:5px}
+  .cmd .cc{font-family:var(--mono);font-size:11.8px;background:#eef1f4;border-radius:3px;padding:5px 7px;color:#2b3540;
+    word-break:break-all;margin:5px 0 7px;line-height:1.5}
+  .cmd .dd{color:var(--ink2);font-size:12.6px;line-height:1.55}
+  .cmd .mt{font-size:11.5px;color:var(--ink3);margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+  .cmd.sp{box-shadow:inset 3px 0 0 var(--cut)}
+  .cmd.sp .nm::after{content:" 单点";font-size:10.5px;color:var(--cut);background:var(--cutbg);border:1px solid var(--cutbd);border-radius:3px;padding:0 4px;margin-left:5px;font-family:inherit}
+
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:12.8px;color:var(--ink3)}
+  @media print{body{background:#fff}header{background:#151a21 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Cube Studio 集群盘点 · 精简方案</h1>
+    <div class="sub">盘点方式：Tabby MCP 直连 5 台服务器 + 仓库交叉对照　·　盘点日期 2026-09-24</div>
+    <div class="verdict">
+      真正在跑的只有 <b>8 个 namespace、43 个工作负载 pod</b>（K8s 自身另有 24 个）；清单里的 <b>pipeline / automl / aihub / logging / EFK</b> 等模块根本没部署，砍它们零成本。<br>
+      真正的坑不在"砍哪些"，而在<b>存储</b>——15 个 PV 全是 hostPath，指向 <code>/data/k8s</code>，而它是个软链，最终落在 <b>服务器1 用 NFS 导出的一个 100G 本地目录</b>上。
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ 关键数字 ============ -->
+<div class="metrics">
+  <div class="m"><div class="v">5</div><div class="k">节点（3 master + 2 worker）</div></div>
+  <div class="m"><div class="v">8 / 16</div><div class="k">有 pod 的 ns / 总 ns</div></div>
+  <div class="m"><div class="v">43<span style="font-size:15px;color:var(--ink3)">+24</span></div><div class="k">工作负载 pod + K8s 自身</div></div>
+  <div class="m bad"><div class="v">0</div><div class="k">GPU（全集群）</div></div>
+  <div class="m bad"><div class="v">0</div><div class="k">StorageClass（全集群）</div></div>
+  <div class="m bad"><div class="v">15</div><div class="k">PV，全是 hostPath</div></div>
+  <div class="m bad"><div class="v">5212<span style="font-size:14px">Gi</span></div><div class="k">PV 声称总量 → 底下只有 100G 盘</div></div>
+  <div class="m bad"><div class="v">45<span style="font-size:14px">G</span></div><div class="k">实际剩余可用（全平台共用）</div></div>
+</div>
+
+<!-- ============ 一、节点 ============ -->
+<h2><span class="n">01</span>五台机器，谁在跑什么</h2>
+<p class="lead">每台机器上除了 K8s 自身，还有几个"不在 K8s 里"的原生进程 —— 这些是清单和仓库里都看不到的。</p>
+
+<div class="nodes">
+  <div class="node">
+    <div class="hd"><span class="nm">服务器1</span><span class="ip">192.168.11.11</span></div>
+    <div class="rl">k8s-master1 · control-plane</div>
+    <div class="bd">
+      <div style="margin-bottom:6px"><span class="tag hot">NFS Server</span><span class="tag">haproxy</span><span class="tag">buildkit</span></div>
+      <ul>
+        <li>导出 <code>/bdm/share_bdm</code> —— <b>全平台存储的根</b></li>
+        <li>权限 <code>*(rw,no_root_squash,async)</code>，任意主机可挂</li>
+      </ul>
+    </div>
+  </div>
+  <div class="node">
+    <div class="hd"><span class="nm">服务器2</span><span class="ip">192.168.11.12</span></div>
+    <div class="rl">k8s-master2 · control-plane</div>
+    <div class="bd">
+      <div style="margin-bottom:6px"><span class="tag keep">Harbor</span><span class="tag">Gitea</span></div>
+      <ul>
+        <li>Harbor 用 <b>docker-compose</b> 跑，HTTP :80（<code>curl /v2/</code> → 401）</li>
+        <li>Gitea :3000（平台"代码仓库"功能）</li>
+        <li>所有镜像都从这台拉</li>
+      </ul>
+    </div>
+  </div>
+  <div class="node">
+    <div class="hd"><span class="nm">服务器3</span><span class="ip">192.168.11.13</span></div>
+    <div class="rl">k8s-master3 · control-plane</div>
+    <div class="bd"><ul><li class="muted">无原生进程，纯 K8s 角色</li></ul></div>
+  </div>
+  <div class="node">
+    <div class="hd"><span class="nm">服务器4</span><span class="ip">192.168.11.14</span></div>
+    <div class="rl">k8s-worker1</div>
+    <div class="bd"><ul><li class="muted">无原生进程。跑 4 个 notebook</li></ul></div>
+  </div>
+  <div class="node" style="border-color:var(--cutbd)">
+    <div class="hd"><span class="nm" style="color:var(--cut)">服务器5</span><span class="ip">192.168.11.15</span></div>
+    <div class="rl">k8s-worker2</div>
+    <div class="bd">
+      <div style="margin-bottom:6px"><span class="tag hot">MySQL 裸金属</span></div>
+      <ul>
+        <li><code>/usr/local/mysql/bin/mysqld</code>，systemd unit <code>mysqld</code></li>
+        <li>MySQL <b>8.0.24</b>，root / admin，库 <code>kubeflow</code></li>
+        <li>⚠️ 同时是 K8s worker，还跑着 2 个 notebook</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="alert warn">
+  <span class="h">⚠️ 仓库里的 K8s MySQL 清单和实际部署对不上</span>
+  <code>install/kubernetes/mysql/deploy.yaml</code> 写的是 <code>nodeSelector: mysql=true</code>，而 <b><code>mysql=true</code> 这个标签打在 3 台 master 上，服务器5 根本没有</b>。说明 K8s 那套 MySQL 是被 <code>start.sh --mysql-host</code> 跳过、手工裸机装的 —— <code>infra</code> namespace 里还留着 <code>mysql-configmap</code>，是当年 apply 过一半的残迹。
+</div>
+
+<!-- ============ 二、存储 ============ -->
+<h2><span class="n">02</span>存储链路：整个平台的根是一块 NFS 盘</h2>
+<p class="lead">从上往下追，Pod 拿到的是一个"持久卷"，一路追到底是一台机器的本地磁盘外加一个 NFS 导出。</p>
+
+<div class="flow">
+  <div class="fstep">
+    <div class="bullet">1</div>
+    <div class="body">
+      <div class="t">Pod 挂载 PVC</div>
+      <div class="d">15 个 PVC：<code>kubeflow-user-workspace</code>、<code>kubeflow-dataset</code>、<code>infra-kubeflow</code>、<code>minio-pvc</code>、<code>kubeflow-global-pvc</code> …</div>
+    </div>
+  </div>
+  <div class="fstep">
+    <div class="bullet">2</div>
+    <div class="body">
+      <div class="t">PV 是 hostPath，<span class="mono">storageClassName: ""</span></div>
+      <div class="d">全集群 <b>一个 StorageClass 都没有</b> —— 没有 CSI 驱动，全靠路径。</div>
+    </div>
+  </div>
+  <div class="fstep">
+    <div class="bullet">3</div>
+    <div class="body">
+      <div class="t">路径是 <code>/data/k8s/kubeflow/…</code></div>
+      <div class="d">看上去像本地目录。</div>
+    </div>
+  </div>
+  <div class="fstep hot">
+    <div class="bullet">4</div>
+    <div class="body">
+      <div class="t">但 <code>/data/k8s</code> 是个<b>软链</b> → <code>/bdm/share_bdm</code></div>
+      <div class="d">5 台机器上都有这同一个软链。</div>
+    </div>
+  </div>
+  <div class="fstep hot">
+    <div class="bullet">5</div>
+    <div class="body">
+      <div class="t">服务器1 用 NFS 导出它，5 台机器全部挂载</div>
+      <div class="d"><code>/etc/exports</code>：<code>/bdm/share_bdm *(rw,no_root_squash,async)</code>　·　<code>fstab</code>：<code>192.168.11.11:/bdm/share_bdm /bdm/share_bdm nfs defaults</code></div>
+    </div>
+  </div>
+  <div class="fstep hot">
+    <div class="bullet">6</div>
+    <div class="body">
+      <div class="t">最终落盘：服务器1 本地 LV <code>vg_app-lv_bdm</code>，100G，已用 56G，<b>剩 45G</b></div>
+      <div class="d">这是全平台唯一的持久化落点。</div>
+    </div>
+  </div>
+</div>
+
+<div class="alert bad">
+  <span class="h">🔴 超卖约 52 倍</span>
+  15 个 PV 的容量加起来声称 <b>5212Gi</b>（10 个各写 500Gi + 2 个 100Gi + 1 个 10Gi + 2 个 1Gi），但底下是<b>同一块 100G、只剩 45G 的盘</b> —— 相当于物理盘的 <b>52 倍</b>。任何一个 notebook 写满，全平台一起停。<br>
+  另外：<code>no_root_squash</code> + <code>*</code> 意味着任意主机都能挂载并有 root 权限；<b>没有快照、没有备份计划</b>。<br>
+  <span class="muted">这就是你说"不想用 NFS，因为单点而且没有备份"的那个东西 —— 它早就是既成事实的根，不是待选方案。</span>
+</div>
+
+<!-- ============ 三、namespace 盘点 ============ -->
+<h2><span class="n">03</span>16 个 namespace：8 个在跑，6 个是空的</h2>
+<p class="lead">虚线框 = 建了 namespace 但一个 pod 都没有，砍掉零成本。</p>
+
+<div class="nsgrid">
+
+  <div class="ns">
+    <div class="hd"><span class="nm">infra</span><span class="ct">9 pods</span></div>
+    <div class="bd"><ul>
+      <li><span class="dot"></span><span class="nm2">kubeflow-dashboard</span><span class="rr">×2</span></li>
+      <li><span class="dot"></span><span class="nm2">kubeflow-dashboard-frontend</span><span class="rr">×2</span></li>
+      <li><span class="dot"></span><span class="nm2">kubeflow-dashboard-schedule</span><span class="rr">×1 单点</span></li>
+      <li><span class="dot"></span><span class="nm2">kubeflow-dashboard-worker</span><span class="rr">×2</span></li>
+      <li><span class="dot"></span><span class="nm2">kubeflow-watch</span><span class="rr">×1 单点</span></li>
+      <li><span class="dot"></span><span class="nm2">redis</span><span class="rr">×1</span></li>
+    </ul></div>
+    <div class="note">平台本体。redis 用的是 emptyDir，无持久化。</div>
+  </div>
+
+  <div class="ns">
+    <div class="hd"><span class="nm">kubeflow</span><span class="ct">5 pods</span></div>
+    <div class="bd"><ul>
+      <li><span class="dot"></span><span class="nm2">minio</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">workflow-controller</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">training-operator</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">volcano-controllers</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">volcano-scheduler</span><span class="rr">×1</span></li>
+    </ul></div>
+    <div class="note">⚠️ 没有 argo-server → 没有 Argo UI</div>
+  </div>
+
+  <div class="ns">
+    <div class="hd"><span class="nm">istio-system</span><span class="ct">4 pods</span></div>
+    <div class="bd"><ul>
+      <li><span class="dot"></span><span class="nm2">istiod</span><span class="rr">×2</span></li>
+      <li><span class="dot"></span><span class="nm2">istio-ingressgateway</span><span class="rr">×2</span></li>
+    </ul></div>
+    <div class="note">全平台唯一入口，VIP 192.168.11.201。所有 ns 都标了 <code>istio-injection: disabled</code> —— <b>只当网关，不当服务网格</b>。</div>
+  </div>
+
+  <div class="ns">
+    <div class="hd"><span class="nm">monitoring</span><span class="ct">8 pods</span></div>
+    <div class="bd"><ul>
+      <li><span class="dot"></span><span class="nm2">prometheus-k8s-0</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">prometheus-operator</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">grafana</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">node-exporter</span><span class="rr">DS ×5</span></li>
+      <li><span class="dot" style="background:var(--none)"></span><span class="nm2 muted">dcgm-exporter</span><span class="rr">DS 无 pod</span></li>
+    </ul></div>
+    <div class="note">dcgm-exporter 因为无 GPU 起不来，纯挂着。</div>
+  </div>
+
+  <div class="ns">
+    <div class="hd"><span class="nm">jupyter</span><span class="ct">6 pods</span></div>
+    <div class="bd"><ul>
+      <li><span class="dot"></span><span class="nm2">admin-439e</span><span class="rr">worker1</span></li>
+      <li><span class="dot"></span><span class="nm2">admin-a855</span><span class="rr">worker2</span></li>
+      <li><span class="dot"></span><span class="nm2">admin-d5b1</span><span class="rr">worker1</span></li>
+      <li><span class="dot"></span><span class="nm2">admin-hdfs</span><span class="rr">worker1</span></li>
+      <li><span class="dot"></span><span class="nm2">admin-jupyter</span><span class="rr">worker2</span></li>
+      <li><span class="dot"></span><span class="nm2">admin-kylin-spark</span><span class="rr">worker1</span></li>
+    </ul></div>
+    <div class="note">镜像：jupyter-kylin-hdfs / ubuntu22.04 / kylin-spark</div>
+  </div>
+
+  <div class="ns">
+    <div class="hd"><span class="nm">metallb-system</span><span class="ct">6 pods</span></div>
+    <div class="bd"><ul>
+      <li><span class="dot"></span><span class="nm2">controller</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">speaker</span><span class="rr">DS ×5</span></li>
+    </ul></div>
+    <div class="note">给 istio gateway 分 VIP，没它外部进不来。</div>
+  </div>
+
+  <div class="ns">
+    <div class="hd"><span class="nm">kube-system</span><span class="ct">24 pods</span></div>
+    <div class="bd"><ul>
+      <li><span class="dot"></span><span class="nm2">etcd / apiserver / controller / scheduler</span><span class="rr">×3</span></li>
+      <li><span class="dot"></span><span class="nm2">kube-proxy</span><span class="rr">DS ×5</span></li>
+      <li><span class="dot"></span><span class="nm2">coredns</span><span class="rr">×2</span></li>
+      <li><span class="dot"></span><span class="nm2">metrics-server</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">kubernetes-dashboard-cluster</span><span class="rr">×1</span></li>
+      <li><span class="dot"></span><span class="nm2">kubernetes-dashboard-user1</span><span class="rr">×1</span></li>
+    </ul></div>
+    <div class="note">K8s 自带 + 两个 K8s Dashboard</div>
+  </div>
+
+  <div class="ns">
+    <div class="hd"><span class="nm">kube-flannel</span><span class="ct">5 pods</span></div>
+    <div class="bd"><ul><li><span class="dot"></span><span class="nm2">kube-flannel-ds</span><span class="rr">DS ×5</span></li></ul></div>
+    <div class="note">CNI 网络插件</div>
+  </div>
+
+  <div class="ns empty">
+    <div class="hd"><span class="nm">pipeline</span><span class="ct zero">0 pod</span></div>
+    <div class="bd"><ul><li class="muted">空。Argo 任务原本放在这里</li></ul></div>
+  </div>
+  <div class="ns empty">
+    <div class="hd"><span class="nm">automl</span><span class="ct zero">0 pod</span></div>
+    <div class="bd"><ul><li class="muted">空。NNI 任务原本放在这里</li></ul></div>
+  </div>
+  <div class="ns empty">
+    <div class="hd"><span class="nm">aihub</span><span class="ct zero">0 pod</span></div>
+    <div class="bd"><ul><li class="muted">空。<b>但 DB 里有 501 条 AIHub 数据</b></li></ul></div>
+  </div>
+  <div class="ns empty">
+    <div class="hd"><span class="nm">service</span><span class="ct zero">0 pod</span></div>
+    <div class="bd"><ul><li class="muted">空。中间件/推理服务都部署到这里</li></ul></div>
+  </div>
+  <div class="ns empty">
+    <div class="hd"><span class="nm">logging</span><span class="ct zero">0 pod</span></div>
+    <div class="bd"><ul><li class="muted">空。<b>EFK、ilogtail 都没部署</b></li></ul></div>
+  </div>
+  <div class="ns empty">
+    <div class="hd"><span class="nm">default</span><span class="ct zero">0 副本</span></div>
+    <div class="bd"><ul><li class="muted">有个 <code>kubeflow-dashboard</code> Deployment，<b>replicas=0</b>，残留</li></ul></div>
+  </div>
+
+</div>
+
+<div class="alert info">
+  <span class="h">✅ 清单里有、实际完全没部署的（砍它们零成本）</span>
+  <b>Argo argo-server</b>（所以没 Argo UI）、<b>EFK</b>（es / filebeat / kibana）、<b>ilogtail + Kafka</b>、<b>Alluxio</b>、<b>JuiceFS</b>、<b>Ceph / Rook</b>（无 CRD、无 SC）、<b>MindSpore operator</b>、<b>HDFS</b>（8020 根本不通）、<b>kube-state-metrics</b>。<br>
+  <span class="muted">另外 <code>admin-hdfs</code> 这个 notebook 和 <code>view_hdfs.py</code> / <code>hdfs_tasks.py</code> 是死代码 —— 集群里没有任何 HDFS。</span>
+</div>
+
+<!-- ============ 四、四个后端 ============ -->
+<h2><span class="n">04</span>四个"后端镜像"其实只有 2 个镜像</h2>
+<p class="lead">dashboard / schedule / worker / watch 用的是<b>同一个镜像</b>的不同 command；frontend 是另一个镜像。</p>
+
+<div class="same">
+  <div class="imgbox">
+    <div class="l">同一个镜像</div>
+    <div class="im">192.168.11.12/cube-studio/<br>kubeflow-dashboard<br>:cube312-test</div>
+    <div style="font-size:11.5px;color:#8b98a8;margin-top:12px">+ 另一个：<br><span class="mono" style="color:#9fe8c4">…-frontend:kylin-20260730</span></div>
+  </div>
+  <div class="fork">
+    <div class="cmd">
+      <div class="nm">kubeflow-dashboard</div>
+      <div class="cc">bash /entrypoint.sh<br><span style="color:var(--cut)">STAGE=prod</span></div>
+      <div class="dd"><b>唯一的对外 HTTP 服务</b>（Flask + FAB + gunicorn 20 worker，:80）。<br>同时兼职 <b>bootstrap</b>。</div>
+      <div class="mt">副本 <b>2</b>　挂 kubeconfig + infra-kubeflow PVC</div>
+    </div>
+    <div class="cmd">
+      <div class="nm">…-frontend</div>
+      <div class="cc">nginx</div>
+      <div class="dd"><code>/frontend/</code> 出 React SPA，<code>/</code> 反代到后端。带 nginx configmap。</div>
+      <div class="mt">副本 <b>2</b>　挂 nginx-configmap</div>
+    </div>
+    <div class="cmd sp">
+      <div class="nm">…-schedule</div>
+      <div class="cc">celery beat</div>
+      <div class="dd"><b>定时器</b>，跑 8 个 cron 任务。</div>
+      <div class="mt">副本 <b>1</b>　挂 kubeconfig</div>
+    </div>
+    <div class="cmd">
+      <div class="nm">…-worker</div>
+      <div class="cc">celery worker --pool=prefork -Ofair -c 20</div>
+      <div class="dd"><b>异步任务执行器</b>：数据集备份/拷贝、K8s 资源轮询、HDFS 下载、镜像构建监听。</div>
+      <div class="mt">副本 <b>2</b>　挂 kubeconfig + infra-kubeflow PVC</div>
+    </div>
+    <div class="cmd sp">
+      <div class="nm">kubeflow-watch</div>
+      <div class="cc">supervisord → watch_workflow.py</div>
+      <div class="dd"><b>Argo workflow / pod 状态监听</b>，回写数据库。</div>
+      <div class="mt">副本 <b>1</b>　挂 kubeconfig</div>
+    </div>
+  </div>
+</div>
+
+<h3>三个要点</h3>
+
+<div class="alert warn">
+  <span class="h">1. backend 的 entrypoint 不只是起服务</span>
+  它顺序做：建软链 → <code>create_db.py</code> → <code>db upgrade</code>（<b>用 Redis 锁 <code>cube:db-upgrade-lock</code> 抢，只有 1 个副本真正执行</b>）→ <code>fab create-admin</code> → <b><code>myapp init</code> 灌初始数据</b>（后面跟了 <code>|| true</code> 吞错）。<br>
+  <b>推论：砍功能时必须同时摘掉 <code>myapp init</code> 的 seed 数据，否则后端一重启又灌回来。</b>
+</div>
+
+<div class="alert warn">
+  <span class="h">2. schedule 和 watch 都是单副本 = 各自的单点</span>
+  schedule 挂了 → 定时任务全停；watch 挂了 → 流水线状态不再更新。<br>
+  <span class="muted">补充：watch 的 <b>16 次重启是设计如此</b>，不是故障 —— liveness 探针里写了 <code>if [ $hour -eq 03 ]; then exit 1; fi</code>，每天 03:00 自杀回收进程。Pod 启动于 09-08，到 09-24 正好 16 天。</span>
+</div>
+
+<div class="alert info">
+  <span class="h">3. 只有 backend 和 worker 挂 PVC</span>
+  → 说明只有它们碰文件系统：backend 提供静态文件下载，worker 做数据集备份/拷贝。<br>
+  schedule 和 watch 不碰盘。
+</div>
+
+<h3>schedule 的 8 个定时任务（精简时逐个判断）</h3>
+<table>
+  <thead><tr><th>任务</th><th>频率</th><th>干什么</th><th class="c">保留 6 功能时</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">task.delete_workflow</td><td>每天 00:01</td><td>清过期 workflow CRD</td><td class="c no">砍</td></tr>
+    <tr><td class="mono">task.make_timerun_config</td><td><b>每 5 分钟</b></td><td>生成定时流水线的运行配置</td><td class="c no">砍</td></tr>
+    <tr><td class="mono">task.delete_old_data</td><td>每天 01:01</td><td>删 <code>/data/k8s/kubeflow/minio/mlpipeline</code> 旧数据</td><td class="c no">砍</td></tr>
+    <tr><td class="mono">task.check_pipeline_run</td><td>每天 11:10</td><td>检查流水线运行时长、报警</td><td class="c no">砍</td></tr>
+    <tr><td class="mono">task.watch_gpu</td><td>8–23 每 2 小时</td><td>推送 GPU 使用率</td><td class="c no">砍（无 GPU，纯空跑）</td></tr>
+    <tr><td class="mono">task.delete_debug_docker</td><td>每天 23:30</td><td>删 debug pod</td><td class="c yes">留</td></tr>
+    <tr><td class="mono">task.watch_pod_utilization</td><td>每天 11:10</td><td>推送低负载 pod</td><td class="c yes">可选留</td></tr>
+    <tr><td class="mono">task.check_pod_terminating</td><td><b>每 10 分钟</b></td><td>清理卡在 Terminating 的 pod</td><td class="c yes">留（很有价值）</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ 五、砍留 ============ -->
+<h2><span class="n">05</span>只保留 6 个功能：砍 / 留决策</h2>
+<p class="lead">
+  保留清单：<b>基础登录注册 · 用户管理 · Jupyter · 推理服务 · 中间件服务 · 取数存数</b><br>
+  <span class="muted">口径说明：「中间件服务」对应平台 <code>service</code> 功能（<code>init-service.json</code> 的 8 个模板）。如果你指的是平台自己的中间件层，结论一样 —— 左边那一列一条都跑不掉。</span>
+</p>
+
+<div class="dec">
+
+  <div class="dcol keep">
+    <div class="hd"><span>✅ 一个都不能砍</span></div>
+    <div class="bd">
+      <div class="item"><div class="t">MySQL（服务器5 裸金属）</div><div class="d">用户/角色/项目/notebook/dataset/inference 全在里面。⚠️ 见下方风险</div></div>
+      <div class="item"><div class="t">Redis</div><div class="d">Celery broker + Flask cache + <b>db upgrade 分布式锁</b>。砍了多副本启动迁移会打架</div></div>
+      <div class="item"><div class="t">backend ×2 + frontend ×2</div><div class="d">唯一入口</div></div>
+      <div class="item"><div class="t">Istio + MetalLB</div><div class="d">Jupyter / 推理服务 / 中间件服务 <b>三个都靠 VirtualService 对外暴露</b>。集群没装 Ingress Controller</div></div>
+      <div class="item"><div class="t">共享存储（/data/k8s 那套）</div><div class="d">notebook 的 /mnt、取数存数的 /dataset + /global、后端静态下载全指它</div></div>
+      <div class="item"><div class="t">flannel / coredns / metrics-server / kube-*</div><div class="d">K8s 自身</div></div>
+    </div>
+  </div>
+
+  <div class="dcol cut">
+    <div class="hd"><span>✂️ 建议直接砍（低风险）</span></div>
+    <div class="bd">
+      <div class="item"><div class="t">dcgm-exporter</div><div class="d">无 GPU，DS 根本没起 pod</div></div>
+      <div class="item"><div class="t">schedule 上的 4 个任务</div><div class="d">3 个纯流水线 + 1 个 GPU。<b>⚠️ 别整条砍</b>，改 config 就行</div></div>
+      <div class="item"><div class="t"><code>labelstudio</code> VirtualService</div><div class="d">没有对应 pod，残留</div></div>
+      <div class="item"><div class="t">default ns 那个 0 副本 Deployment</div><div class="d">残留</div></div>
+      <div class="item"><div class="t">admin-hdfs notebook + HDFS 代码</div><div class="d"><code>view_hdfs.py</code>、<code>hdfs_tasks.py</code>、<code>notebook-hdfs-build/</code> —— 集群里没有任何 HDFS</div></div>
+      <div class="item"><div class="t">Gitea（服务器2:3000）</div><div class="d">平台"代码仓库"功能，不在保留清单。⚠️ 有人拿它存代码就先问一声</div></div>
+      <div class="item"><div class="t">5 个空 namespace</div><div class="d">pipeline / automl / aihub / service / logging —— 留着也不占资源</div></div>
+    </div>
+  </div>
+
+  <div class="dcol warn">
+    <div class="hd"><span>⚠️ 建议砍，但先确认（中风险）</span></div>
+    <div class="bd">
+      <div class="item"><div class="t">kubeflow-watch</div><div class="d">唯一职责是同步 Argo 状态。没流水线就没活干。<b>先确认流水线确实不要了</b>（DB 里 <code>run</code> 表 0 条）</div></div>
+      <div class="item"><div class="t">minio（kubeflow ns）</div><div class="d">只给 Argo 存 artifact。<b>取数存数的真实后端不是它</b>。<code>config.py</code> 的 <code>MINIO_HOST</code> 要一起清</div></div>
+      <div class="item"><div class="t">workflow-controller + Argo CRD</div><div class="d">流水线砍后完全无用</div></div>
+      <div class="item"><div class="t">training-operator</div><div class="d">只管分布式训练。砍了 tfjob/pytorchjob/mpijob/paddlejob/mxnet 模板全废</div></div>
+      <div class="item"><div class="t">volcano</div><div class="d">只服务 vcjob 分布式调度</div></div>
+      <div class="item"><div class="t">kubernetes-dashboard-user1</div><div class="d">保留清单没提；<code>cluster</code> 那个建议留作排障入口</div></div>
+      <div class="item"><div class="t">prometheus（保留 grafana）</div><div class="d"><b>Grafana 是推理服务页面的跳转目标</b>（<code>GRAFANA_SERVICE_PATH</code>），删了有死链。建议降配而非删除</div></div>
+    </div>
+  </div>
+
+</div>
+
+<h3>可以绕过的代码模块（14 个 view）</h3>
+<table>
+  <thead><tr><th>功能</th><th>对应 view</th><th class="c">DB 里有多少数据</th></tr></thead>
+  <tbody>
+    <tr><td>AIHub</td><td class="mono">view_aihub.py</td><td class="c"><b>501</b> 条</td></tr>
+    <tr><td>元数据管理</td><td class="mono">view_metadata.py · view_metadata_metric.py · view_dimension.py</td><td class="c">27 张表</td></tr>
+    <tr><td>ChatGPT / RAG</td><td class="mono">view_chat.py</td><td class="c">12</td></tr>
+    <tr><td>模型仓库</td><td class="mono">view_train_model.py</td><td class="c">4</td></tr>
+    <tr><td>NNI 超参搜索</td><td class="mono">view_nni.py</td><td class="c">1</td></tr>
+    <tr><td>数据 ETL</td><td class="mono">view_etl_pipeline*.py</td><td class="c">1</td></tr>
+    <tr><td>在线构建镜像</td><td class="mono">view_docker.py</td><td class="c">1</td></tr>
+    <tr><td>SQLLab</td><td class="mono">view_sqllab.py</td><td class="c">1</td></tr>
+    <tr><td>公告</td><td class="mono">view_announcement.py</td><td class="c">1</td></tr>
+    <tr><td>代码仓库</td><td class="mono">（Gitea）</td><td class="c">1</td></tr>
+    <tr><td>HDFS</td><td class="mono">view_hdfs.py · hdfs_tasks.py</td><td class="c">死代码</td></tr>
+    <tr><td>流水线 / 运行历史</td><td class="mono">view_pipeline.py · view_workflow.py · view_runhistory.py</td><td class="c">pipeline 4 / <b>run 0</b></td></tr>
+    <tr><td>总览资源</td><td class="mono">view_total_resource.py</td><td class="c">—</td></tr>
+  </tbody>
+</table>
+<div class="alert warn" style="margin-top:14px">
+  <span class="h">⚠️ 光藏菜单没用</span>
+  必须同时从 <code>myapp/cli.py</code> 的 <code>myapp init</code> 里摘掉对应的 seed 数据。
+  因为 backend 每次启动都会跑 <code>myapp init</code>（<code>|| true</code>），否则重启一次就灌回来。
+</div>
+
+<!-- ============ 六、风险 ============ -->
+<h2><span class="n">06</span>本次盘点发现的 4 个真问题</h2>
+<p class="lead">都不是"砍组件"能解决的，需要单独排期。</p>
+
+<div class="dec">
+  <div class="dcol cut">
+    <div class="hd"><span>🔴 1. MySQL 是最高风险单点</span><span style="font-size:12px;font-weight:500">比存储盘还高</span></div>
+    <div class="bd">
+      <div class="item"><div class="t">和业务负载抢同一台机器</div><div class="d">服务器5 同时是 K8s worker，跑着 <code>admin-a855</code>、<code>admin-jupyter</code> 两个 notebook。节点一挂 / 一 drain，数据库跟业务一起没</div></div>
+      <div class="item"><div class="t">单点、无副本、无主从</div><div class="d">落盘就是 <code>/usr/local/mysql</code> 的数据目录，没看到备份任务</div></div>
+      <div class="item"><div class="t">清单和实际对不上</div><div class="d"><code>nodeSelector: mysql=true</code> 打在 3 台 master 上，服务器5 没有 → K8s 那套是被跳过、手工裸机装的</div></div>
+      <div class="item" style="border:none"><div class="d" style="color:var(--cut)"><b>存储盘挂了数据还在别的机器上，MySQL 挂了整站登不进去。</b></div></div>
+    </div>
+  </div>
+
+  <div class="dcol cut">
+    <div class="hd"><span>🔴 2. 存储：NFS 单点 + 超卖 52 倍</span></div>
+    <div class="bd">
+      <div class="item"><div class="t">PV 声称 5212Gi，底下剩 45G</div><div class="d">10 个 PV 各写 500Gi，全落在同一块盘上。任何一个 notebook 写满，全平台一起停</div></div>
+      <div class="item"><div class="t">无快照、无备份</div><div class="d">—</div></div>
+      <div class="item"><div class="t">权限敞开</div><div class="d"><code>no_root_squash</code> + <code>*</code> 任意主机可挂且有 root</div></div>
+    </div>
+  </div>
+
+  <div class="dcol warn">
+    <div class="hd"><span>⚠️ 3. Redis 无持久化</span></div>
+    <div class="bd">
+      <div class="item"><div class="t">用的是 emptyDir</div><div class="d">Pod 一重启：Celery 队列里在跑的任务丢失、Flask cache 清空。仓库里的 <code>redis/pv-pvc-hostpath.yaml</code> 有 PVC，但实际部署没用上</div></div>
+      <div class="item"><div class="t">对 db upgrade 锁影响不大</div><div class="d">那个锁是短时租约，影响有限</div></div>
+    </div>
+  </div>
+
+  <div class="dcol warn">
+    <div class="hd"><span>⚠️ 4. 中间件模板 mysql-ui 是坏的</span></div>
+    <div class="bd">
+      <div class="item"><div class="t">指向一个不存在的 Service</div><div class="d"><code>init-service.json</code> 里 <code>mysql-ui</code> 写 <code>PMA_HOST=mysql-service.infra:3306</code>，但<b>全集群没有 <code>mysql-service</code> 这个 Service</b>（MySQL 是裸机进程，不在 K8s 里）</div></div>
+      <div class="item"><div class="t">8 个模板里只有 redis-ui 能直接用</div><div class="d">mysql-ui / mongo-express / postgresql-ui 都需要外部实例；es / neo4j / sd-webui / xinference 需要共享存储 + 特定节点</div></div>
+      <div class="item"><div class="t">修法二选一</div><div class="d">给服务器5 的 MySQL 建一个 ExternalName / Endpoints Service 叫 <code>mysql-service</code>；或者把这个模板下架</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 附 ============ -->
+<h2><span class="n">07</span>一个关键机制：Istio 其实可以绕</h2>
+<p class="lead">如果要评估"能不能不用 Istio"，代码里已经埋了一条降级路径。</p>
+
+<table>
+  <tbody>
+    <tr>
+      <th style="width:200px">调用 <code>create_istio_ingress</code> 的地方</th>
+      <td>推理服务（<code>view_inferenceserving.py</code>）、服务/中间件（<code>view_serving.py</code>）、NNI（<code>view_nni.py</code>）、notebook（<code>view_notebook.py</code>）、资源清理（<code>view_total_resource.py</code>）</td>
+    </tr>
+    <tr>
+      <th>降级路径</th>
+      <td><code>py_k8s.py:1758</code> 里有一句：<br>
+      <div class="cc mono" style="background:#eef1f4;padding:9px 11px;border-radius:4px;margin-top:6px">host = host.split(":")[0]<br>if not host or <b>core.checkip(host)</b>:<br>&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;&nbsp;<span style="color:var(--keep)"># ← 传 IP 就跳过，不建 VirtualService</span></div></td>
+    </tr>
+    <tr>
+      <th>但是</th>
+      <td>要走这条路得先有 Ingress Controller 或接受 NodePort 直连。而 <code>install/kubernetes/ingress.yaml</code> 那套 Ingress 对象<b>在集群里没有任何 controller 兜底</b>（<code>kubectl get ingress</code> 为空）。</td>
+    </tr>
+    <tr>
+      <th>结论</th>
+      <td class="yes">6 功能下 Istio 不建议砍，绕过成本高于收益。</td>
+    </tr>
+  </tbody>
+</table>
+
+<footer>
+  盘点数据来源：5 台服务器实测（<code>kubectl get pods/deploy/svc/pv/pvc/crd -A</code>、<code>mount</code>、<code>/etc/exports</code>、<code>systemctl</code>、MySQL 直查）+ 仓库清单交叉对照<br>
+  配套文档：<code>集群组件盘点与精简方案.md</code>
+</footer>
+
+</div>
+</body>
+</html>

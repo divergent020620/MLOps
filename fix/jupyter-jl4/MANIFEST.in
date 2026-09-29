@@ -1,0 +1,16 @@
+# sdist 内容（wheel 的实际打包范围由 setup.py 的 package_data 决定）
+include README.md
+include pyproject.toml
+include jupyter-requirements.txt
+
+# Python 包 + 前端预构建产物
+recursive-include cube_studio_dataset *.py
+recursive-include cube_studio_dataset/labextension *
+
+# 明确排除：TS 源码、node_modules、构建中间物 —— 都不该进包
+prune labextension
+prune labextension/node_modules
+global-exclude *.ts *.tsx
+global-exclude *.map
+global-exclude .gitignore
+global-exclude tsconfig*.json

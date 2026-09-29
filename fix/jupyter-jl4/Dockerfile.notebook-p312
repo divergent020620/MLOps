@@ -1,0 +1,230 @@
+# ============================================================================
+# Cube Studio — 麒麟信创 Jupyter Notebook 镜像（原生 py3.12 + JupyterLab 4 + 数据集面板）
+#
+# 对应《组装交接文档》M3 节。
+#
+# 参照来源（本文件是在它们基础上改的）：
+#   install/docker/notebook-hdfs-build/Dockerfile        ← 官方参照（旧: ubuntu+conda+py3.7+JL3）
+#   domestic-jupyter/Dockerfile.hdfs                     ← 行内改造版（旧: 同样 conda+py3.7+JL3）
+#
+# ── ★ 相对旧版删掉的三段（M3 约束不允许）────────────────────────────────
+#   ① RUN yum install ... nodejs npm ...          M3：不装 node
+#   ② RUN conda create -n python37 python=3.7.4   M3：必须 py3.12，且不做 conda 移植
+#   ③ RUN cd /opt/labextension && npm install && npm run build
+#      && jupyter labextension install ...        M3：无 node 无编译链，这步在行内做不了
+#
+#   其中 ③ 是关键：前端 labextension 是 TypeScript，必须 tsc 编译。
+#   本方案把它**前置到行外**（见 fix/jupyter-jl4/build_jupyter_ext.sh），
+#   编译产物随 cube_studio_dataset-*.whl 分发，行内这行退化成一次 pip install。
+#
+# ── ★ 相对旧版删掉的 HDFS / Kerberos 段（按需保留，见文末注释）──────────
+#   旧版装 krb5-devel/cyrus-sasl-devel/gcc + hdfs/requests_kerberos/krbcontext
+#   + 拷 hadoop-conf/ 与 krb5.conf，是为了**让 notebook 直接访问 HDFS**。
+#
+#   而「侧边栏看数据集 + 读已下载的数据集」这条链**完全不需要 HDFS**：
+#     - 列表来源：Cube Studio 后端 /dataset_modelview/api/jupyter_list（HTTP，不是 HDFS）
+#     - 数据读取：dataset_helper.load_dataset() → pd.read_parquet('/mnt/<user>/datasets/**/data.parquet')
+#                 读的是**已经下载到本地挂载卷**的 parquet
+#     - HDFS 下载动作发生在**后端 celery worker**（myapp/tasks/hdfs_tasks.py），不在 notebook 里
+#
+#   所以本镜像不装 HDFS 客户端。若确有「notebook 内直连 HDFS」需求，
+#   见文末「如何把 HDFS 加回来」。
+#
+# ── 构建（行内，在 build context 内执行）────────────────────────────────
+#   docker build -t 10.240.125.39/cube-studio/cube-studio-notebook:jupyter-p312-v1 \
+#     -f Dockerfile.notebook-p312 .
+#
+#   build context 目录布局（只需 5 个文件）：
+#     jupyter-p312-build/
+#     ├── Dockerfile.notebook-p312
+#     ├── cube_studio_dataset-2.0.0-py3-none-any.whl   ← 由行外构建产出
+#     ├── jupyter-requirements.txt
+#     ├── dataset_helper.py
+#     └── init.sh
+# ============================================================================
+
+# 行内 M0 基础基座：已含 行内 py3.12 + kinit 二进制 + libkadm5srv + fontconfig/wqy-microhei
+#
+# BASE_IMAGE 可覆盖，用途是**行外做自测**（行内基座在行外拉不到）：
+#   docker build --build-arg BASE_IMAGE=notebook:jupyter-ubuntu-py312 ...
+# 行内正常构建**不要传这个参数**，用默认值即可。
+ARG BASE_IMAGE=10.240.125.39/cube-studio/kubeflow-dashboard:app-base-test-v1
+FROM ${BASE_IMAGE}
+
+ENV TZ=Asia/Shanghai
+
+# ── 语言环境 ───────────────────────────────────────────────────────────────
+# 沿用旧版设置（中文环境）。**前提是基座有 zh_CN.UTF-8 locale**，
+# 断言 [7/7] 会检查这一点，缺了会带着替代方案明确报错。
+#
+# ★ 重要澄清（避免误解）：
+#   「能不能处理中文」和「用哪个 locale」是两件不同的事 ——
+#     处理中文 = UTF-8 编码，C.UTF-8 与 zh_CN.UTF-8 都能完美支持
+#                （中文注释 / print 输出 / 文件名 / pandas 列名 / matplotlib 绘图）
+#     用哪个 locale 只影响**本地化格式**：日期月份显示"一月"还是"January"、
+#                排序是否按拼音、系统工具的消息语言
+#   所以万一基座没有 zh_CN.UTF-8，改成 C.UTF-8 也不影响中文功能。
+ENV LANG=zh_CN.UTF-8
+ENV LC_ALL=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN.UTF-8
+
+# ── 行内 pip 源 ────────────────────────────────────────────────────────────
+# 与 fix/交接/backend/Dockerfile.backend-py312 保持同一口径。
+# 口令轮换后直接用 --build-arg 覆盖，不必改本文件：
+#   docker build --build-arg PIP_INDEX="http://<user>:<pwd>@10.208.29.10:8087/..." ...
+ARG PIP_INDEX="http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple"
+ARG PIP_HOST="10.208.29.10"
+
+# ── 材料 COPY ──────────────────────────────────────────────────────────────
+# ★ wheel 必须**保持原文件名**，不能改名。
+#   pip 会校验 wheel 文件名符合 PEP 427 格式：{名字}-{版本}-{py标签}-{abi}-{平台}.whl
+#   实测把它改成 /tmp/cube_studio_dataset.whl 会直接失败：
+#       ERROR: Invalid wheel filename (wrong number of parts): 'cube_studio_dataset'
+#   所以这里只 COPY 到目录，安装时用通配符（build context 里只会有一个 whl）。
+COPY jupyter-requirements.txt        /tmp/jupyter-requirements.txt
+COPY cube_studio_dataset-*.whl       /tmp/
+COPY dataset_helper.py               /opt/dataset_helper.py
+COPY init.sh                         /init.sh
+
+# ── venv + Python 依赖 ─────────────────────────────────────────────────────
+# 注意用 /opt/nbenv 而不是后端镜像的 /opt/appenv：
+#   notebook 与后端是两个镜像，即便同基座也各自独立 venv，互不污染。
+#
+# --only-binary=:all: 是**有意为之且必须保留**：
+#   它保证任何包都必须有 py3.12 的 manylinux wheel，否则直接报错停下。
+#   这正是「无 gcc 无编译链」这条约束的强制手段 —— 一旦有人往清单里加了
+#   只能源码编译的包，构建会在这一步失败，而不是在运行时才炸。
+# ★ 注意：升级 pip 这一行**也必须带 --index-url**。
+#   实测漏写会去连默认公网 PyPI（files.pythonhosted.org），行内根本不通：
+#     ERROR: Could not install packages due to an OSError:
+#     HTTPSConnectionPool(host='files.pythonhosted.org', port=443): Read timed out
+#   两条命令用的是同一个源，避免出现"一部分走行内源、一部分走公网"的混合状态。
+RUN python3.12 -m venv /opt/nbenv && \
+    /opt/nbenv/bin/pip install --quiet --upgrade pip setuptools wheel \
+        --trusted-host "${PIP_HOST}" --index-url "${PIP_INDEX}" && \
+    /opt/nbenv/bin/pip install --quiet \
+        --only-binary=:all: \
+        --trusted-host "${PIP_HOST}" \
+        --index-url "${PIP_INDEX}" \
+        -r /tmp/jupyter-requirements.txt
+
+# ── ★ 数据集面板扩展（替代旧版的 npm install + jupyter labextension install）──
+# 这一行就是整个方案的核心：预构建产物已在行外编好并打进 wheel，
+# 这里只做文件拷贝，不需要 node / npm / tsc。
+#
+# --no-deps 是必须的：本包 install_requires=[] ，
+#   不加 --no-deps 时 pip 会试图解析它声明的 jupyterlab 范围，反而可能改动已锁好的版本。
+RUN /opt/nbenv/bin/pip install --quiet --no-deps /tmp/cube_studio_dataset-*.whl
+
+# 服务端扩展登记（可选，只为启动时打一行自检日志，便于排查「面板没出来」）
+# JL4 用 `jupyter server extension enable`（有空格），旧版写法 jupyter serverextension enable 已废弃。
+RUN /opt/nbenv/bin/python -m jupyter server extension enable \
+        --py cube_studio_dataset --sys-prefix || true
+
+# ── ★ 构建期断言：任何一个失败就让构建失败，绝不产出坏镜像 ────────────────
+# 这是本 Dockerfile 最重要的一段。它把「面板能不能显示」这件事
+# 从"运行时才发现"提前到"构建时就报错"。
+#
+# 和 py312 后端 Dockerfile 的冒烟断言（import myapp / HDFS-Kerberos OK）是同一个思路。
+RUN set -eux; \
+    echo "════ [1/7] Python 版本（必须 3.12）════"; \
+    /opt/nbenv/bin/python -V; \
+    /opt/nbenv/bin/python -c "import sys; assert sys.version_info[:2]==(3,12), sys.version"; \
+    \
+    echo "════ [2/7] JupyterLab 版本（必须 4.x）════"; \
+    /opt/nbenv/bin/python -c "import jupyterlab,sys; v=jupyterlab.__version__; print('jupyterlab', v); assert v.startswith('4.'), '需要 JL4，实际 '+v"; \
+    /opt/nbenv/bin/jupyter lab --version; \
+    \
+    echo "════ [3/7] 数据读取依赖（parquet 引擎）════"; \
+    /opt/nbenv/bin/python -c "import pandas, pyarrow; print('pandas', pandas.__version__, '/ pyarrow', pyarrow.__version__); import pyarrow.parquet; print('pyarrow.parquet OK')"; \
+    \
+    echo "════ [4/7] 数据集扩展已装 + 自带前端产物 ════"; \
+    /opt/nbenv/bin/python -c "import cube_studio_dataset as m, json; s=m.status(); print(json.dumps(s, indent=2, ensure_ascii=False)); assert s['prebuilt'], '缺前端预构建产物，面板不会出现'"; \
+    \
+    echo "════ [5/7] ★ JupyterLab 自己能发现这个扩展吗（最关键的一条）════"; \
+    /opt/nbenv/bin/python -c "\
+from jupyter_core.paths import jupyter_path; \
+from jupyterlab_server.config import get_federated_extensions; \
+exts = get_federated_extensions(jupyter_path('labextensions')); \
+print('发现的扩展:', list(exts.keys())); \
+assert 'cube-studio-dataset' in exts, 'JupyterLab 找不到扩展，侧边栏不会有数据集 Tab'; \
+e = exts['cube-studio-dataset']; \
+load = e['jupyterlab']['_build']['load']; \
+print('  version:', e['version']); \
+print('  load   :', load); \
+assert chr(92) not in load, 'load 路径含反斜杠，Linux 上会 404 白屏'; \
+print('  OK: 扩展可被 JL4 加载')"; \
+    \
+    echo "════ [6/7] 确认未引入编译链与 node（M3 约束）════"; \
+    if command -v node >/dev/null 2>&1; then echo '!! 镜像里有 node，违反 M3 约束'; exit 1; fi; \
+    if command -v gcc  >/dev/null 2>&1; then echo '!! 镜像里有 gcc，违反 M3 约束';  exit 1; fi; \
+    echo "OK: 无 node / 无 gcc"; \
+    \
+    echo "════ [7/7] 中文支持（locale + UTF-8 编码）════"; \
+    echo "--- 基座可用 locale ---"; \
+    locale -a 2>/dev/null | grep -iE 'zh|utf' || true; \
+    echo "--- python 编码（这个才是决定中文能不能用的）---"; \
+    /opt/nbenv/bin/python -c "\
+import locale, sys; \
+enc = locale.getpreferredencoding(False); \
+print('preferredencoding  =', enc); \
+print('filesystemencoding =', sys.getfilesystemencoding()); \
+assert enc.upper().replace('-', '') == 'UTF8', '!! python 默认编码非 UTF-8，中文文件名/输出会乱码: ' + enc; \
+s = '中文测试：数据集、列名、注释'; \
+assert s.encode('utf-8').decode('utf-8') == s; \
+print('中文 round-trip OK:', s)"; \
+    echo "--- 中文字体（matplotlib 出中文图要用）---"; \
+    if command -v fc-list >/dev/null 2>&1; then \
+        fc-list :lang=zh 2>/dev/null | wc -l | xargs -I{} echo "可用中文字体数: {}"; \
+    else \
+        echo "(无 fc-list，跳过字体检查)"; \
+    fi; \
+    if ! locale -a 2>/dev/null | grep -qiE '^zh_CN\.?(utf-?8)?$'; then \
+        echo '!! 基座没有 zh_CN.UTF-8 locale'; \
+        echo '   影响范围：只有日期/月份/排序等**本地化格式**；中文的读写与显示不受影响。'; \
+        echo '   两个选择：'; \
+        echo '     ① 基座补装 glibc-langpack-zh（麒麟上通常是这个包名）；'; \
+        echo '     ② 把本文件顶部的 LANG / LC_ALL / LANGUAGE 三行改成 C.UTF-8（中文功能完全一样）。'; \
+        exit 1; \
+    fi; \
+    echo "OK: zh_CN.UTF-8 可用"; \
+    \
+    echo "════ 清理 ════"; \
+    rm -rf /tmp/jupyter-requirements.txt /tmp/cube_studio_dataset-*.whl /root/.cache
+
+# ── 环境变量 ───────────────────────────────────────────────────────────────
+# PATH 把 /opt/nbenv/bin 放最前：保证 `jupyter` / `python` 解析到新环境
+ENV PATH=/opt/nbenv/bin:${PATH}
+# 注意：**不设** HADOOP_CONF_DIR（本镜像不含 HDFS 客户端，见文件头说明）
+
+RUN chmod +x /init.sh
+
+# ── 便捷 alias（沿用旧版）────────────────────────────────────────────────
+RUN echo "alias ll='ls -alF'" >> /root/.bashrc && \
+    echo "alias la='ls -A'"    >> /root/.bashrc && \
+    echo "alias vi='vim'"      >> /root/.bashrc
+
+WORKDIR /mnt
+EXPOSE 8888 3000
+
+# 不写 CMD：notebook 的启动命令由 Cube Studio 后端在创建 pod 时下发
+# （见 myapp/views/view_notebook.py 的 entry_jupyter），镜像只提供环境。
+
+# ============================================================================
+# 如何把 HDFS 直连加回来（仅当确有「notebook 内读 HDFS」需求时）
+# ============================================================================
+# 1) 基座需具备（M0 只保证 kinit + libkadm5srv，其余要另加）：
+#      krb5-workstation krb5-libs cyrus-sasl-devel gcc gcc-c++
+#      ＋ 一个 kerberos 后端的 gssapi wheel（见 fix/交接/materials/offline-wheels/）
+# 2) 本文件追加：
+#      COPY hadoop-conf/ /etc/hadoop/conf/
+#      COPY krb5.conf   /etc/krb5.conf
+#      ENV  HADOOP_CONF_DIR=/etc/hadoop/conf
+#      RUN  /opt/nbenv/bin/pip install --no-index --find-links /tmp/ow gssapi decorator
+#      RUN  /opt/nbenv/bin/pip install --no-deps hdfs requests_kerberos krbcontext
+#    （gssapi 必须离线装：它要编译，而 --only-binary 环境下没有 gcc）
+# 3) 注意 krb5.conf 与 keytab 属于**环境相关材料**，不要硬编进通用镜像；
+#    按旧版做法由部署侧挂载注入更合适。
+# 4) 加完后第 [6/7] 条断言会因 gcc 失败 —— 那时把该断言改成
+#    「只检查 node 不存在」，并在文档里注明为何保留 gcc。
+# ============================================================================

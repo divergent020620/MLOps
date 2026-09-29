@@ -1,0 +1,49 @@
+{
+  "name": "cube-studio-dataset",
+  "version": "2.0.0",
+  "description": "Cube Studio Dataset Panel - browse and load HDFS datasets in the JupyterLab sidebar",
+  "keywords": [
+    "jupyter",
+    "jupyterlab",
+    "jupyterlab-extension"
+  ],
+  "license": "Apache-2.0",
+  "files": [
+    "lib/**/*",
+    "style/**/*",
+    "schema/**/*",
+    "static/**/*"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "style": "style/base.css",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf lib tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@jupyterlab/application": "^4.2.0",
+    "@jupyterlab/apputils": "^4.2.0",
+    "@jupyterlab/coreutils": "^6.2.0",
+    "@jupyterlab/settingregistry": "^4.2.0",
+    "@lumino/messaging": "^2.0.0",
+    "@lumino/signaling": "^2.1.0",
+    "@lumino/widgets": "^2.3.0"
+  },
+  "devDependencies": {
+    "@jupyterlab/builder": "^4.2.0",
+    "rimraf": "^5.0.0",
+    "typescript": "~5.5.0"
+  },
+  "jupyterlab": {
+    "extension": true,
+    "schemaDir": "schema",
+    "outputDir": "../cube_studio_dataset/labextension",
+    "sharedPackages": {
+      "@lumino/widgets": {
+        "bundled": false,
+        "singleton": true
+      }
+    }
+  }
+}

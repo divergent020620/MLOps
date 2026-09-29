@@ -1,0 +1,33 @@
+:80 {
+	# / -> /frontend/ 永久重定向
+	redir / /frontend/ permanent
+
+	# 静态资源(等价 nginx: root /data/web + try_files 回退)
+	handle /frontend/* /static/appbuilder/* {
+		root * /data/web
+		file_server
+		try_files {path} {path}/ /frontend/index.html
+	}
+
+	# html 不缓存(等价 add_header Cache-Control no-cache)
+	@html path_regexp \.html$
+	header @html Cache-Control "no-cache, no-store"
+	header @html Pragma "no-cache"
+
+	# 兜底:反代到后端(WebSocket 自动透传,无需配置)
+	handle {
+		reverse_proxy http://kubeflow-dashboard.infra {
+			transport http {
+				dial_timeout 30s
+				read_timeout 3600s
+				write_timeout 3600s
+			}
+			header_up Host {http.request.host}
+			header_up X-Real-IP {remote_ip}
+		}
+	}
+
+	log {
+		output file /data/log/caddy/access.log
+	}
+}

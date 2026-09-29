@@ -1,0 +1,66 @@
+<h2>你需要向集群管理员确认的全部信息</h2>
+<p class="subtitle">拿着这份清单去问，一次搞清楚，不用来回跑</p>
+
+<div class="section">
+  <h3>一、Spark / YARN 环境</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="30">#</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">问题</th><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="160">为什么需要知道</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">1</td><td style="padding:6px; border:1px solid #ddd;"><b>Spark 版本是多少？</b>（spark-submit --version）</td><td style="padding:6px; border:1px solid #ddd;">3.4+ 有 TorchDistributor 直接训练；老版本需手动 torchrun</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">2</td><td style="padding:6px; border:1px solid #ddd;"><b>有没有 spark-submit 权限？</b>在哪台机器上提交？</td><td style="padding:6px; border:1px solid #ddd;">需要 Gateway/Edge 节点地址</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">3</td><td style="padding:6px; border:1px solid #ddd;"><b>YARN ResourceManager 地址？</b></td><td style="padding:6px; border:1px solid #ddd;">spark-submit 需要 --master yarn://RM:8032</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">4</td><td style="padding:6px; border:1px solid #ddd;"><b>YARN 队列名(queue)是什么？</b>资源配额多少？</td><td style="padding:6px; border:1px solid #ddd;">提交任务要指定队列，配额决定能用多少 Executor</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">5</td><td style="padding:6px; border:1px solid #ddd;"><b>每个 NodeManager 最多给多少 Container？</b>内存/CPU 限制？</td><td style="padding:6px; border:1px solid #ddd;">决定 --executor-memory 和 --num-executors 该设多少</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>二、节点环境</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="30">#</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">问题</th><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="160">为什么需要知道</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">6</td><td style="padding:6px; border:1px solid #ddd;"><b>500 个节点有 GPU 吗？</b>什么型号？多少张？</td><td style="padding:6px; border:1px solid #ddd;">决定训练能不能用 GPU、ONNX 推理用 CPU 还是 GPU</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">7</td><td style="padding:6px; border:1px solid #ddd;"><b>节点操作系统和架构？</b>(cat /etc/os-release; uname -m)</td><td style="padding:6px; border:1px solid #ddd;">决定 Python 包用什么平台编译（linux x86_64 / aarch64）</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">8</td><td style="padding:6px; border:1px solid #ddd;"><b>节点上 Python 版本？</b>(python3 --version)</td><td style="padding:6px; border:1px solid #ddd;">venv 的 Python 版本必须跟节点一致，不然启动报错</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">9</td><td style="padding:6px; border:1px solid #ddd;"><b>节点上有没有基础 Python 包？</b>(pip list)</td><td style="padding:6px; border:1px solid #ddd;">如果有 NumPy/Pandas 就不需要重复打包，省体积</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">10</td><td style="padding:6px; border:1px solid #ddd;"><b>有没有 glibc 版本限制？</b>(ldd --version)</td><td style="padding:6px; border:1px solid #ddd;">PyTorch 的 .so 需要 glibc >= 2.17，太老的 CentOS 6 可能不行</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>三、HDFS 和认证</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="30">#</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">问题</th><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="160">为什么需要知道</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">11</td><td style="padding:6px; border:1px solid #ddd;"><b>HDFS 地址？</b>（NameNode 和端口）</td><td style="padding:6px; border:1px solid #ddd;">读写数据、上传 venv 包都需要</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">12</td><td style="padding:6px; border:1px solid #ddd;"><b>keytab 认证怎么用？</b>kinit 命令是什么？</td><td style="padding:6px; border:1px solid #ddd;">HDFS 和 YARN 都走 Kerberos，需要先 kinit 才能操作</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">13</td><td style="padding:6px; border:1px solid #ddd;"><b>我的 HDFS 目录在哪？</b>读写权限？容量限制？</td><td style="padding:6px; border:1px solid #ddd;">数据放哪、venv 包放哪、输出写哪</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">14</td><td style="padding:6px; border:1px solid #ddd;"><b>YARN 是否也需要 keytab 认证？</b></td><td style="padding:6px; border:1px solid #ddd;">spark-submit 可能需要 --principal --keytab 参数</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>四、网络和权限</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="30">#</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">问题</th><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="160">为什么需要知道</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">15</td><td style="padding:6px; border:1px solid #ddd;"><b>NodeManager 之间网络通吗？</b>端口有限制吗？</td><td style="padding:6px; border:1px solid #ddd;">PyTorch 分布式训练需要 Executor 间 TCP 通信(all-reduce)</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">16</td><td style="padding:6px; border:1px solid #ddd;"><b>能访问外网吗？</b>还是纯离线？</td><td style="padding:6px; border:1px solid #ddd;">离线环境 pip install 需要提前下载 wheel</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">17</td><td style="padding:6px; border:1px solid #ddd;"><b>--archives 文件大小有限制吗？</b></td><td style="padding:6px; border:1px solid #ddd;">venv 包 500MB-1GB，有些集群限制 archives 大小</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">18</td><td style="padding:6px; border:1px solid #ddd;"><b>有没有 YARN 本地目录空间限制？</b></td><td style="padding:6px; border:1px solid #ddd;">venv 解压到 yarn.nodemanager.local-dirs，空间要够</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>五、你现在就有的东西</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f0fff0;"><td style="padding:6px; border:1px solid #ddd;">keytab 文件</td><td style="padding:6px; border:1px solid #ddd;">用于 kinit 认证，访问 HDFS 和 YARN</td></tr>
+    <tr style="background:#f0fff0;"><td style="padding:6px; border:1px solid #ddd;">Docker 镜像</td><td style="padding:6px; border:1px solid #ddd;">Notebook 和推理环境，里面已经装了 PyTorch/ONNX Runtime</td></tr>
+    <tr style="background:#f0fff0;"><td style="padding:6px; border:1px solid #ddd;">krb5.conf</td><td style="padding:6px; border:1px solid #ddd;">Kerberos 配置文件（你有吗？）</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>对方大概率会反问你</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#fff5f0;"><td style="padding:6px; border:1px solid #ddd;">你需要多少资源？</td><td style="padding:6px; border:1px solid #ddd;">训练：50 Executor × 4核 × 16G 内存 + 1 GPU = 共 200 核 / 800G 内存 / 50 GPU<br/>推理：200 Executor × 2核 × 8G 内存 = 共 400 核 / 1.6T 内存</td></tr>
+    <tr style="background:#fff5f0;"><td style="padding:6px; border:1px solid #ddd;">你要跑多久？</td><td style="padding:6px; border:1px solid #ddd;">训练单次 2-8 小时；推理按数据量线性扩展</td></tr>
+    <tr style="background:#fff5f0;"><td style="padding:6px; border:1px solid #ddd;">你需要装什么？</td><td style="padding:6px; border:1px solid #ddd;">不需要在节点上装任何东西！全部通过 venv 包 + YARN --archives 运行时自动分发</td></tr>
+  </table>
+</div>

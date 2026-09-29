@@ -1,0 +1,15 @@
+# 前端全量构建 — 基于现有前端镜像，更新全部产物
+# 用法:
+#   1. cd myapp/frontend && npm run build
+#   2. cp -r build/* ../static/appbuilder/frontend/
+#   3. cd ../..
+#   4. docker build --network=host \
+#        -t 192.168.11.12/cube-studio/kubeflow-dashboard-frontend:20260729 \
+#        -f install/docker/update/Dockerfile.frontend .
+# 以后每次更新前端，改个 tag 重新 build + push 即可
+
+FROM 192.168.11.12/cube-studio/kubeflow-dashboard-frontend:20260714
+
+# 覆盖全部前端构建产物（包含 main frontend + vision + visionPlus）
+COPY myapp/static/appbuilder/frontend /data/web/frontend
+RUN rm -rf /data/web/frontend/manifest.json /data/web/frontend/robots.txt

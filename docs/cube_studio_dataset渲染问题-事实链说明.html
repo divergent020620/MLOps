@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cube_studio_dataset 数据集面板不渲染 — 事实链说明</title>
+<style>
+  :root{
+    --bg:#f0f2f5; --surface:#fff; --text:#1a1a2e; --text2:#6b7280;
+    --border:#e5e7eb; --border2:#d1d5db;
+    --primary:#4f46e5; --primary-l:#e0e7ff;
+    --ok:#10b981; --ok-l:#d1fae5;
+    --warn:#f59e0b; --warn-l:#fef3c7;
+    --danger:#ef4444; --danger-l:#fee2e2;
+    --info:#3b82f6; --info-l:#dbeafe;
+    --purple:#8b5cf6; --purple-l:#ede9fe;
+    --code-bg:#1e293b; --code-fg:#e2e8f0;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,"Courier New",monospace;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+    --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+    --radius:10px; --radius-sm:6px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.65; padding:24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .layout{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:236px minmax(0,1fr);gap:24px;align-items:start}
+
+  .header{
+    grid-column:1/-1;
+    background:linear-gradient(135deg,#b91c1c 0%,#dc2626 45%,#f59e0b 100%);
+    border-radius:var(--radius);padding:30px 34px;color:#fff;
+    box-shadow:var(--shadow-md);
+  }
+  .header h1{font-size:1.55rem;font-weight:700;letter-spacing:-.02em}
+  .header .sub{font-size:.93rem;opacity:.94;margin-top:6px}
+  .header .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .header .meta span{
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+    padding:3px 11px;border-radius:20px;font-size:.76rem;font-weight:500;
+  }
+
+  .toc{
+    position:sticky;top:24px;background:var(--surface);border-radius:var(--radius);
+    padding:16px 14px;box-shadow:var(--shadow);max-height:calc(100vh - 48px);overflow-y:auto;
+  }
+  .toc h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--text2);
+    font-weight:700;margin-bottom:10px;padding-left:8px}
+  .toc a{
+    display:block;padding:6px 9px;border-radius:var(--radius-sm);font-size:.845rem;
+    color:var(--text2);text-decoration:none;border-left:2.5px solid transparent;
+    transition:all .15s;line-height:1.4;
+  }
+  .toc a:hover{background:var(--bg);color:var(--text)}
+  .toc a.active{background:var(--primary-l);color:var(--primary);font-weight:600;border-left-color:var(--primary)}
+  .toc a.sub{padding-left:20px;font-size:.79rem}
+  .toc hr{border:none;border-top:1px solid var(--border);margin:9px 0}
+
+  main{display:flex;flex-direction:column;gap:20px;min-width:0}
+  section.card{
+    background:var(--surface);border-radius:var(--radius);padding:24px 28px;
+    box-shadow:var(--shadow);border-left:4px solid transparent;scroll-margin-top:24px;
+  }
+  section.card.c-p{border-left-color:var(--primary)}
+  section.card.c-d{border-left-color:var(--danger)}
+  section.card.c-w{border-left-color:var(--warn)}
+  section.card.c-i{border-left-color:var(--info)}
+  section.card.c-o{border-left-color:var(--ok)}
+  section.card.c-u{border-left-color:var(--purple)}
+
+  h2.sec{font-size:1.2rem;font-weight:700;letter-spacing:-.01em;margin-bottom:4px;
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  h2.sec .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:26px;height:26px;padding:0 7px;background:var(--primary);color:#fff;
+    border-radius:var(--radius-sm);font-size:.78rem;font-weight:700;flex:none;align-self:center;
+  }
+  h2.sec .en{font-size:.78rem;color:var(--text2);font-weight:400}
+  .lead{color:var(--text2);font-size:.9rem;margin-bottom:16px;line-height:1.6}
+
+  h3.sub{font-size:1rem;font-weight:700;margin:20px 0 10px;padding-left:10px;
+    border-left:3px solid var(--primary);line-height:1.35}
+  h3.sub:first-of-type{margin-top:12px}
+  h4.sub2{font-size:.875rem;font-weight:700;margin:16px 0 8px}
+  p{margin:10px 0;font-size:.9rem}
+  ul,ol{margin:10px 0 10px 22px;font-size:.9rem}
+  li{margin:5px 0}
+  li::marker{color:var(--text2)}
+
+  code{
+    font-family:var(--mono);font-size:.83em;background:#eef2f7;color:#3730a3;
+    padding:1.5px 5px;border-radius:4px;word-break:break-word;
+  }
+  pre{
+    background:var(--code-bg);color:var(--code-fg);padding:16px 18px;border-radius:var(--radius-sm);
+    overflow-x:auto;margin:12px 0;font-size:.79rem;line-height:1.62;
+    font-family:var(--mono);white-space:pre;tab-size:4;
+  }
+  pre .c{color:#7c8ba1}
+  pre .k{color:#c792ea}
+  pre .s{color:#a5e075}
+  pre .n{color:#ffcb6b}
+  pre .hl{color:#82aaff;font-weight:600}
+  pre .bad{color:#ff9cac;font-weight:700}
+  pre .ln{color:#64748b}
+  pre.plain{background:#f8fafc;color:#334155;border:1px solid var(--border)}
+
+  .tw{overflow-x:auto;margin:12px 0;border-radius:var(--radius-sm);border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:.845rem;background:var(--surface)}
+  th{background:#f8fafc;text-align:left;padding:9px 12px;font-weight:700;color:var(--text);
+    border-bottom:2px solid var(--border);white-space:nowrap;font-size:.78rem;
+    text-transform:uppercase;letter-spacing:.03em}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafbff}
+  td.mono,th.mono{font-family:var(--mono);font-size:.79rem}
+  td.num{font-family:var(--mono);color:var(--text2);font-size:.79rem;white-space:nowrap}
+  td.nowrap{white-space:nowrap}
+
+  .callout{
+    border-radius:var(--radius-sm);padding:12px 16px;margin:14px 0;font-size:.87rem;
+    border-left:3px solid;display:flex;gap:10px;align-items:flex-start;
+  }
+  .callout .ico{font-size:1rem;line-height:1.45;flex:none}
+  .callout.warn{background:var(--warn-l);border-color:var(--warn);color:#78350f}
+  .callout.danger{background:var(--danger-l);border-color:var(--danger);color:#7f1d1d}
+  .callout.info{background:var(--info-l);border-color:var(--info);color:#1e3a5f}
+  .callout.ok{background:var(--ok-l);border-color:var(--ok);color:#064e3b}
+  .callout.idea{background:var(--purple-l);border-color:var(--purple);color:#4c1d95}
+  .callout b{font-weight:700}
+  .callout code{background:rgba(255,255,255,.6);color:inherit}
+
+  .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.71rem;
+    font-weight:600;font-family:var(--mono);white-space:nowrap}
+  .chip.ver{background:var(--ok-l);color:#065f46}
+  .chip.tbd{background:var(--warn-l);color:#92400e}
+  .chip.no{background:var(--danger-l);color:#991b1b}
+
+  .chain{
+    background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:14px 18px;margin:12px 0;
+    font-family:var(--mono);font-size:.79rem;line-height:1.8;overflow-x:auto;
+  }
+  .chain b{color:var(--primary);font-weight:700}
+  .chain .bad{color:#b91c1c;font-weight:700}
+
+  .verdict{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0;
+  }
+  .verdict > div{border-radius:var(--radius-sm);padding:14px 18px;font-size:.88rem}
+  .verdict .wrong{background:var(--danger-l);border:1px solid #fca5a5}
+  .verdict .right{background:var(--ok-l);border:1px solid #6ee7b7}
+  .verdict .t{font-weight:700;margin-bottom:6px;font-size:.82rem;letter-spacing:.02em}
+  .verdict .wrong .t{color:#991b1b}
+  .verdict .right .t{color:#065f46}
+
+  footer{grid-column:1/-1;text-align:center;color:var(--text2);font-size:.78rem;padding:16px 0 4px}
+
+  @media(max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .toc{position:static;max-height:none;display:none}
+    .verdict{grid-template-columns:1fr}
+    body{padding:14px}
+    section.card{padding:20px 18px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <header class="header">
+    <h1>cube_studio_dataset 数据集面板不渲染 — 事实链说明</h1>
+    <div class="sub">「扩展没丢」与「面板不出」是两件事；因果不在组装环节</div>
+    <div class="meta">
+      <span>面向：交接人 / 装配同事</span>
+      <span>JupyterLab 3 → 4 适配缺位</span>
+      <span>证据可逐条复核</span>
+      <span>2026-09-21</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h2>目录</h2>
+    <a href="#s1" class="active">一 · 结论先行</a>
+    <a href="#s2">二 · 事实链</a>
+    <a href="#f1" class="sub">事实1 装了、在跑</a>
+    <a href="#f2" class="sub">事实2 三处源码断点</a>
+    <a href="#f3" class="sub">事实3 文档自己说的</a>
+    <a href="#f4" class="sub">事实4 包里实际有什么</a>
+    <a href="#s3">三 · 因果定位</a>
+    <a href="#s4">四 · 需要谁做什么</a>
+    <hr>
+    <a href="#sa">附录 A · 证据索引</a>
+    <a href="#sb">附录 B · 待补证</a>
+  </nav>
+
+  <main>
+
+  <!-- ══ 一 ══ -->
+  <section class="card c-d" id="s1">
+    <h2 class="sec"><span class="num">一</span>结论先行</h2>
+
+    <div class="verdict">
+      <div class="wrong">
+        <div class="t">✗ 错误归因</div>
+        组装把功能弄丢了 / 交付物里有就能用
+      </div>
+      <div class="right">
+        <div class="t">✓ 正确归因</div>
+        JL4 适配版这个交付物尚未产出；现场装的是包内旧源（JL3 版）作占位 —— 服务端能起、不炸，但渲染层在等适配版。
+      </div>
+    </div>
+
+    <div class="callout danger">
+      <span class="ico">🎯</span>
+      <div><b>一句话：不是「被去除了」，是「被装上了一个注定渲染不出来的旧版」。</b></div>
+    </div>
+  </section>
+
+  <!-- ══ 二 ══ -->
+  <section class="card c-p" id="s2">
+    <h2 class="sec"><span class="num">二</span>事实链</h2>
+    <p class="lead">四条事实，每条都可按 <code>文件:行号</code> 复核。</p>
+
+    <!-- 事实 1 -->
+    <h3 class="sub" id="f1">事实 1 · 扩展确实装了，服务端一直在跑，没被删</h3>
+    <p><span class="chip tbd">待补证</span> 来自运行态观察，需附证据：</p>
+    <div class="tw"><table>
+      <thead><tr><th>观察点</th><th>记录值</th></tr></thead>
+      <tbody>
+        <tr><td>pip 安装</td><td class="mono">cube_studio_dataset 已安装</td></tr>
+        <tr><td>config.d JSON</td><td class="mono">已启用</td></tr>
+        <tr><td>Pod 日志</td><td class="mono">cube_studio_dataset | extension was successfully linked</td></tr>
+        <tr><td>代码改动</td><td class="mono">服务端一行未删</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><b><code>extension was successfully linked</code> 只证明 server extension 加载成功</b>，
+      它证明不了<b>前端渲染</b>。这两件事在 JupyterLab 里是两条独立链路：</div>
+    </div>
+
+<pre>server extension（Python）  → extension was successfully linked   <span class="hl">← 这里成功了</span>
+labextension（前端 JS/TS）  → 侧边栏出现面板                        <span class="bad">← 这里没成功</span></pre>
+
+    <p><b>所以「日志里有 successfully linked」不能推出「应该能看到面板」。</b></p>
+
+    <!-- 事实 2 -->
+    <h3 class="sub" id="f2">事实 2 · 它渲染不了 —— 源码级三处断点 <span class="chip ver">已核实</span></h3>
+
+    <p>被装进去的那份源码，自己就在文件头声明了它的适配目标：</p>
+<pre><span class="c"># fix/交接/jupyter/cube_studio_dataset/__init__.py:L1-9</span>
+<span class="s">"""
+Cube Studio Dataset — Jupyter Server Extension
+
+在 JupyterLab 侧边栏添加 "数据集" 面板。
+纯 Python 实现，无需 TypeScript 编译，兼容 JupyterLab 3.x。</span>     <span class="bad">← ★ L5 自述</span><span class="s">
+
+用法:
+    pip install cube_studio_dataset/
+    jupyter serverextension enable --py cube_studio_dataset --sys-prefix</span>   <span class="bad">← ★ L9 旧命令</span>
+<span class="s">"""</span></pre>
+
+    <div class="callout danger">
+      <span class="ico">💥</span>
+      <div><b>L5 原文就是「兼容 JupyterLab 3.x」。</b><br>
+      <b>L9 用的还是 <code>jupyter serverextension enable</code></b> —— jupyter_server 1.x 的旧命令；
+      JL4 配套的 jupyter_server 2.x 是 <code>jupyter server extension enable</code>（有空格）。<br>
+      这份文档连自己的安装说明都还是 JL3 写法。</div>
+    </div>
+
+    <p>三处断点逐条对应：</p>
+    <div class="tw"><table>
+      <thead><tr><th class="mono">#</th><th>断点</th><th>证据</th><th>为什么在 JL4 上必定失败</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">A</td>
+          <td>前端 JS 等 <code>window.jupyterlab</code> 全局变量</td>
+          <td class="mono">__init__.py:26<br>if (window.jupyterlab &amp;&amp; window.jupyterlab.shell) {<br><br>__init__.py:36<br>var lab = window.jupyterlab;</td>
+          <td><b>JL4 不再向 <code>window</code> 暴露 <code>jupyterlab</code> 这个全局对象。</b>这段 <code>waitForJupyterLab</code> 轮询会<b>永远等不到</b>，面板永不挂载</td>
+        </tr>
+        <tr>
+          <td class="mono">B</td>
+          <td>server extension 用 JL3 旧入口 + Tornado <code>outputTransform</code> 注入</td>
+          <td class="mono">__init__.py:195<br>def _jupyter_server_extension_paths():<br><br>__init__.py:207<br>def _load_jupyter_server_extension(lab_app):<br><br>__init__.py:221<br>def transform_first_chunk(self, status_code, headers, chunk, finishing):<br><br>__init__.py:228<br>lab_app.web_app.add_transform(_InjectPanelJS())</td>
+          <td><code>_jupyter_server_extension_paths()</code> 是 jupyter_server 1.x 的旧入口名（2.x 起用 <code>_jupyter_server_extension_points()</code>）。<br>
+            <code>add_transform</code> 这条注入路径在 JL4 环境下<b>实际失败</b> —— 冒烟当天已记录 <code>OutputTransform 注入失败</code>（M3-9，<span class="chip tbd">待补证</span>）。<br>
+            <b>源码自己就写了这个失败分支</b>，见下</td>
+        </tr>
+        <tr>
+          <td class="mono">C</td>
+          <td>labextension 依赖整套 <code>@jupyterlab/* ^3.4.0</code></td>
+          <td class="mono">labextension/package.json:25-27<br>"@jupyterlab/application": "^3.4.0"<br>"@jupyterlab/apputils": "^3.4.0"<br>"@lumino/widgets": "^1.31.0"</td>
+          <td>JL4 对应的是 <code>@jupyterlab/* ^4.x</code> + <code>@lumino/widgets ^2.x</code>。<b>大版本 API 完全不同</b>，不能直接跑在 JL4 上</td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <h4 class="sub2">断点 B 的关键细节 —— 失败是源码预期内的，它自己打了 warning</h4>
+<pre><span class="c"># __init__.py:L214-231</span>
+    <span class="c"># 方式1: Tornado OutputTransform (兼容 Jupyter Server 1.x / 2.x)</span>   <span class="bad">← 注释声称兼容 2.x</span>
+    <span class="k">if</span> hasattr(lab_app, <span class="s">'web_app'</span>):
+        <span class="k">from</span> tornado.web <span class="k">import</span> OutputTransform
+        ...
+        <span class="k">try</span>:
+            lab_app.web_app.add_transform(_InjectPanelJS())
+            lab_app.log.info(<span class="s">'[Cube Studio] 数据集面板扩展已加载 (OutputTransform)'</span>)
+        <span class="k">except</span> Exception <span class="k">as</span> e:
+            lab_app.log.warning(<span class="s">f'[Cube Studio] OutputTransform 注入失败: {e}'</span>)   <span class="bad">← ★ L231</span></pre>
+
+    <div class="callout danger">
+      <span class="ico">🔍</span>
+      <div><b><code>OutputTransform 注入失败</code> 这句 warning 就在源码 L231 —— 作者自己预留的失败分支。</b><br>
+      连接收失败的兜底都写好了，说明这个注入路径本身就不稳。<br>
+      这与流程记录里「组装当天冒烟就报了 outputTransform 注入失败（M3-9）」<b>完全对应</b>。<br>
+      <span class="chip tbd">待补证</span> M3-9 那条冒烟记录的具体编号与截图，需从流程记录调出。</div>
+    </div>
+
+    <h4 class="sub2">断点 C 还有一个硬伤：这份 labextension 根本没有可用的预构建产物</h4>
+<pre><span class="c">// labextension/package.json:L8, L11, L32</span>
+<span class="s">"main"</span>: <span class="s">"lib/index.js"</span>,          <span class="bad">← 指向 lib/，但包内没有 lib/</span>
+<span class="s">"build"</span>: <span class="s">"tsc"</span>,                  <span class="bad">← 需要 TypeScript 编译（而 JL4 线明确不装 node/编译链）</span>
+<span class="s">"typescript"</span>: <span class="s">"~4.1.6"</span>,</pre>
+
+    <p>实测 <code>labextension/</code> 目录内容：</p>
+<pre class="plain">fix/交接/jupyter/labextension/
+├── package.json
+├── schema/plugin.json
+├── src/index.ts        ← 只有 TS 源
+├── style/base.css
+└── tsconfig.json</pre>
+
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><b>没有 <code>lib/</code>。</b>而 <code>main</code> 指向 <code>lib/index.js</code>。<br>
+      → 即使忽略 API 版本差异，它也<b>必须先在行外 <code>tsc</code> 编译</b>才能用；
+      而 M3 的环境约束是「不装 node / gcc / 编译链」。</div>
+    </div>
+
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div><b>附带一提</b>：迁移评估报告早在评估阶段就把这块列为风险区 ——
+      <code>py312/Python312迁移评估报告.md:254</code>：「<code>tornado 6.1→6.3.3+</code>、
+      <code>jupyterlab 3.6.3/jupyter_server 1.23.6(3.12 下需实测或升 4.x/2.x)</code>」。</div>
+    </div>
+
+    <!-- 事实 3 -->
+    <h3 class="sub" id="f3">事实 3 · 交接文档自己就把这块列为「待交付材料」 <span class="chip ver">已核实</span></h3>
+    <p>这不是事后解释，是<b>文档当时的原文定义</b>。</p>
+
+    <h4 class="sub2">3.1 <code>fix/交接/文档/组装交接文档.md</code> M3 节（<code>:130</code> 起）</h4>
+<pre class="plain">### M3 jupyter 镜像(原生 py3.12 版,约 1 天)
+
+> **材料(等交接人交付)**:
+> 1. `jupyter-requirements.txt` —— jupyterlab 4.x + notebook 7.x + ipykernel + numpy/pandas/... 等
+> 2. `cube_studio_dataset-*.whl` —— 包内源行外构建(JupyterLab4 API 适配版)      ← ★
+> 3. `labextension-dist` —— JupyterLab 4 版预构建前端包(包内源为旧版参考)        ← ★
+
+> **边界:jupyterlab 4 版本组合若安装/启动异常 → 完整报错交回(版本选择由交接人定);
+> labextension 旧源只作参考,必须用迁移线交付的 4 版**</pre>
+
+    <div class="callout info">
+      <span class="ico">ℹ️</span>
+      <div>注意第 2、3 条：<b><code>cube_studio_dataset-*.whl</code> 的定义就是「JupyterLab4 API 适配版」</b>，
+      <b><code>labextension-dist</code> 的定义就是「JupyterLab 4 版预构建前端包」，且明写「包内源为旧版参考」。</b></div>
+    </div>
+
+    <h4 class="sub2">3.2 <code>fix/交接/jupyter/README.md</code>（材料目录自己的说明）</h4>
+<pre class="plain">| 项 | 用途 | M3 中怎么用 |
+|---|---|---|
+| `cube_studio_dataset/` | 数据集定制扩展(Python 包源) | **迁移线构建 wheel**(JupyterLab4 适配后)后交付 |
+| `labextension/` | 数据集前端扩展(**JupyterLab 3 api 旧版源**) | **迁移线按 JupyterLab 4 API 重建**后交付;**本源仅参考** |
+
+## 迁移线交付物(同事等这些才能合流 M3)
+1. `jupyter-requirements.txt`
+2. `cube_studio_dataset-*.whl` —— 本目录 setup.py 行外构建(JupyterLab4 API 适配版)
+3. `labextension-dist` —— JupyterLab 4 版预构建前端包</pre>
+
+    <div class="callout danger">
+      <span class="ico">📌</span>
+      <div><b>目录自己的 README 白纸黑字写着 <code>labextension/</code> 是「JupyterLab 3 api 旧版源」、「本源仅参考」。</b></div>
+    </div>
+
+    <h4 class="sub2">3.3 <code>cube312-prod-pack/总交接文档-行内上线流程.md:52</code></h4>
+<pre class="plain">│       └── jupyter/                     ← M3(jupyter 镜像)材料, 本次不用</pre>
+    <p>同文件紧接一句：</p>
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div><b>本次只动 6 个 ⭐ 标注的路径, 其余为背景材料。</b><br>
+      即：<b>交付包在自己的目录说明里，就把 <code>jupyter/</code> 标成了「本次不用 / 背景材料」。</b></div>
+    </div>
+
+    <!-- 事实 4 -->
+    <h3 class="sub" id="f4">事实 4 · 交付包里确实没有那三样 <span class="chip ver">已核实</span></h3>
+    <p>对 <code>C:\Users\27404\Desktop\BOS\cubeStudio\cube312-prod-pack</code> 逐项查证：</p>
+    <div class="tw"><table>
+      <thead><tr><th>材料</th><th>应有</th><th>实况</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">cube_studio_dataset-*.whl</td><td>M3 材料 2</td><td><span class="chip no">全包无此文件</span></td></tr>
+        <tr><td class="mono">labextension-dist</td><td>M3 材料 3</td><td><span class="chip no">全包无此文件</span></td></tr>
+        <tr><td class="mono">jupyter-requirements.txt</td><td>M3 材料 1</td><td><span class="chip no">全包无此文件</span></td></tr>
+        <tr><td class="mono">handover-docs/</td><td>交接文档目录</td><td><span class="chip tbd">空目录（0 个文件）</span></td></tr>
+        <tr><td class="mono">myapp/static/jupyterlab-extension/</td><td>前端扩展位</td><td><span class="chip tbd">只有一个空的 src/ 子目录</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <p>包内 <code>offline-wheels/</code> 的完整清单（<b>只有 6 个，与 jupyter 无关</b>）：</p>
+<pre class="plain">decorator-5.3.1-py3-none-any.whl
+docopt-0.6.2-py2.py3-none-any.whl
+gssapi-1.9.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+hdfs-2.7.3-py3-none-any.whl
+jieba-0.42.1-py3-none-any.whl
+wtforms_json-0.3.5-py3-none-any.whl</pre>
+
+    <p><code>build/</code> 只有后端三件（<code>Dockerfile.backend-py312</code>、<code>requirements-final.txt</code>、<code>requirements-kerberos.txt</code>），
+      <b>没有任何 jupyter 镜像构建件</b>。</p>
+
+    <div class="callout info">
+      <span class="ico">🧭</span>
+      <div><b>顺便把来源也钉一下：</b>旧源确实随 <code>py312迁移交付包.zip</code> 发过去了 ——
+      <code>fix/交接/jupyter/cube_studio_dataset/{__init__.py, setup.py}</code> 在该 zip 内（已核实）。<br>
+      <b>但同一个包的总交接文档，把 <code>jupyter/</code> 标为「本次不用」。</b><br>
+      所以现场装到旧源，来源可查；而<b>适配版从来没被做出来</b>，来源不可查 —— 因为不存在。</div>
+    </div>
+  </section>
+
+  <!-- ══ 三 ══ -->
+  <section class="card c-w" id="s3">
+    <h2 class="sec"><span class="num">三</span>因果定位</h2>
+    <p class="lead">把四段拼起来：</p>
+
+    <div class="chain">
+① <b>交付来源</b>：包内只有 JL3 旧源（且文档标注「本次不用 / 旧版参考」）
+        ↓
+② <b>现场装配</b>：装了旧源占位 —— pip 安装 + enable 成功
+        ↓
+③ <b>服务端</b>：extension was successfully linked  <span class="c">← 这层本来就该成功</span>
+        ↓
+④ <b>渲染层</b>：三处断点全部命中
+        （window.jupyterlab 不存在 / outputTransform 注入失败 / @jupyterlab ^3.4.0）
+        → <span class="bad">面板不出现</span>
+        ↓
+⑤ <b>适配版</b>（cube_studio_dataset-*.whl + labextension-dist）<span class="bad">从未产出</span>
+    </div>
+
+    <div class="verdict">
+      <div class="wrong">
+        <div class="t">✗ 「组件被去除了」</div>
+        <b>不成立。</b>它在镜像里，服务端还在跑。
+      </div>
+      <div class="wrong">
+        <div class="t">✗ 「交付物里有就能用」</div>
+        <b>不成立。</b>交付物里那两份，按文档定义就是「旧版参考源」，不是「适配版」。真正能在 JL4 上跑的两份（whl + labextension-dist），<b>至今未交付</b>。
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 四 ══ -->
+  <section class="card c-o" id="s4">
+    <h2 class="sec"><span class="num">四</span>需要谁做什么</h2>
+    <div class="tw"><table>
+      <thead><tr><th>项</th><th>责任方</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">产出 cube_studio_dataset-*.whl</td><td><b>交接人（迁移线）</b></td><td>按 JL4 API 适配后，行外构建（<code>fix/交接/jupyter/README.md</code>「迁移线交付物」第 2 条）</td></tr>
+        <tr><td class="mono">产出 labextension-dist</td><td><b>交接人（迁移线）</b></td><td>按 JL4 API 重建 + 行外预构建（同 README 第 3 条）；<b>必须带预构建产物，因为 M3 不装 node</b></td></tr>
+        <tr><td class="mono">产出 jupyter-requirements.txt</td><td><b>交接人（迁移线）</b></td><td>同 README 第 1 条</td></tr>
+        <tr><td class="mono">现场占位状态维持</td><td>装配同事</td><td>旧源装了不炸、服务端可用；渲染层等适配版</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout danger">
+      <span class="ico">📌</span>
+      <div><b>当前状态一句话：</b>M3 的三份材料（清单 + 适配版 wheel + 预构建前端包）是 M3 的硬前置，
+      它们在 <code>组装交接文档.md</code> M3 节和 <code>fix/交接/jupyter/README.md</code> 里都被列为「等交接人交付」，
+      <b>至今未到</b> —— 这正是流程记录里反复反映的事项（见附录 B）。</div>
+    </div>
+  </section>
+
+  <!-- ══ 附录 A ══ -->
+  <section class="card c-i" id="sa">
+    <h2 class="sec"><span class="num">A</span>证据索引（可逐条复核）</h2>
+    <div class="tw"><table>
+      <thead><tr><th class="mono">#</th><th>论断</th><th>位置</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>源码自述「兼容 JupyterLab 3.x」</td><td class="mono">fix/交接/jupyter/cube_studio_dataset/__init__.py:5</td></tr>
+        <tr><td class="num">2</td><td>源码仍用 JL3 的 <code>jupyter serverextension enable</code> 命令</td><td class="mono">同上 :9</td></tr>
+        <tr><td class="num">3</td><td>前端 JS 等 <code>window.jupyterlab</code> 全局</td><td class="mono">同上 :26、:36</td></tr>
+        <tr><td class="num">4</td><td>server extension 用旧入口 <code>_jupyter_server_extension_paths</code></td><td class="mono">同上 :195</td></tr>
+        <tr><td class="num">5</td><td>加载函数签名 <code>_load_jupyter_server_extension(lab_app)</code></td><td class="mono">同上 :207</td></tr>
+        <tr><td class="num">6</td><td>Tornado <code>outputTransform</code> 注入 + 自带的失败 warning</td><td class="mono">同上 :215、:221、:228、<b>:231</b></td></tr>
+        <tr><td class="num">7</td><td>labextension 依赖 JL3 版 API</td><td class="mono">fix/交接/jupyter/labextension/package.json:25、:26、:27</td></tr>
+        <tr><td class="num">8</td><td>labextension <code>main</code> 指向不存在的 <code>lib/</code>，且需 <code>tsc</code></td><td class="mono">同上 :8、:11、:32；目录实测无 <code>lib/</code></td></tr>
+        <tr><td class="num">9</td><td>M3 三份材料「等交接人交付」</td><td class="mono">fix/交接/文档/组装交接文档.md:130 起<br>（fix/组装交接文档.md:148 同文）</td></tr>
+        <tr><td class="num">10</td><td>边界「labextension 旧源只作参考，必须用迁移线交付的 4 版」</td><td class="mono">同上 M3 节末</td></tr>
+        <tr><td class="num">11</td><td>材料目录自述「JupyterLab 3 api 旧版源 / 本源仅参考」</td><td class="mono">fix/交接/jupyter/README.md 表格行 2</td></tr>
+        <tr><td class="num">12</td><td>「迁移线交付物（同事等这些才能合流 M3）」三条</td><td class="mono">同上</td></tr>
+        <tr><td class="num">13</td><td>交付包把 <code>jupyter/</code> 标为「本次不用」</td><td class="mono">cube312-prod-pack/总交接文档-行内上线流程.md:52</td></tr>
+        <tr><td class="num">14</td><td>tornado/jupyterlab 版本风险早在评估期标注</td><td class="mono">py312/Python312迁移评估报告.md:254</td></tr>
+        <tr><td class="num">15</td><td>交付包内无三份材料 / <code>handover-docs</code> 空</td><td class="mono">cube312-prod-pack/ 实测（见事实 4 表）</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ══ 附录 B ══ -->
+  <section class="card c-u" id="sb">
+    <h2 class="sec"><span class="num">B</span>待补证的记录</h2>
+    <p class="lead">以下两条出自流程记录与运行态，<b>本文件未能在仓库中定位</b>，需补齐后此材料即完整。</p>
+
+    <div class="callout warn">
+      <span class="ico">1️⃣</span>
+      <div><b>M3-9</b> —— 组装当天冒烟测试记录里「<code>outputTransform</code> 注入失败」的那条，及其编号 / 截图。<br>
+      （源码 <code>__init__.py:231</code> 的 warning 字符串与之对应，可互为印证）</div>
+    </div>
+
+    <div class="callout warn">
+      <span class="ico">2️⃣</span>
+      <div><b>反馈清单第 7、8 条</b> —— 自 <b>2026-09-08</b> 起反复记录的反馈条目，含编号与提交时间，
+      用于证明「<b>这不是新问题，是持续未销项</b>」。</div>
+    </div>
+
+    <div class="callout ok">
+      <span class="ico">✅</span>
+      <div><b>补齐位置建议：</b>紧接本文件，作为「附录 B-1 / B-2」正文引用即可，
+      <b>转载给同事时无需改动前文任何论断</b>。</div>
+    </div>
+  </section>
+
+  <footer>
+    cube_studio_dataset 数据集面板不渲染 — 事实链说明 · 标注「已核实」的证据均可按 <code>文件:行号</code> 复核
+  </footer>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var sections = links.map(function(a){
+    var id = a.getAttribute('href').slice(1);
+    return document.getElementById(id);
+  }).filter(Boolean);
+
+  function onScroll(){
+    var y = window.scrollY + 130;
+    var current = sections[0];
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i];
+    }
+    links.forEach(function(a){ a.classList.remove('active'); });
+    if (current){
+      var hit = links.filter(function(a){ return a.getAttribute('href') === '#' + current.id; })[0];
+      if (hit) hit.classList.add('active');
+    }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>

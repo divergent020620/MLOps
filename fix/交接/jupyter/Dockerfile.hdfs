@@ -1,0 +1,88 @@
+# ============================================================================
+# Cube Studio — 麒麟信创 Jupyter Notebook (HDFS 数据集)
+# 严格参照:
+#   - install/docker/notebook-hdfs-build/Dockerfile
+#   - images/jupyter-notebook/Dockerfile-ubuntu-conda
+#
+# 构建:
+#   docker build --network=host \
+#     -t 10.240.125.39/cube-studio/notebook:jupyter-kylin-hdfs -f Dockerfile.hdfs .
+# ============================================================================
+
+FROM cube-studio/kylin:v10-sp3-2403
+
+ENV TZ=Asia/Shanghai
+ENV LANG=zh_CN.UTF-8
+ENV LC_ALL=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN.UTF-8
+
+# ── 1. 系统依赖 ────────────────────────────────────────────
+RUN yum install -y --nogpgcheck \
+        krb5-workstation krb5-libs krb5-devel \
+        cyrus-sasl-devel cyrus-sasl \
+        vim wget curl git unzip zip lsof procps-ng net-tools \
+        fontconfig wqy-microhei-fonts \
+        nodejs npm \
+        bzip2 \
+        iproute \
+        gcc gcc-c++ make \
+    && yum clean all && rm -rf /var/cache/yum/*
+
+# ── 2. Miniconda + Python 3.7 ──────────────────────────────
+COPY packages/Miniconda3-4.7.12.1-Linux-x86_64.sh /tmp/
+RUN bash /tmp/Miniconda3-4.7.12.1-Linux-x86_64.sh -b && \
+    rm -f /tmp/Miniconda3-4.7.12.1-Linux-x86_64.sh
+
+ENV PATH=/root/miniconda3/bin:${PATH}
+RUN conda create -y -n python37 python=3.7.4
+ENV PATH=/root/miniconda3/envs/python37/bin:${PATH}
+ENV CONDA_DEFAULT_ENV=python37
+
+# ── 3. JupyterLab + Python 包 ──────────────────────────────
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
+    pip install --no-cache-dir \
+        jupyterlab==3.4.8 notebook==6.4.12 ipykernel \
+        numpy pandas scikit-learn scipy matplotlib Pillow seaborn \
+        pyarrow pymysql sqlalchemy requests pysnooper jinja2 pyyaml \
+        hdfs requests_kerberos krbcontext \
+        pyhive thrift thrift-sasl sasl pika kafka-python redis celery \
+    && rm -rf /tmp/* /root/.cache
+
+# ── 5. Cube Studio Dataset 服务端扩展 ────────────────────────
+COPY cube_studio_dataset/ /opt/cube_studio_dataset/
+RUN cd /opt/cube_studio_dataset && \
+    pip install . --no-deps && \
+    jupyter server extension enable --py cube_studio_dataset --sys-prefix
+
+# ── 6. Cube Studio Dataset 前端扩展 ──────────────────────────
+COPY labextension/ /opt/labextension/
+RUN cd /opt/labextension && \
+    npm install --legacy-peer-deps && \
+    npm run build && \
+    jupyter labextension install /opt/labextension --no-build && \
+    jupyter lab build && \
+    rm -rf /opt/labextension/node_modules /root/.npm /root/.cache /tmp/*
+
+# ── 7. Dataset Helper ──────────────────────────────────────
+COPY dataset_helper.py /opt/dataset_helper.py
+COPY dataset_init.sh /init-dataset.sh
+RUN chmod +x /init-dataset.sh
+
+# ── 8. Hadoop/HDFS 配置 ────────────────────────────────────
+COPY hadoop-conf/ /etc/hadoop/conf/
+COPY krb5.conf /etc/krb5.conf
+
+# ── 9. 环境变量 ────────────────────────────────────────────
+ENV HADOOP_CONF_DIR=/etc/hadoop/conf
+ENV PATH=/root/miniconda3/envs/python37/bin:/root/miniconda3/bin:${PATH}
+
+# ── 10. 初始化 ─────────────────────────────────────────────
+COPY init.sh /init.sh
+RUN chmod +x /init.sh
+
+RUN echo "alias ll='ls -alF'" >> ~/.bashrc && \
+    echo "alias la='ls -A'" >> ~/.bashrc && \
+    echo "alias vi='vim'" >> ~/.bashrc
+
+WORKDIR /mnt
+EXPOSE 3000 8888

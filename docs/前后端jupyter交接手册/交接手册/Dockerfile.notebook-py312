@@ -1,0 +1,96 @@
+# ============================================================================
+# 行内 M3 jupyter/notebook 镜像(py3.12)构建 Dockerfile
+#
+# ⚠ 本文所有地址/tag 均为 2026-09 本次操作实例值,仅作示例;
+#   其他操作者必须按自己环境替换核对(Registry/Nexus/镜像 tag)。
+#
+# 对应实际产物:10.240.125.39/cube-studio-notebook:jupyter-p312-test-v1(至 v3)
+#   (实际镜像按"容器+commit"流组装,本文件为等价固化版,供重建/评审用;
+#    v2/v3 整改(扩展 2.0.0/sitecustomize/hdfs 2.7.3/Kerberos 组)见交接手册)
+#
+# ⚠ 路径要求:COPY 路径相对 build context 根目录,构建前把材料收齐到
+#   nb312-build/ 目录(只在该目录执行 docker build):
+#
+#   nb312-build/
+#   ├── Dockerfile.notebook-py312     ← 本文件
+#   ├── jupyter/                      ← 交接包 交接/jupyter/ 整体(README/旧Dockerfile可不拷)
+#   │   ├── hadoop-conf/  krb5.conf  sitecustomize.py(不装,仅留档)
+#   │   ├── init.sh  init-spark.sh  dataset_init.sh  dataset_helper.py
+#   │   └── cube_studio_dataset/     ← 已由 2.0.0 wheel 取代,见下
+#   ├── jupyter-requirements.txt      ← 包清单(建议钉版本,含 hdfs==2.7.3/cryptography==46.0.5)
+#   ├── cube_studio_dataset-2.0.0-py3-none-any.whl   ← JL4 预构建适配版(同事交付)
+#   └── offline-wheels/               ← gssapi/decorator 等(取自 cube312-prod-pack)
+#
+# 构建:
+#   docker build -t <registry>/cube-studio/notebook:jupyter-p312-v1 \
+#     -f Dockerfile.notebook-py312 .
+#
+# 基于: M0 基础基座(已含 kinit + libkadm5srv + fontconfig/wqy-microhei + 行内 py3.12)
+# ============================================================================
+FROM 10.240.125.39/cube-studio/kubeflow-dashboard:app-base-test-v1
+
+# ── 材料 COPY ──
+COPY jupyter-requirements.txt /tmp/jupyter-requirements.txt
+COPY jupyter/ /tmp/jy/
+COPY cube_studio_dataset-2.0.0-py3-none-any.whl /tmp/cube_studio_dataset-2.0.0-py3-none-any.whl
+COPY offline-wheels/ /tmp/ow/
+
+# ── venv + 主依赖(行内 Nexus 源;docopt 无 wheel 单独放行源码构建,纯 py 无需 gcc)──
+# ⚠ Nexus 有"大 wheel 首拉 404"抖动,失败重跑即过;docker build 无 pip 缓存放大该问题,
+#   抖动严重时可回退容器+commit 流(参考交接手册第三章)
+RUN python3.12 -m venv /opt/nbenv && \
+    /opt/nbenv/bin/pip install --timeout 90 --retries 8 \
+        --only-binary=:all: --no-binary docopt \
+        --trusted-host 10.208.29.10 \
+        --index-url http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple \
+        -r /tmp/jupyter-requirements.txt
+
+# ── 数据集扩展 v2.0.0(JL4 预构建联邦扩展:服务端新 API + remoteEntry 前端)──
+RUN /opt/nbenv/bin/pip install --no-deps --force-reinstall /tmp/cube_studio_dataset-2.0.0-py3-none-any.whl && \
+    mkdir -p /opt/nbenv/etc/jupyter/jupyter_server_config.d && \
+    printf '{\n  "ServerApp": {\n    "jpserver_extensions": {\n      "cube_studio_dataset": true\n    }\n  }\n}\n' \
+        > /opt/nbenv/etc/jupyter/jupyter_server_config.d/cube_studio_dataset.json
+#    ↑ 包不带 config.d 元数据,jupyter server extension enable 会误报 "could not
+#      be found";手写此 JSON 为标准启用方式(实测有效)
+
+# ── Kerberos 组(--no-deps 纪律,依赖闭手动补齐;cryptography 正常解析依赖)──
+RUN /opt/nbenv/bin/pip install --no-deps --timeout 90 --retries 5 \
+        --trusted-host 10.208.29.10 \
+        --index-url http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple \
+        requests-kerberos==0.15.0 pyspnego==0.12.2 && \
+    /opt/nbenv/bin/pip install --no-deps /tmp/ow/gssapi-1.9.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl \
+        /tmp/ow/decorator-5.3.1-py3-none-any.whl && \
+    /opt/nbenv/bin/pip install --only-binary=:all: --trusted-host 10.208.29.10 \
+        --index-url http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple \
+        cryptography==46.0.5
+
+# ── 配置/脚本注入(对齐旧版 Dockerfile.hdfs 路径)──
+# ⚠ sitecustomize.py 是 py3.8+Spark2.4 专用补丁,py3.12 下会毒害 isinstance——不安装!
+#    如需留档放 /opt/sitecustomize.py.disabled 即可
+RUN mkdir -p /etc/hadoop && \
+    cp -a /tmp/jy/hadoop-conf /etc/hadoop/conf && \
+    cp /tmp/jy/init.sh /init.sh && \
+    cp /tmp/jy/init-spark.sh /init-spark.sh && \
+    cp /tmp/jy/dataset_init.sh /init-dataset.sh && \
+    chmod +x /init.sh /init-spark.sh /init-dataset.sh && \
+    cp /tmp/jy/dataset_helper.py /opt/dataset_helper.py
+#    ⚠ /etc/krb5.conf 不放占位——部署阶段 COPY/挂载行内真实配置(组装纪律)
+#    ⚠ 风险包 sasl/thrift-sasl 仍待行外编译 wheel(影响 pyhive SASL 场景)
+
+# ── 环境(与容器+commit 产物 --change 注入等价)──
+ENV PATH=/opt/nbenv/bin:/opt/python3.12.10-x86_64-bin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV HADOOP_CONF_DIR=/etc/hadoop/conf
+
+# ── 冒烟(任一失败构建即终止;--allow-root 因容器 root 运行)──
+RUN /opt/nbenv/bin/python -c "import jupyterlab, notebook, ipykernel, cube_studio_dataset, numpy, pandas, pyarrow, hdfs, hdfs.ext.kerberos, cryptography; print('imports OK')" && \
+    timeout 25 /opt/nbenv/bin/jupyter lab --no-browser --allow-root --ip=127.0.0.1 --port=18888 \
+        > /tmp/jl-smoke.log 2>&1 || true ; \
+    grep -E "数据集面板扩展.*已加载|is running at" /tmp/jl-smoke.log && \
+    ! grep -q "Traceback" /tmp/jl-smoke.log && rm -f /tmp/jl-smoke.log
+
+# ── 清理(保留 /tmp/jy 作送评对照;如不需要可加 rm -rf /tmp/jy /tmp/ow)──
+RUN rm -rf /root/.cache/pip /tmp/jupyter-requirements.txt /tmp/cube_studio_dataset-2.0.0-py3-none-any.whl
+
+# ── 启动:按行内现网 notebook 部署约定(env/port 不变),平台拉起,此处给默认──
+EXPOSE 8888
+CMD ["/opt/nbenv/bin/jupyter", "lab", "--no-browser", "--allow-root", "--ip=0.0.0.0", "--port=8888"]

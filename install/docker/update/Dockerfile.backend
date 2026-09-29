@@ -1,0 +1,27 @@
+# 后端全量构建 — 基于现有 base 镜像，更新全部源码
+# 用法:
+#   docker build --network=host \
+#     -t 192.168.11.12/cube-studio/kubeflow-dashboard:20260729 \
+#     -f install/docker/update/Dockerfile.backend .
+# 以后每次更新代码，改个 tag 重新 build + push 即可
+
+FROM 192.168.11.12/cube-studio/kubeflow-dashboard:20260703
+
+# 覆盖全部 myapp 源码
+COPY myapp /home/myapp/myapp
+
+# 覆盖前端静态资源（vision / visionPlus 等非 main frontend 的产物）
+COPY myapp/static/appbuilder/frontend /data/web/frontend
+
+# 更新启动脚本（如有变动）
+COPY install/docker/entrypoint.sh /entrypoint.sh
+
+ENV PATH=/home/myapp/myapp/bin:${PATH:-}
+ENV PYTHONPATH=/home/myapp:${PYTHONPATH:-}
+
+# 修复可执行权限（COPY 会丢失）
+RUN chmod +x /home/myapp/myapp/bin/myapp /entrypoint.sh
+
+# 移除本地未部署的 migration 文件（避免 myapp db upgrade 崩溃）
+# a1b2c3d4e5f6: 本地 HDFS 迁移，DB 里没有对应 revision 但列已存在
+RUN rm -f /home/myapp/myapp/migrations/versions/a1b2c3d4e5f6_add_hdfs_path_to_dataset.py

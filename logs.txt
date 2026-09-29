@@ -1,0 +1,19 @@
+[root@k8s-master1] /bdm/share_bdm/cube-studio-master/install/kubernetes/cube/overlays# kubectl -n infra get pods
+NAME                                           READY   STATUS             RESTARTS      AGE
+kubeflow-dashboard-574b755cdc-8gb2n            0/1     Pending            0             4s
+kubeflow-dashboard-574b755cdc-jrc7d            1/1     Running            0             65s
+kubeflow-dashboard-785554bb74-fdrjq            1/1     Running            0             14d
+kubeflow-dashboard-785554bb74-zcqtw            1/1     Terminating        0             14d
+kubeflow-dashboard-frontend-7dd776fc97-rlfsg   1/1     Running            0             17m
+kubeflow-dashboard-frontend-7dd776fc97-xwc55   1/1     Running            0             17m
+kubeflow-dashboard-schedule-6cbc46c699-j96kb   1/1     Running            0             14d
+kubeflow-dashboard-schedule-6d7597fbf6-b4lc5   0/1     Running            0             65s
+kubeflow-dashboard-worker-5c554c4b4b-9jhzh     1/1     Running            0             65s
+kubeflow-dashboard-worker-5c554c4b4b-jbglw     1/1     Running            0             61s
+kubeflow-watch-5dc7f8bc8b-djv7f                0/1     CrashLoopBackOff   3 (19s ago)   64s
+kubeflow-watch-fcb4579-7vg85                   0/1     CrashLoopBackOff   3 (27s ago)   71s
+redis-b68dd6d58-qtjvb                          1/1     Running            0             49d
+[root@k8s-master1] /bdm/share_bdm/cube-studio-master/install/kubernetes/cube/overlays# kubectl logs -n infra kubeflow-watch-fcb4579-7vg85
+Defaulted container "kubeflow-watch-workflow" out of: kubeflow-watch-workflow, wait-for-mysql (init), wait-for-redis (init)
+Error: The directory named as part of the path /var/log/supervisor/supervisord.log does not exist
+For help, use /home/myapp/py312/bin/supervisord -h

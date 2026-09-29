@@ -1,0 +1,56 @@
+<h2>三个实现方案对比</h2>
+<p class="subtitle">核心目标：定时起Pod执行 → 完成释放资源，复用Job_Template模板体系，不依赖企业版算子</p>
+
+<div class="section">
+  <h3>方案 A：新增 ScheduledJob 模型 + K8s CronJob</h3>
+  <div class="mockup-body" style="text-align:left; font-size:13px; background:#f0f5ff; border-radius:8px; padding:14px; margin-bottom:12px;">
+    <p><b>思路：</b>新建一个 <code>ScheduledJob</code> 数据模型，用户选择模板 + 填 cron 表达式 + 填参数 → 后端生成 K8s <code>CronJob</code> 资源</p>
+    <p><b>新增模型：</b><code>ScheduledJob</code> (约10个字段)</p>
+    <p><b>新增视图：</b><code>ScheduledJob_ModelView_Api</code></p>
+    <p><b>K8s 资源：</b>CronJob（K8s 原生，无需 Argo）</p>
+    <p><b>代码改动：</b>~300行（模型100 + 视图150 + K8s工具50）</p>
+    <p><b>前端：</b>需要新建页面</p>
+    <div class="pros-cons">
+      <div class="pros"><h4>优点</h4><ul><li>最干净，独立模型不污染现有逻辑</li><li>K8s CronJob 原生支持，稳定可靠</li><li>完全脱离企业版</li></ul></div>
+      <div class="cons"><h4>缺点</h4><ul><li>改动量大（新模型+新视图+新前端页面）</li><li>需要前端开发新页面</li></ul></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>方案 B：在现有 Service 模型上扩展 Cron 能力</h3>
+  <div class="mockup-body" style="text-align:left; font-size:13px; background:#f0fff0; border-radius:8px; padding:14px; margin-bottom:12px;">
+    <p><b>思路：</b>在现有的 <code>Service</code> 模型上加一个 <code>schedule_type</code> 字段。<code>schedule_type='once'</code> 就是现有的一次性服务，<code>schedule_type='cron'</code> 就生成 CronJob</p>
+    <p><b>模型改动：</b>Service 模型加 2 个字段 (<code>schedule_type</code>, <code>cron_expression</code>)</p>
+    <p><b>代码改动：</b>~150行（模型20 + 视图80 + K8s工具50）</p>
+    <p><b>前端：</b>复用 Service 页面，加 cron 表单</p>
+    <div class="pros-cons">
+      <div class="pros"><h4>优点</h4><ul><li>改动小，复用现有 Service 的部署链路</li><li>前端只需在现有页面加字段</li><li>用户学习成本低</li></ul></div>
+      <div class="cons"><h4>缺点</h4><ul><li>Service 和 CronJob 本质不同（常驻 vs 一次性），语义混淆</li><li>后续维护时两种模式互相牵制</li></ul></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>方案 C：复用 Pipeline 模型 + 旁路 K8s Job（非 Argo）</h3>
+  <div class="mockup-body" style="text-align:left; font-size:13px; background:#fff5f0; border-radius:8px; padding:14px; margin-bottom:12px;">
+    <p><b>思路：</b>继续用 Pipeline + Task 模型定义跑批逻辑，但在执行时绕过 Argo → 直接生成 K8s <b>Job</b>（非 CronJob），配合外部 Cron 调度</p>
+    <p><b>模型改动：</b>几乎不变，Pipeline 加一个 <code>engine</code> 字段(<code>argo</code> | <code>native</code>)</p>
+    <p><b>代码改动：</b>~200行（新增 native job 生成器 + 定时器调度）</p>
+    <p><b>前端：</b>几乎不变</p>
+    <div class="pros-cons">
+      <div class="pros"><h4>优点</h4><ul><li>复用现有 DAG 编排和模板选择逻辑</li><li>前端完全复用</li></ul></div>
+      <div class="cons"><h4>缺点</h4><ul><li>Pipeline 模型很重(40+字段)，为简单跑批引入复杂度</li><li>DAG 逻辑对单任务跑批来说是多余的</li><li>Cron 调度仍需自己实现</li></ul></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>推荐：方案 A — 新建 ScheduledJob</h3>
+      <p>最干净，模型语义清晰，CronJob 是 K8s 原生资源成熟稳定。唯一代价是新前端页面，但改动隔离性好。</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cube Studio 集群模块说明书</title>
+<style>
+  :root{
+    --bg:#f5f7f9; --card:#fff; --ink:#161a1f; --ink2:#59616e; --ink3:#8a939f;
+    --line:#e2e6ea; --line2:#cbd2d9;
+    --keep:#0e7a4e; --keepbg:#e9f7f0; --keepbd:#9ad9bd;
+    --bad:#c0392b;  --badbg:#fdeceb;  --badbd:#f0b3ad;
+    --warn:#a05f08; --warnbg:#fdf4e5; --warnbd:#efd09a;
+    --blue:#1d5da3; --bluebg:#eaf2fb; --bluebd:#b5cfec;
+    --purple:#5b3fa8; --purplebg:#f1ecfc; --purplebd:#c9b8ee;
+    --gray:#6b7280; --graybg:#f0f2f4;
+    --mono:ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:0 0 90px;background:var(--bg);color:var(--ink);
+    font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 26px}
+
+  header{background:#141920;color:#fff;padding:36px 0 32px}
+  header h1{margin:0 0 8px;font-size:27px;font-weight:660;letter-spacing:.3px}
+  header .sub{color:#98a4b3;font-size:14px;margin-bottom:20px}
+  header .note{background:#1d242e;border-left:3px solid #4a9e78;border-radius:4px;
+    padding:14px 18px;font-size:14.5px;line-height:1.75;color:#dde4ec;max-width:980px}
+  header .note b{color:#7fd6a8}
+
+  /* nav */
+  nav{background:#fff;border:1px solid var(--line);border-radius:9px;padding:16px 20px;margin:26px 0 8px}
+  nav .t{font-size:12px;color:var(--ink3);letter-spacing:.8px;margin-bottom:10px;text-transform:uppercase}
+  nav a{display:inline-block;font-size:13.4px;color:var(--ink);text-decoration:none;background:var(--graybg);
+    border:1px solid var(--line);border-radius:5px;padding:5px 11px;margin:0 6px 7px 0;transition:.12s}
+  nav a:hover{background:var(--bluebg);border-color:var(--bluebd);color:var(--blue)}
+  nav a .n{font-family:var(--mono);color:var(--ink3);font-size:11.5px;margin-right:5px}
+
+  h2{font-size:21px;margin:46px 0 4px;font-weight:650;letter-spacing:.2px;scroll-margin-top:16px}
+  h2 .n{font-family:var(--mono);color:var(--blue);font-size:17px;margin-right:9px;font-weight:600}
+  .why{color:var(--ink2);font-size:14.5px;margin:0 0 4px}
+  .where{font-size:13px;color:var(--ink3);margin:0 0 16px}
+  .where b{color:var(--ink2);font-weight:600}
+  .where code,.mono,code{font-family:var(--mono);font-size:.88em;background:#eaeef2;border-radius:3px;padding:1px 5px;color:#28313b}
+
+  table{width:100%;border-collapse:collapse;font-size:13.7px;background:var(--card);margin:0 0 4px;
+    border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#eef1f5;font-weight:620;font-size:12.3px;color:var(--ink2);letter-spacing:.4px;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.pod{font-family:var(--mono);font-size:12.4px;color:#1f2831;white-space:nowrap}
+  td.n{text-align:center;font-family:var(--mono);font-size:12.6px;white-space:nowrap}
+  td.loc{font-family:var(--mono);font-size:12px;color:var(--ink2);white-space:nowrap}
+  .say{color:var(--ink2)}
+  .say b{color:var(--ink);font-weight:620}
+
+  .prob{background:var(--badbg);border:1px solid var(--badbd);border-left-width:4px;border-radius:7px;
+    padding:13px 17px;margin:14px 0 0;font-size:13.6px;line-height:1.75;color:#7a2419}
+  .prob .h{font-weight:660;display:block;margin-bottom:5px;font-size:13.9px}
+  .prob ul{margin:5px 0 0;padding-left:19px}
+  .prob li{margin:4px 0}
+  .prob code{background:#f8dcd8;color:#7a2419}
+  .prob.soft{background:var(--warnbg);border-color:var(--warnbd);color:#6b4108}
+  .prob.soft code{background:#f7e6c8;color:#6b4108}
+  .prob .ok{color:var(--keep);font-weight:600}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:18px 0 0;
+    background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 17px}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.g{background:var(--keep)} .dot.r{background:var(--bad)} .dot.y{background:var(--warn)} .dot.n{background:var(--gray)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:18px 20px;margin:14px 0 0}
+  .box h4{margin:0 0 8px;font-size:14.5px;font-weight:650}
+  .box p{margin:0 0 8px;font-size:13.7px;color:var(--ink2)}
+  .box p:last-child{margin-bottom:0}
+  .box.b{border-color:var(--bluebd);background:var(--bluebg)}
+  .box.b h4{color:var(--blue)}
+  .box.p{border-color:var(--purplebd);background:var(--purplebg)}
+  .box.p h4{color:var(--purple)}
+
+  footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);font-size:12.8px;color:var(--ink3)}
+  @media print{body{background:#fff}header{background:#141920 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    h2{page-break-after:avoid}table{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Cube Studio 集群模块说明书</h1>
+    <div class="sub">按功能模块组织　·　5 台服务器实测 + 仓库对照　·　2026-09-24</div>
+    <div class="note">
+      这份文档回答三个问题：<b>每个模块是干什么的</b>、<b>它部署在哪</b>、<b>每个 pod 具体管什么事</b>。<br>
+      当前策略：<b>全部保留，暂不精简。</b>所以每个模块末尾都标出了<b>它现在有什么问题</b>，方便后续按优先级处理。
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="legend">
+  <span><i class="dot g"></i> 正常运行</span>
+  <span><i class="dot r"></i> 有问题 / 有风险</span>
+  <span><i class="dot y"></i> 需要注意</span>
+  <span><i class="dot n"></i> 空转 / 未部署</span>
+</div>
+
+<nav>
+  <div class="t">模块导航</div>
+  <a href="#m1"><span class="n">01</span>请求怎么进来的</a>
+  <a href="#m2"><span class="n">02</span>平台本体（后端五件套）</a>
+  <a href="#m3"><span class="n">03</span>数据存在哪</a>
+  <a href="#m4"><span class="n">04</span>Jupyter 交互式开发</a>
+  <a href="#m5"><span class="n">05</span>任务与任务流（低代码）</a>
+  <a href="#m6"><span class="n">06</span>推理服务与中间件服务</a>
+  <a href="#m7"><span class="n">07</span>监控</a>
+  <a href="#m8"><span class="n">08</span>集群地基</a>
+  <a href="#m9"><span class="n">09</span>镜像仓库（K8s 之外）</a>
+  <a href="#m10"><span class="n">10</span>清单里有、实际没装的</a>
+  <a href="#sc"><span class="n">A</span>附录：StorageClass 速查</a>
+</nav>
+
+<!-- ============================================ 01 -->
+<h2 id="m1"><span class="n">01</span>请求怎么进来的</h2>
+<p class="why">你在浏览器里敲一个地址，流量要经过几道手才到后端。</p>
+<p class="where">部署在 <b>istio-system</b> 和 <b>metallb-system</b> 两个 namespace，跑在 <b>master1 / master3 / worker2</b></p>
+
+<table>
+  <thead><tr><th>Pod / 对象</th><th class="n">副本</th><th>它是干什么的（说人话）</th><th>在哪</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="pod">metallb speaker</td><td class="n">5</td>
+      <td class="say"><b>给内网"借"一个真实 IP 当负载均衡。</b>没有云厂商的 LB，MetalLB 就让每台机器用 ARP 广播喊"<code>192.168.11.201</code> 在我这儿"，把流量吸引过来。每台机器一个。</td>
+      <td class="loc">全部 5 台</td>
+    </tr>
+    <tr>
+      <td class="pod">metallb controller</td><td class="n">1</td>
+      <td class="say"><b>IP 分配员。</b>谁申请 LoadBalancer 类型的 Service，它就从地址池里发一个 IP，并告诉 speaker 们去广播。</td>
+      <td class="loc">worker2</td>
+    </tr>
+    <tr>
+      <td class="pod">istio-ingressgateway</td><td class="n">2</td>
+      <td class="say"><b>平台的唯一大门。</b>外部流量全从这里进来，再按域名和路径分发给内部的服务。就是它占用了 VIP <code>192.168.11.201</code>。</td>
+      <td class="loc">master1 / master3</td>
+    </tr>
+    <tr>
+      <td class="pod">istiod</td><td class="n">2</td>
+      <td class="say"><b>Istio 的大脑。</b>把 VirtualService 这些"路由规则"翻译成 Envoy 能懂的配置，下发到网关上。<br><span style="color:var(--ink3)">※ 本集群所有 namespace 都标了 <code>istio-injection: disabled</code>，所以它<b>只当网关的控制面，不做服务网格</b>（不给业务 Pod 塞 sidecar）。</span></td>
+      <td class="loc">master1 / master3</td>
+    </tr>
+    <tr>
+      <td class="pod">Gateway <span style="font-weight:400">（配置对象，不是 pod）</span></td><td class="n">2</td>
+      <td class="say"><b>规定"门开在哪"。</b><code>kubeflow-gateway</code> 监听 80，<code>kubeflow-gateway-8080</code> 监听 8080，host 都是 <code>*</code>（什么域名都接）。</td>
+      <td class="loc">kubeflow ns</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box b">
+  <h4>完整的进门路径</h4>
+  <p><code>浏览器</code> → <code>192.168.11.201:80</code>（MetalLB 借来的 VIP）→ <code>istio-ingressgateway</code> → 按 VirtualService 规则分流 → 后端 / notebook / Grafana / K8s Dashboard</p>
+  <p>目前挂在网关后面的 VirtualService 共 <b>11 个</b>：平台后端、6 个 notebook、2 个 K8s Dashboard、Grafana，加一个<b>没有对应 Pod 的 <code>labelstudio</code></b>。</p>
+</div>
+
+<div class="prob">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>没有 Ingress Controller。</b><code>install/kubernetes/ingress.yaml</code> 里那几个 Kubernetes 原生 Ingress 对象，集群里<b>没有任何 controller 去实现它们</b>（<code>kubectl get ingress</code> 是空的）。这份配置是死的，别以为它生效了。</li>
+    <li><b><code>labelstudio</code> VirtualService 是残留</b>：路由指向一个不存在的服务，属于删了没影响的垃圾配置。</li>
+    <li><b>VIP 是 L2 广播方式。</b>MetalLB 在 L2 模式下，同一时刻只有一个节点在响应 ARP。所以虽然 <code>istio-ingressgateway</code> 有 2 个副本，<b>入口带宽实际由一台机器承担</b>，节点故障时 VIP 要漂移几秒。</li>
+    <li><b>MetalLB后面会被haproxy替代，目前只是一个暂时状态，最后用haproxy指向127.0.0.1来完成集群的HA</b></li>
+  </ul>
+</div>
+
+<!-- ============================================ 02 -->
+<h2 id="m2"><span class="n">02</span>平台本体（后端五件套）</h2>
+<p class="why">这是 Cube Studio 自己的代码，全部在 <b>infra</b> namespace。五个 Deployment 用<b>同一个镜像</b>，靠不同的启动命令分工。</p>
+<p class="where">镜像 <code>kubeflow-dashboard:cube312-test</code>　·　跑在 <b>master1 / master2 / master3</b>（靠 nodeAffinity 只调度到打了 <code>kubeflow-dashboard=true</code> 的节点）</p>
+
+<table>
+  <thead><tr><th>Pod</th><th class="n">副本</th><th>启动命令</th><th>它是干什么的（说人话）</th><th>在哪</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="pod">kubeflow-dashboard</td><td class="n">2</td>
+      <td class="loc" style="white-space:normal">bash /entrypoint.sh<br>STAGE=prod</td>
+      <td class="say"><b>后端，唯一的对外服务。</b>你看到的每个页面、每个接口都是它。gunicorn 起了 20 个进程扛并发。<br><b>它还兼着"初始化工人"</b>：启动时依次建表 → 跑数据库迁移 → 建 admin 账号 → 灌初始数据。</td>
+      <td class="loc">master2/3</td>
+    </tr>
+    <tr>
+      <td class="pod">kubeflow-dashboard-frontend</td><td class="n">2</td>
+      <td class="loc">nginx</td>
+      <td class="say"><b>前端。</b>把打包好的 React 页面发给你；其他请求一律转发给后端。<code>/frontend/</code> 出页面，<code>/</code> 走代理。</td>
+      <td class="loc">master1/3</td>
+    </tr>
+    <tr>
+      <td class="pod">kubeflow-dashboard-schedule</td><td class="n">1</td>
+      <td class="loc">celery beat</td>
+      <td class="say"><b>闹钟。</b>只负责"到点了"，自己不干活，到点就把任务扔进队列。目前定了 8 个定时任务（见下表）。</td>
+      <td class="loc">master2</td>
+    </tr>
+    <tr>
+      <td class="pod">kubeflow-dashboard-worker</td><td class="n">2</td>
+      <td class="loc" style="white-space:normal">celery worker<br>-c 20</td>
+      <td class="say"><b>干活的。</b>所有耗时操作都甩给它异步做：数据集备份/拷贝、K8s 资源轮询、HDFS 拉数、<b>notebook 保存镜像时轮询状态</b>。<br><span style="color:var(--ink3)">20 个并发进程。</span></td>
+      <td class="loc">master2/3</td>
+    </tr>
+    <tr>
+      <td class="pod">kubeflow-watch</td><td class="n">1</td>
+      <td class="loc" style="white-space:normal">supervisord<br>→ watch_workflow.py</td>
+      <td class="say"><b>监工。</b>每 60 秒扫一遍 Argo 工作流，状态变了就写回数据库、发通知。它存在的唯一理由是"让平台 UI 能显示流水线进度"。</td>
+      <td class="loc">master2</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <h4>schedule 上的 8 个定时任务</h4>
+  <table style="margin-top:8px">
+    <thead><tr><th>任务</th><th>什么时候跑</th><th>干什么</th></tr></thead>
+    <tbody>
+      <tr><td class="pod">delete_workflow</td><td>每天 00:01</td><td class="say">清理过期的 Argo 工作流</td></tr>
+      <tr><td class="pod">make_timerun_config</td><td><b>每 5 分钟</b></td><td class="say">给配了 crontab 的任务流生成运行配置</td></tr>
+      <tr><td class="pod">delete_old_data</td><td>每天 01:01</td><td class="say">删 <code>/data/k8s/kubeflow/minio/mlpipeline</code> 下的旧数据</td></tr>
+      <tr><td class="pod">check_pipeline_run</td><td>每天 11:10</td><td class="say">检查任务流跑太久的情况，报警</td></tr>
+      <tr><td class="pod">delete_debug_docker</td><td>每天 23:30</td><td class="say">清理调试用的 Pod</td></tr>
+      <tr><td class="pod">watch_gpu</td><td>8–23 点每 2 小时</td><td class="say">推送 GPU 使用率</td></tr>
+      <tr><td class="pod">watch_pod_utilization</td><td>每天 11:10</td><td class="say">找出利用率过低的 Pod 并提醒</td></tr>
+      <tr><td class="pod">check_pod_terminating</td><td><b>每 10 分钟</b></td><td class="say">清理卡在 Terminating 状态删不掉的 Pod</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="prob">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>schedule 和 watch 都是单副本，各自是单点。</b>schedule 挂了 → 所有定时任务停摆（包括"清理卡死的 Pod"）；watch 挂了 → 流水线进度不再更新。<b>只有 backend 和 worker 是 2 副本。</b></li>
+    <li><b>backend 兼着"数据库迁移"这件事。</b>它靠 Redis 加锁保证多副本里只有 1 个真正执行迁移。好处是防止并发迁移打架，坏处是<b>如果 Redis 挂了，新 Pod 启动时会卡在"抢锁"环节</b>（代码里是重试 30 次、每次 2 秒，60 秒后放弃继续）。</li>
+    <li><b>每次重启都会重灌初始数据</b>（<code>myapp init</code>，后面跟了 <code>|| true</code> 吞掉错误）。这带来一个副作用：<b>以后要下线任何功能，光删数据没用，得同时改掉 init 的数据源，否则重启一次就全回来了。</b></li>
+    <li><b>前端日志没挂出来。</b>nginx 的 access_log / error_log 写在容器内的 <code>/data/log/nginx/</code>，但 Pod 只挂了一个 nginx 配置文件，这个目录在宿主机上也不存在 → <b>前端访问日志实际是丢的</b>，Pod 一重建就没了。</li>
+    <li><b>watch 每天 03:00 会自己重启一次</b>（它的 liveness 探针里写了 <code>if [ $hour -eq 03 ]; then exit 1; fi</code>）。这是<b>设计如此</b>不是故障，但意味着每天凌晨有约一分钟窗口它不工作。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 03 -->
+<h2 id="m3"><span class="n">03</span>数据存在哪</h2>
+<p class="why">平台有四种"存东西"的地方，各管一摊。这一块是当前<b>风险最集中</b>的模块。</p>
+<p class="where">共享盘在 <b>服务器1</b>　·　MinIO + Redis 在 <b>kubeflow / infra</b> ns　·　MySQL 在 <b>服务器5 裸金属</b></p>
+
+<table>
+  <thead><tr><th>存储</th><th>管什么数据</th><th>它是干什么的（说人话）</th><th>在哪</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="pod">MySQL</td><td class="say">平台所有元数据</td>
+      <td class="say"><b>平台的账本。</b>用户、角色、项目、notebook 记录、数据集记录、推理服务配置……全在 <code>kubeflow</code> 库里。表结构有 35 张。</td>
+      <td class="loc">服务器5 裸机</td>
+    </tr>
+    <tr>
+      <td class="pod">共享盘（NFS）</td><td class="say">文件本体</td>
+      <td class="say"><b>真正的文件都放这儿。</b>notebook 里的 <code>/mnt/&lt;用户名&gt;</code>、数据集目录、模型文件、后端做文件下载的源目录，全指向它。</td>
+      <td class="loc">服务器1 导出</td>
+    </tr>
+    <tr>
+      <td class="pod">minio</td><td class="say">Argo 的中间产物</td>
+      <td class="say"><b>S3 对象存储。</b>目前<b>只服务 Argo</b>——任务流每一步之间要传递文件，就临时扔这儿。</td>
+      <td class="loc">kubeflow ns / master3</td>
+    </tr>
+    <tr>
+      <td class="pod">redis</td><td class="say">队列 + 缓存 + 锁</td>
+      <td class="say"><b>三个身份合一：</b>① 异步任务的消息队列（backend 扔、worker 取）② 页面缓存 ③ 数据库迁移的分布式锁。</td>
+      <td class="loc">infra ns / master3</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box p">
+  <h4>共享盘是怎么回事（重点）</h4>
+  <p>Pod 拿到的是一个"持久卷"，看上去是本地目录 <code>/data/k8s/…</code>。但一路追下去：</p>
+  <p style="font-family:var(--mono);font-size:12.6px;line-height:2;color:#2b3540;background:#fff;border:1px solid var(--line);border-radius:6px;padding:12px 15px;margin:8px 0">
+    PVC → PV（hostPath，<b>全集群没有一个 StorageClass</b>）<br>
+    &nbsp;&nbsp;→ <code>/data/k8s/…</code> → 这是个<b>软链</b> → <code>/bdm/share_bdm</code><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;→ <b>服务器1 用 NFS 导出这个目录</b>，5 台机器统统挂载<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 最终落盘：服务器1 本地盘 <b>100G，已用 56G，剩 45G</b>
+  </p>
+  <p><b>换句话说：整个平台唯一的持久化落点，是服务器1 上的一块盘。</b></p>
+</div>
+
+<div class="prob">
+  <span class="h">🔴 这个模块问题最多，按严重程度排</span>
+  <ul>
+    <li><b>共享盘超卖约 52 倍。</b>15 个 PV 声称加起来 <b>5212Gi</b>（10 个各写 500Gi），底下却是同一块<b>只剩 45G</b> 的盘。任何一个 notebook 写满，全平台一起停。</li>
+    <li><b>共享盘权限敞开。</b>导出配置是 <code>/bdm/share_bdm *(rw,no_root_squash,async)</code> —— <code>*</code> 意味着任意主机都能挂，<code>no_root_squash</code> 意味着挂上来的客户端 root 就是真 root。</li>
+    <li><b>共享盘没有快照、没有备份。</b>而且它是 NFS，<b>你之前明确不想要的那种"单点 + 无备份"的东西——它早就是整个平台的地基了。</b></li>
+    <li><b>Redis 没有持久化。</b>用的是 <code>emptyDir</code>（临时目录），Pod 一重启：在跑的异步任务丢失、页面缓存清空。<i>仓库里其实有现成的 Redis PVC 配置，但实际部署没用上。</i>（对"迁移锁"影响不大，那是个短时租约。）</li>
+    <li><b>仓库清单和实装对不上。</b><code>install/kubernetes/mysql/deploy.yaml</code> 写的是 <code>nodeSelector: mysql=true</code>，可这个标签<b>打在三台 master 上，服务器5 根本没有</b> → 说明 K8s 那套 MySQL 当年是被 <code>start.sh --mysql-host</code> 跳过、手工装的。infra ns 里还留着 <code>mysql-configmap</code> 是当年的残迹。</li>
+    <li><b>MinIO 是单副本 + 单块 hostPath。</b>Pod 挂了就没了。好消息是它只存 Argo 的中间产物，且那个目录<b>目前是空的</b>（说明任务流从没跑过）。后续要考虑使用MinIO来替代NFS</li>
+  </ul>
+</div>
+
+<!-- ============================================ 04 -->
+<h2 id="m4"><span class="n">04</span>Jupyter 交互式开发</h2>
+<p class="why">高代码路线的主入口：开一个网页版 IDE，自己写代码、装包、跑训练。</p>
+<p class="where"><b>jupyter</b> namespace　·　全部跑在 <b>worker1 / worker2</b> 两个节点上（靠 <code>notebook=true</code> 标签）</p>
+
+<table>
+  <thead><tr><th>Pod</th><th>镜像是啥</th><th>它是干什么的</th><th>在哪</th></tr></thead>
+  <tbody>
+    <tr><td class="pod">admin-jupyter</td><td class="loc">jupyter-ubuntu22.04</td><td class="say">麒麟镜像，Python3.12</td><td class="loc">worker2</td></tr>
+    <tr><td class="pod">admin-a855</td><td class="loc">jupyter-ubuntu22.04</td><td class="say">另一个麒麟镜像，Python3.12</td><td class="loc">worker2</td></tr>
+    <tr><td class="pod">admin-kylin-spark</td><td class="loc">jupyter-kylin-spark</td><td class="say">麒麟系统 + Spark 环境，给大数据场景用</td><td class="loc">worker1</td></tr>
+    <tr><td class="pod">admin-hdfs</td><td class="loc">jupyter-kylin-hdfs</td><td class="say">镜像名带 hdfs</td><td class="loc">worker1</td></tr>
+    <tr><td class="pod">admin-d5b1</td><td class="loc">jupyter-kylin-hdfs</td><td class="say">麒麟环境</td><td class="loc">worker1</td></tr>
+    <tr><td class="pod">admin-439e</td><td class="loc">jupyter-kylin-hdfs</td><td class="say">麒麟环境</td><td class="loc">worker1</td></tr>
+  </tbody>
+</table>
+
+<div class="box b">
+  <h4>每个 notebook 是怎么起来的</h4>
+  <p>平台会为它创建三样东西：<b>一个 Pod</b>（跑 jupyter lab，端口 3000）+ <b>一个 Service</b>（给 Pod 一个集群内地址）+ <b>一个 VirtualService</b>（把外部访问路由进来）。</p>
+  <p>挂载：<code>/mnt/&lt;用户名&gt;</code> → 共享盘里的个人工作目录　·　<code>/mnt/datasets</code> → 数据集目录（只读）</p>
+  <p style="margin-top:10px"><b>高代码路线怎么继续往下走：</b>在 notebook 里训练完 → 点「保存镜像」→ 平台起一个 <code>notebook-commit-xxx</code> 的临时 Pod 把当前容器 commit + push 到 Harbor → <b>worker 轮询最多 30 分钟确认结果</b>，成功后把镜像名记回 notebook 记录 → 之后就能拿这个镜像去部署推理服务。</p>
+</div>
+
+<div class="prob soft">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>「保存镜像」依赖 worker。</b><code>check_notebook_commit</code> 是跑在 worker 上的 celery 任务。<b>这条依赖很隐蔽</b>——只看"谁挂了存储卷"是看不出来的，因为 worker 也挂了，容易误判成"可以砍"。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 05 -->
+<h2 id="m5"><span class="n">05</span>任务与任务流（低代码）</h2>
+<p class="why">平台里有<b>两个不同的功能</b>容易混：<b>「任务」</b>是跑单个作业，<b>「任务流」</b>是把多个作业串成一张图（DAG）交给 Argo 调度。菜单里分别叫「任务」和「任务流」。</p>
+<p class="where">控制器在 <b>kubeflow</b> ns　·　任务流跑起来后 Pod 落在 <b>pipeline</b> ns（当前是空的）</p>
+
+<table>
+  <thead><tr><th>Pod</th><th class="n">副本</th><th>它是干什么的（说人话）</th><th>在哪</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="pod">workflow-controller</td><td class="n">1</td>
+      <td class="say"><b>任务流引擎（Argo Workflows）。</b>你在页面上拖出来的那张图，编译成一个 Workflow 对象交给它，它负责按依赖顺序把每一步跑起来、失败重试、记录状态。每一步就是一个 Pod。<br><span style="color:var(--ink3)">※ 注意：<b>没部署 argo-server</b>，所以没有 Argo 官方的那个 Web UI，只能从平台页面看。</span></td>
+      <td class="loc">master1</td>
+    </tr>
+    <tr>
+      <td class="pod">training-operator</td><td class="n">1</td>
+      <td class="say"><b>分布式训练的"专用工单处理器"。</b>认 TFJob / PyTorchJob / MPIJob / PaddleJob / MXJob / XGBoostJob 这几种 CRD，把它们翻译成一组 Pod（比如 1 个 master + N 个 worker）。</td>
+      <td class="loc">worker1</td>
+    </tr>
+    <tr>
+      <td class="pod">volcano-scheduler</td><td class="n">1</td>
+      <td class="say"><b>批调度器。</b>负责"<b>组调度</b>"——一个分布式训练要 8 个 Pod，它保证<b>要么 8 个一起排上，要么一个都不占</b>，避免出现"占了 3 个卡在那儿干等"的僵局。</td>
+      <td class="loc">master1</td>
+    </tr>
+    <tr>
+      <td class="pod">volcano-controllers</td><td class="n">1</td>
+      <td class="say"><b>Volcano 的控制器。</b>管理 vcjob 这个 CRD 的生命周期（创建、状态跟踪、清理），配合上面的 scheduler 工作。</td>
+      <td class="loc">master1</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box p">
+  <h4>「任务」和「任务流」的区别</h4>
+  <p><b>「任务」</b>（<code>view_task.py</code>）：从 98 个作业模板里挑一个，填参数，直接建 K8s 资源。<b>不走 Argo。</b></p>
+  <p><b>「任务流」</b>（<code>view_pipeline.py</code>，菜单标题就是「任务流」）：拖一张 DAG，每个节点选一个作业模板 → 平台合成一个 Argo Workflow → 提交到 <code>pipeline</code> namespace → <code>workflow-controller</code> 执行 → <code>kubeflow-watch</code> 把状态写回数据库。</p>
+  <p style="margin-top:10px"><b>两者共用同一批作业模板</b>，区别只在"单步"还是"多步编排"。</p>
+</div>
+
+<div class="prob soft">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>零使用。</b>库里 <code>pipeline</code> 表 4 条、<code>workflow</code> 表 <b>0 条</b>、<code>run</code> 表 <b>0 条</b>；集群里 <b>0 个 Job、0 个 Workflow、0 个已结束的 Pod</b>；MinIO 的产物目录 <b>是空的</b>。→ 这套东西装了 72 天，<b>一次没跑过</b>。</li>
+    <li><b>那 4 条任务流是安装器自带的演示数据。</b>名字 <code>yolov8</code> / <code>ml</code> / <code>deepseek</code> / <code>electric-bicycle</code>，跟 <code>myapp/init/init-pipeline.json</code> 里的键<b>一字不差</b>，且全部创建于 <code>2026-07-14 12:23:03~05</code>（建集群那 3 秒内，<code>myapp init</code> 灌进去的）。</li>
+    <li><b>没部署 argo-server</b> → 平台以外没有 Argo 界面，排查问题只能靠 <code>kubectl</code> 或平台页面。</li>
+    <li><b><code>watch_gpu</code> 这个定时任务在空转。</b>本集群 5 个节点<b>都没有 GPU</b>（<code>nvidia.com/gpu</code> 全是 <code>&lt;none&gt;</code>），但它还是每 2 小时跑一次推 GPU 使用率。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 06 -->
+<h2 id="m6"><span class="n">06</span>推理服务与中间件服务</h2>
+<p class="why">这是平台把"训练成果"变成一个可访问的在线服务的地方，也是"一键起个 MySQL 管理界面"这类工具的地方。</p>
+<p class="where">都部署在 <b>service</b> namespace（当前 0 个 Pod）</p>
+
+<table>
+  <thead><tr><th>功能</th><th>它是干什么的（说人话）</th><th>背后建了什么</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="pod">推理服务</td>
+      <td class="say"><b>把镜像变成能访问的 API。</b>你选一个镜像（比如 notebook 保存出来的那个），填模型路径、端口、资源，平台帮你部署起来并给它一个访问地址。</td>
+      <td class="say">普通 <code>Deployment</code> + 普通 <code>Service</code> + <code>VirtualService</code>（Istio 暴露）+ 可选的 <code>HPA</code>（自动扩缩容）。<b>不碰 Argo。</b>还支持金丝雀发布、影子流量（靠改 VirtualService 权重做滚动升级）。</td>
+    </tr>
+    <tr>
+      <td class="pod">中间件服务</td>
+      <td class="say"><b>一键起个现成的工具/中间件</b>，省得自己写 YAML。平台内置 8 个模板。</td>
+      <td class="say">同样一套 <code>Deployment</code> + <code>Service</code> + <code>VirtualService</code>。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <h4>内置的 8 个中间件模板（来自 <code>init-service.json</code>）</h4>
+  <table style="margin-top:8px">
+    <thead><tr><th>模板</th><th>是什么</th><th>连的谁</th><th class="n">能用吗</th></tr></thead>
+    <tbody>
+      <tr><td class="pod">redis-ui</td><td class="say">Redis 网页管理界面</td><td class="loc">redis-master.infra:6379 ✓</td><td class="n" style="color:var(--keep);font-weight:600">能</td></tr>
+      <tr><td class="pod">mysql-ui</td><td class="say">phpMyAdmin</td><td class="loc">mysql-service.infra ✗ 不存在</td><td class="n" style="color:var(--bad);font-weight:600">坏</td></tr>
+      <tr><td class="pod">postgresql-ui</td><td class="say">pgAdmin</td><td class="say">需自备 PG 实例</td><td class="n">需配置</td></tr>
+      <tr><td class="pod">mongo-express</td><td class="say">MongoDB 管理界面</td><td class="loc">xx.xx.xx.xx 占位符</td><td class="n">需配置</td></tr>
+      <tr><td class="pod">es</td><td class="say">Elasticsearch 单节点</td><td class="say">自带</td><td class="n">需存储</td></tr>
+      <tr><td class="pod">neo4j</td><td class="say">图数据库</td><td class="say">需要共享盘目录</td><td class="n">需存储</td></tr>
+      <tr><td class="pod">sd-webui</td><td class="say">Stable Diffusion 画图界面</td><td class="say">需模型文件在共享盘</td><td class="n">需模型</td></tr>
+      <tr><td class="pod">xinference</td><td class="say">大模型推理框架</td><td class="say">需模型目录</td><td class="n">需模型</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="prob">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>推理服务一条都没真正在跑。</b>数据库里有 5 条记录，但 <code>service</code> namespace 里<b>一个 Pod 都没有</b>，也没有对应的 VirtualService。<b>其中 4 条是安装器灌的演示数据</b>（<code>mnist-202208011</code>、<code>resnet50-202208012/3/4</code>，全部创建于 <code>2026-07-14 12:23:05</code>），只有 1 条 <code>batch-202608241</code> 是人建的（08-24）。</li>
+    <li><b><code>mysql-ui</code> 模板是坏的。</b>它指向 <code>mysql-service.infra:3306</code>，但<b>全集群根本没有这个 Service</b>（MySQL 是服务器5 上的裸机进程，不在 K8s 里）。一开就报错。<br><b>修法二选一：</b>① 给服务器5 的 MySQL 建一个 ExternalName 类型的 Service 叫 <code>mysql-service</code>；② 把这个模板下架。</li>
+    <li><b>过半模板需要额外准备才能用。</b>8 个里只有 <code>redis-ui</code> 开箱即用，其余要么需要外部实例、要么需要模型文件、要么需要共享盘目录。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 07 -->
+<h2 id="m7"><span class="n">07</span>监控</h2>
+<p class="why">看集群和业务的运行状况。</p>
+<p class="where"><b>monitoring</b> namespace　·　跑在 <b>master1 / master3</b> 和全部 5 台机器上</p>
+
+<table>
+  <thead><tr><th>Pod</th><th class="n">副本</th><th>它是干什么的（说人话）</th><th>在哪</th></tr></thead>
+  <tbody>
+    <tr><td class="pod">prometheus-k8s-0</td><td class="n">1</td>
+      <td class="say"><b>指标仓库。</b>定时去各个地方抓数字（CPU、内存、请求量……）存起来，供查询和画图。是个 StatefulSet，挂了会重建。</td><td class="loc">master1</td></tr>
+    <tr><td class="pod">prometheus-operator</td><td class="n">1</td>
+      <td class="say"><b>Prometheus 的管家。</b>你写个 CRD 声明"我要一个什么样的 Prometheus"，它自动帮你把实例起好、配置好。</td><td class="loc">master1</td></tr>
+    <tr><td class="pod">grafana</td><td class="n">1</td>
+      <td class="say"><b>仪表盘。</b>把 Prometheus 里的数字画成图表。平台菜单和推理服务页面都有跳转入口。</td><td class="loc">master3</td></tr>
+    <tr><td class="pod">node-exporter</td><td class="n">5</td>
+      <td class="say"><b>每台机器的体检表。</b>采集所在节点的 CPU / 内存 / 磁盘 / 网络。每台机器一个（DaemonSet）。每个 Pod 里还有个小 sidecar 叫 <code>kube-rbac-proxy</code>，负责鉴权。</td><td class="loc">全部 5 台</td></tr>
+    <tr><td class="pod">dcgm-exporter</td><td class="n">0</td>
+      <td class="say"><b>GPU 体检表。</b>本该采集 GPU 利用率，但<b>本集群没有 GPU，所以这个 DaemonSet 一个 Pod 都没起来</b>，纯粹挂在清单里。</td><td class="loc">—</td></tr>
+  </tbody>
+</table>
+
+<div class="prob soft">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b><code>dcgm-exporter</code> 是纯装饰。</b>没有 GPU，它永远不会起来。要么删掉，要么留着等以后加 GPU（不影响任何功能）。</li>
+    <li><b>监控本身是单点。</b>prometheus 和 grafana 都只有 1 副本，而且监控数据存在共享盘上——<b>共享盘挂了，监控数据和业务数据一起没</b>，那正是最需要看监控的时刻。</li>
+    <li><b>入口在 Istio 网关后面</b>，和业务共用同一个 VIP。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 08 -->
+<h2 id="m8"><span class="n">08</span>集群地基</h2>
+<p class="why">这些不是 Cube Studio 的东西，是 K8s 本身跑起来必需的。没有它们整台机器都不转。</p>
+<p class="where">主要在 <b>kube-system</b> 和 <b>kube-flannel</b> 两个 namespace</p>
+
+<table>
+  <thead><tr><th>组件</th><th class="n">副本</th><th>它是干什么的（说人话）</th></tr></thead>
+  <tbody>
+    <tr><td class="pod">etcd</td><td class="n">3</td>
+      <td class="say"><b>整个集群的账本。</b>所有 K8s 对象（Pod、Service、配置……）都存在这里。<b>它是集群里最不能丢的东西。</b>3 副本，多数派存活即可用。</td></tr>
+    <tr><td class="pod">kube-apiserver</td><td class="n">3</td>
+      <td class="say"><b>唯一的正门。</b>所有人（包括 kubectl、平台后端）都只能通过它读写集群，它是唯一直接跟 etcd 说话的。</td></tr>
+    <tr><td class="pod">kube-controller-manager</td><td class="n">3</td>
+      <td class="say"><b>自动纠偏程序。</b>不停对比"实际状态"和"你要的状态"，不一样就动手改。比如 Pod 挂了它负责重建。</td></tr>
+    <tr><td class="pod">kube-scheduler</td><td class="n">3</td>
+      <td class="say"><b>派活儿的。</b>决定一个新 Pod 该放到哪台机器上（看资源够不够、标签对不对、亲和性满不满足）。</td></tr>
+    <tr><td class="pod">kube-proxy</td><td class="n">5</td>
+      <td class="say"><b>Service 的接线员。</b>让"一个 Service 名"能对应到后台多个 Pod，并做流量转发。每台机器一个。</td></tr>
+    <tr><td class="pod">kube-flannel-ds</td><td class="n">5</td>
+      <td class="say"><b>跨机器的网络。</b>让 A 机器上的 Pod 能直连 B 机器上的 Pod（CNI 插件）。每台机器一个。</td></tr>
+    <tr><td class="pod">coredns</td><td class="n">2</td>
+      <td class="say"><b>集群内的电话簿。</b>服务之间互相访问用的域名（比如 <code>minio.kubeflow</code>）就是它解析的。</td></tr>
+    <tr><td class="pod">metrics-server</td><td class="n">1</td>
+      <td class="say"><b>资源数据源。</b>给 <code>kubectl top</code> 和自动扩缩容（HPA）提供 CPU/内存数字。</td></tr>
+    <tr><td class="pod">kubernetes-dashboard-cluster</td><td class="n">1</td>
+      <td class="say"><b>管理员用的 K8s 原生控制台。</b>平台菜单里的「K8s Dashboard」跳转的就是它。带一个 metrics-scraper 采集指标。</td></tr>
+    <tr><td class="pod">kubernetes-dashboard-user1</td><td class="n">1</td>
+      <td class="say"><b>用户级的 K8s 控制台</b>（权限受限版）。同样带一个 metrics-scraper。</td></tr>
+  </tbody>
+</table>
+
+<div class="prob soft">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>3 个 master 同时是控制面和负载节点。</b>它们身上还跑着平台后端、Redis、监控、任务流控制器等等。虽然打了 <code>node-role.kubernetes.io/control-plane</code> 的污点通常能隔离普通业务 Pod，但平台自己的组件是特意调度上去的（靠 <code>kubeflow-dashboard=true</code> 等标签）。<b>结果是控制面的稳定性和平台组件的稳定性绑在一起了。</b></li>
+    <li><b>两个 K8s Dashboard 的权限都很大</b>，而且都通过 Istio 网关暴露在同一个 VIP 后面，靠路径区分。建议至少把 <code>user1</code> 那个收一收。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 09 -->
+<h2 id="m9"><span class="n">09</span>镜像仓库（在 K8s 之外）</h2>
+<p class="why">这一块<b>不在 K8s 里</b>，所以 <code>kubectl get pods</code> 看不到它，之前几轮的清单里也没有它。但它是整个平台的供应链起点。</p>
+<p class="where">跑在 <b>服务器2（192.168.11.12）</b>，用 <b>docker-compose</b> 部署，不是 K8s 工作负载</p>
+
+<table>
+  <thead><tr><th>服务</th><th>它是干什么的</th><th>在哪</th></tr></thead>
+  <tbody>
+    <tr><td class="pod">Harbor</td>
+      <td class="say"><b>私有镜像仓库。</b>所有镜像都从 <code>192.168.11.12/cube-studio/*</code> 拉。由 8 个容器组成：<code>harbor-core</code>（主服务）、<code>harbor-portal</code>（界面）、<code>harbor-jobservice</code>、<code>registry</code>（真正存镜像的）、<code>registryctl</code>、<code>harbor-db</code>（元数据库）、<code>redis</code>、<code>nginx</code>（入口）。</td>
+      <td class="loc">服务器2 :80</td></tr>
+    <tr><td class="pod">Gitea</td>
+      <td class="say"><b>代码仓库。</b>平台「代码仓库」功能对接的就是它。（SSH 走 :2222）</td>
+      <td class="loc">服务器2 :3000</td></tr>
+    <tr><td class="pod">buildkit</td>
+      <td class="say"><b>构建镜像的服务。</b>装在服务器1 上（systemd 服务）。</td>
+      <td class="loc">服务器1</td></tr>
+    <tr><td class="pod">Docker</td>
+      <td class="say">服务器1 上装了 Docker（其余节点用 containerd）。平台配置里 <code>CONTAINER_CLI='docker'</code>，notebook「保存镜像」就是通过挂载 <code>/var/run/docker.sock</code> 来 commit 镜像的。</td>
+      <td class="loc">服务器1</td></tr>
+  </tbody>
+</table>
+
+<div class="prob">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>Harbor 是单点，还没有备份。</b>它跑在<b>一台机器</b>上（服务器2），用 docker-compose 编排，<b>不在 K8s 里、不受监控、不会自动重建</b>。<code>systemctl is-active harbor</code> 返回的是 <b>inactive</b>（因为没有 systemd unit）—— 意味着<b>机器重启后 Harbor 不会自动起来</b>，得手工 <code>docker compose up</code>。</li>
+    <li><b>走的是 HTTP 明文。</b><code>curl http://192.168.11.12/v2/</code> 返回 401（服务在，需要认证），但协议是 http 不是 https。镜像拉取和推送的内容在内网是明文的。</li>
+    <li><b>它的元数据库 <code>harbor-db</code> 也在同一台机器上</b>，和 registry 共命运。</li>
+    <li><b>Harbor 一挂，全平台的新部署都受影响</b>（已有 Pod 不受影响，因为镜像已在本地），但「保存镜像」和新建 notebook/推理服务会直接失败。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 10 -->
+<h2 id="m10"><span class="n">10</span>清单里有、实际没装的</h2>
+<p class="why">仓库 <code>install/kubernetes/</code> 下有完整清单，但集群里<b>完全没有部署</b>。列出来是为了避免误判——<b>看文档以为有，实际去查发现没有</b>。</p>
+
+<table>
+  <thead><tr><th>模块</th><th>清单在哪</th><th>实际状态</th></tr></thead>
+  <tbody>
+    <tr><td class="pod">Argo Server</td><td class="loc">argo/install-3.4.3-all.yaml</td><td class="say">❌ 只部署了 controller，<b>没部署 server</b> → 没有 Argo 官方 Web UI</td></tr>
+    <tr><td class="pod">EFK 日志栈</td><td class="loc">efk/es-all.yaml 等</td><td class="say">❌ 完全没装。<code>logging</code> namespace 是空的</td></tr>
+    <tr><td class="pod">ilogtail + Kafka</td><td class="loc">ilogtail/ · kafka/</td><td class="say">❌ 完全没装。（Kafka 本身也不在这个仓库里）</td></tr>
+    <tr><td class="pod">Alluxio</td><td class="loc">alluxio/2.9/</td><td class="say">❌ 完全没装</td></tr>
+    <tr><td class="pod">JuiceFS</td><td class="loc">juicefs/</td><td class="say">❌ 完全没装</td></tr>
+    <tr><td class="pod">Ceph / Rook</td><td class="loc">ceph/</td><td class="say">❌ 完全没装。无 CRD、无 StorageClass、无 PVC。仓库里那份 <code>mon: count: 1</code> 是 demo 配置，别当成生产方案</td></tr>
+    <tr><td class="pod">MindSpore Operator</td><td class="loc">mindspore/operator.yaml</td><td class="say">❌ 完全没装</td></tr>
+    <tr><td class="pod">kube-state-metrics</td><td class="loc">prometheus/kube-state-metrics/</td><td class="say">❌ 没装 → K8s 对象层面的指标（有多少 Deployment、有多少 Pod 在 CrashLoop）采集不到</td></tr>
+    <tr><td class="pod">HDFS</td><td class="loc">nfs/ · notebook-hdfs-build/</td><td class="say">❌ 完全没装。8020 端口不通。<b>但有 notebook 和代码在用它的名字</b></td></tr>
+    <tr><td class="pod">NFS 服务端部署文档</td><td class="loc">nfs/NFS离线部署.md</td><td class="say">⚠️ 实际用的是服务器1 手工配的 NFS（<code>no_root_squash</code>），和文档里的方案不是一套</td></tr>
+  </tbody>
+</table>
+
+<div class="prob soft">
+  <span class="h">⚠️ 这个模块的问题</span>
+  <ul>
+    <li><b>配置漂移。</b>清单、文档、实际部署三者不一致，导致排查时很容易走错方向。举两个已经踩到的例子：<br>
+      ① MySQL —— 清单用 <code>nodeSelector: mysql=true</code>，实际是服务器5 裸机；<br>
+      ② NFS —— 文档在 <code>nfs/</code> 目录，实际是服务器1 手工 <code>/etc/exports</code>。</li>
+    <li><b>留下了一批"看起来有其实没有"的引用。</b>比如 <code>admin-hdfs</code> notebook、<code>view_hdfs.py</code>、<code>KAFKA</code> 相关的 ilogtail 配置——都会被当成正常功能去用，然后失败。</li>
+    <li><b>没有 StorageClass 是被动的结果。</b>因为 Ceph/NFS-CSI/JuiceFS 都没装，所以只能用 <code>hostPath</code> 硬编码路径，才有了"超卖 52 倍"和"改路径要动一堆 YAML"的问题。</li>
+  </ul>
+</div>
+
+<!-- ============================================ 附录 A -->
+<h2 id="sc"><span class="n">A</span>附录：StorageClass 速查</h2>
+<p class="why">前面反复出现"全集群没有一个 StorageClass"。这一节讲清它是什么、为什么这里没有、以及<b>为什么装了它也不解决根本问题</b>。</p>
+<p class="where">相关模块：<b>03 数据存储</b>　·　<b>10 清单里有、实际没装的</b></p>
+
+<div class="box p">
+  <h4>一句话：StorageClass 是「存储的模板」</h4>
+  <p>它回答一个问题：<b>"有人要一块盘的时候，我该去哪儿拿、怎么造、按什么规格造？"</b></p>
+  <p>没有它，只能是<b>管理员先手工造好盘，再等人来申请</b>；有了它，<b>用户提一张申请单，盘自动出现</b>。</p>
+</div>
+
+<table>
+  <thead><tr><th>概念</th><th>是什么</th><th>类比</th><th class="n">数量关系</th></tr></thead>
+  <tbody>
+    <tr><td class="pod">StorageClass</td><td class="say">怎么造（模板 / 规格）</td><td class="say">菜谱：「3 副本、SSD、可扩容」</td><td class="n">一对多</td></tr>
+    <tr><td class="pod">PVC</td><td class="say">用户的申请单</td><td class="say">点单：「按这个菜谱来 10G」</td><td class="n">一对一</td></tr>
+    <tr><td class="pod">PV</td><td class="say">造出来的那块盘</td><td class="say">端上来的那份菜</td><td class="n">一对一</td></tr>
+  </tbody>
+</table>
+<p class="why" style="margin-top:8px">注意：<b>PVC 和 PV 是一一对应</b>的，而 StorageClass 能造出无数块盘。</p>
+
+<div class="box b">
+  <h4>核心区别：静态供给 vs 动态供给</h4>
+  <p><b>现状是「静态供给」——手工作坊：</b></p>
+  <div style="font-family:var(--mono);font-size:12.3px;line-height:1.7;color:#2b3540;background:#fff;
+       border:1px solid var(--line);border-radius:6px;padding:12px 15px;margin:8px 0;white-space:pre;overflow-x:auto"># ① 管理员先登服务器，手工建目录
+#    mkdir /bdm/share_bdm/kubeflow/dataset
+
+# ② 再手工登记一个 PV —— 这一步就是"造盘"
+kind: PersistentVolume
+metadata: {name: jupyter-kubeflow-dataset}
+spec:
+  capacity: {storage: 500Gi}      # ← 随手填的数字，K8s 无法校验
+  storageClassName: ""            # ← 空字符串 = 不用模板，只能手工配对
+  hostPath: {path: /data/k8s/kubeflow/dataset}
+
+# ③ 用户写 PVC，还得写 storageClassName: "" 才配得上</div>
+  <p style="margin-top:12px"><b>有 StorageClass 之后——自动化工厂：</b></p>
+  <div style="font-family:var(--mono);font-size:12.3px;line-height:1.7;color:#2b3540;background:#fff;
+       border:1px solid var(--line);border-radius:6px;padding:12px 15px;margin:8px 0;white-space:pre;overflow-x:auto">kind: StorageClass
+metadata: {name: nas-light}
+provisioner: nfs.csi.k8s.io        # ← 谁来"造盘"（关键就是它）
+parameters:
+  server: 192.168.11.11
+  share: /bdm/share_bdm
+reclaimPolicy: Retain
+allowVolumeExpansion: true         # ← 支持在线扩容
+---
+# 用户的申请单就只剩这么点
+kind: PersistentVolumeClaim
+spec:
+  storageClassName: nas-light      # ← 只写这一行，PV 自动生成并绑定
+  resources: {requests: {storage: 10Gi}}</div>
+  <p>中间那个 <code>provisioner</code> 是关键——它是 CSI 驱动，收到 PVC 后<b>真的去调后端接口造一块盘</b>，造完自动建 PV 并绑定。本集群没装任何 CSI 驱动，所以 PV 全靠手工登记。</p>
+</div>
+
+<table>
+  <thead><tr><th>能力</th><th>现在（hostPath）</th><th>有 StorageClass 之后</th></tr></thead>
+  <tbody>
+    <tr><td class="pod">容量约束</td><td class="say">❌ 那个 <code>500Gi</code> 纯粹是装饰，没人管</td><td class="say">✅ 按申请的大小真去造</td></tr>
+    <tr><td class="pod">在线扩容</td><td class="say">❌ 改 YAML 数字，盘不会变大</td><td class="say">✅ 改 PVC 的 size 就能扩（需 <code>allowVolumeExpansion</code>）</td></tr>
+    <tr><td class="pod">多档套餐</td><td class="say">❌ 只有一种</td><td class="say">✅ 可并存 <code>fast-ssd</code> / <code>cheap-hdd</code> / <code>shared-nas</code>，按业务挑</td></tr>
+    <tr><td class="pod">删 PVC 之后</td><td class="say">❌ 手工决定</td><td class="say">✅ <code>reclaimPolicy: Delete/Retain</code> 自动处理</td></tr>
+    <tr><td class="pod">调度时机</td><td class="say">❌ 无</td><td class="say">✅ <code>volumeBindingMode: WaitForFirstConsumer</code>（等 Pod 定好节点再造盘，避免造错地方）</td></tr>
+    <tr><td class="pod">配额</td><td class="say">❌ 无</td><td class="say">✅ 配合 <code>ResourceQuota</code> 限制"某团队最多申请多少存储"</td></tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <h4>为什么这里一个都没有 —— 一条因果链</h4>
+  <div style="font-family:var(--mono);font-size:12.3px;line-height:1.85;color:#2b3540;background:#fff;
+       border:1px solid var(--line);border-radius:6px;padding:12px 15px;margin:8px 0;white-space:pre;overflow-x:auto">Ceph / NFS-CSI / JuiceFS / Longhorn 全都没装
+      ↓  没有任何 provisioner 可用
+没有"存储模板"可写 → StorageClass 一个都建不出来
+      ↓
+只能人工划目录 + 手工登记 hostPath PV
+      ↓
+手工填的容量数字没人校验（为省事都填 500Gi）
+      ↓
+15 个 PV 声称 5212Gi，底下只剩 45G —— 超卖 52 倍</div>
+  <p><b>所以"没有 StorageClass"不是原因，是结果</b>——它是"没装任何存储驱动"这件事最直观的症状。它和模块 10 里那份"没装清单"是同一件事的两面。</p>
+</div>
+
+<div class="prob soft">
+  <span class="h">⚠️ 但要说句实话：装了 StorageClass 也解决不了根本问题</span>
+  <ul>
+    <li><b>NFS 目录做不了硬配额。</b>就算装了 NFS CSI，<code>requests.storage</code> 也只是"造目录时记个数"，<b>目录写满了照样爆</b>（除非 NFS 服务端支持 project quota）。要真限制住，得用块存储（Ceph RBD / 云盘那种）。<b>超卖那 52 倍不会因为装了 SC 就消失。</b></li>
+    <li><b>单点也不会变。</b>StorageClass 只换了"谁来划目录"，底层还是服务器1 那一块盘、那一个 NFS 导出。</li>
+    <li>一句话：<b>StorageClass 能把「管理方式」变好，但变不了「物理上的单点」。</b>要动物理层，还是得回到"到底用哪套存储后端"这个决策——也就是模块 10 里列的那几个候选（Ceph / JuiceFS / NFS-CSI / Longhorn）。</li>
+  </ul>
+</div>
+
+<div class="prob">
+  <span class="h">🔴 顺带一个比 StorageClass 更该担心的坑：静默数据分裂</span>
+  <p style="margin:0 0 8px">现在这套 hostPath + 软链的方案，藏着一个不会报错的故障模式。worker 节点上的实际结构是：</p>
+  <div style="font-family:var(--mono);font-size:12.3px;line-height:1.8;color:#7a2419;background:#fff;
+       border:1px solid var(--badbd);border-radius:6px;padding:12px 15px;margin:8px 0 12px;white-space:pre;overflow-x:auto">/bdm                   ← 节点本地的 XFS 盘（真实存在，空的）
+ └─ share_bdm/          ← NFS 挂载"覆盖"在这个子目录上
+/data/k8s  →  软链指向 /bdm/share_bdm</div>
+  <p style="margin:0 0 6px">关键点：<b><code>/bdm/share_bdm</code> 底下本来就是一个本地目录</b>，NFS 只是盖在它上面。于是有两种失败方式，都不会给你明确的错误提示：</p>
+  <ul>
+    <li><b>① 挂载时失败</b>（服务器1 没起来、NFS 服务没启）→ <code>/bdm/share_bdm</code> 就露出底下那个<b>本地空目录</b>。Pod <b>能正常启动、不报任何错</b>，但 notebook 里的 <code>/mnt</code> 是空的；往里面写的数据落在<b>本地盘</b>上，等 NFS 恢复后被挂载点盖住，等于凭空消失。</li>
+    <li><b>② 挂载成功后服务器1 掉线</b> → 挂载参数里带了 <code>hard</code>（实测：<code>hard,proto=tcp,timeo=600,retrans=2</code>）→ IO 会<b>永久阻塞</b>而不是报错。表现是"notebook 突然卡死、日志里什么都没有"。<br><span style="opacity:.85">（<code>hard</code> 的取舍是"宁可卡住也不丢数据"，但对使用者来说就是无声的挂起。）</span></li>
+  </ul>
+  <p style="margin:10px 0 0"><b>建议：</b>在这块盘上加一个"挂载点存活"的检查（判断 <code>/bdm/share_bdm</code> 是不是真的 NFS 文件系统，而不只是个目录），比单纯看容量水位更能提前发现问题。这和模块 07 里"监控数据也放在同一块盘上"是同一个盲区。</p>
+</div>
+
+<!-- ============================================ 总结 -->
+<h2 id="sum"><span class="n">★</span>一页纸总结</h2>
+
+<table>
+  <thead><tr><th>模块</th><th class="n">Pod 数</th><th>状态</th><th>最该关注的问题</th></tr></thead>
+  <tbody>
+    <tr><td>01 入口</td><td class="n">10</td><td style="color:var(--warn)">⚠️ 有坑</td><td class="say">没有 Ingress Controller；L2 模式入口带宽实际单机</td></tr>
+    <tr><td>02 平台本体</td><td class="n">8</td><td style="color:var(--warn)">⚠️ 有坑</td><td class="say">schedule / watch 单点；前端日志丢失；每次重启重灌初始数据</td></tr>
+    <tr><td>03 数据存储</td><td class="n">4</td><td style="color:var(--bad)">🔴 风险高</td><td class="say"><b>共享盘超卖 52 倍 + 无快照</b></td></tr>
+    <tr><td>04 Jupyter</td><td class="n">6</td><td style="color:var(--warn)">⚠️ 有坑</td><td class="say">6 个环境压在 2 个 worker 上；只有 1 个用户</td></tr>
+    <tr><td>05 任务与任务流</td><td class="n">4</td><td style="color:var(--gray)">○ 空转</td><td class="say">零使用，4 条任务是安装器灌的演示数据</td></tr>
+    <tr><td>06 推理/中间件服务</td><td class="n">0</td><td style="color:var(--gray)">○ 未使用</td><td class="say">一条都没真在跑；<code>mysql-ui</code> 模板是坏的</td></tr>
+    <tr><td>07 监控</td><td class="n">8</td><td style="color:var(--warn)">⚠️ 有坑</td><td class="say">监控数据存在共享盘上，共享盘挂了一起没</td></tr>
+    <tr><td>08 集群地基</td><td class="n">24</td><td style="color:var(--keep)">✓ 正常</td><td class="say">控制面和平台组件混部</td></tr>
+    <tr><td>09 镜像仓库</td><td class="n">—</td><td style="color:var(--bad)">🔴 单点</td><td class="say">Harbor 单机 docker-compose，重启不自起，HTTP 明文</td></tr>
+    <tr><td>10 未部署</td><td class="n">0</td><td style="color:var(--gray)">○ —</td><td class="say">配置漂移，留下了一批"看起来有其实没有"的引用</td></tr>
+  </tbody>
+</table>
+
+<div class="box b" style="margin-top:18px">
+  <h4>如果只做三件事</h4>
+  <p><b>1. 给 MySQL 加备份。</b>它挂了整站登不进去，而且和业务混部在同一台 worker 上。定时 <code>mysqldump</code> 到共享盘以外的位置就行（注意别 dump 到可能同时挂的那块盘上）。</p>
+  <p><b>2. 给 Harbor 加自启和备份。</b>一句 systemd unit 就能让它在重启后自动起来；<code>harbor-db</code> 和 registry 的数据目录要纳入备份。</p>
+  <p><b>3. 摸清共享盘还剩多少。</b>45G 是全平台共用的余量，而 PV 声称了 5212Gi。至少要加容量告警，否则某天某个 notebook 写满会带上所有人。</p>
+</div>
+
+<footer>
+  数据来源：5 台服务器实测（<code>kubectl get all -A</code>、<code>mount</code>、<code>/etc/exports</code>、<code>systemctl</code>、<code>docker ps</code>、MySQL 直查）+ 仓库清单交叉对照<br>
+  盘点时间：2026-09-24　·　策略：全部保留，暂不精简
+</footer>
+
+</div>
+</body>
+</html>

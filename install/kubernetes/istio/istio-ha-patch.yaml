@@ -1,0 +1,18 @@
+# Istio HA: ingressgateway + istiod 双副本
+# 不修改原始 install-1.15.0.yaml（istioctl 自动生成），
+# 通过独立 patch 文件设置副本数
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istio-ingressgateway
+  namespace: istio-system
+spec:
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istiod
+  namespace: istio-system
+spec:
+  replicas: 2

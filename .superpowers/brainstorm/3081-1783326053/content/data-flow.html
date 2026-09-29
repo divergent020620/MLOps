@@ -1,0 +1,90 @@
+<h2>你现在的模式 vs Spark 模式</h2>
+<p class="subtitle">关键转变：数据不动，计算动</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">现在：拉数据到本地</div>
+    <div class="mockup-body" style="text-align:left; font-size:13px;">
+      HDFS 上 100GB Parquet<br/>
+      ↓ hdfs dfs -get (下载 30分钟)<br/>
+      本地 Python/Jupyter<br/>
+      ↓ pd.read_parquet()<br/>
+      单机训练/推理<br/>
+      ↓<br/>
+      结果写回本地
+      <br/><br/>
+      <b style="color:#c00;">瓶颈：</b>网络传输 + 单机内存
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Spark 模式：数据不动，计算动</div>
+    <div class="mockup-body" style="text-align:left; font-size:13px;">
+      HDFS 上 100GB Parquet<br/>
+      ↓ spark.read.parquet("hdfs://...")<br/>
+      Executor-1 读 Partition-1 (节点本地)<br/>
+      Executor-2 读 Partition-2 (节点本地)<br/>
+      ...<br/>
+      Executor-500 读 Partition-500 (节点本地)<br/>
+      ↓ 各自训练/推理<br/>
+      结果直接写回 HDFS
+      <br/><br/>
+      <b style="color:#0a0;">优势：</b>零数据传输 + 500 节点并行
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>你需要知道的信息（问管理员）</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;" width="35">#</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">问题</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">为什么</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">1</td><td style="padding:6px; border:1px solid #ddd;"><b>Hive Metastore URI？</b>(如 thrift://x.x.x.x:9083)</td><td style="padding:6px; border:1px solid #ddd;">Spark 可以直接读 Hive 表，用 SQL 查，不需要知道每个 parquet 路径</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">2</td><td style="padding:6px; border:1px solid #ddd;"><b>HDFS NameNode 地址？</b>(跟你知道的一样)</td><td style="padding:6px; border:1px solid #ddd;">你已经有 keytab 连上了，Spark 用同样的地址</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">3</td><td style="padding:6px; border:1px solid #ddd;"><b>数据在哪个路径？</b></td><td style="padding:6px; border:1px solid #ddd;">比如 /user/hive/warehouse/xxx.db/table_name/</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">4</td><td style="padding:6px; border:1px solid #ddd;"><b>Spark Thrift Server 有吗？</b></td><td style="padding:6px; border:1px solid #ddd;">如果有，你 Java JDBC 可以直接连 Spark SQL，不需要改代码</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>三种读数据方式（按推荐顺序）</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;">方式</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">代码</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">前提</th></tr>
+    <tr style="background:#f0fff0;">
+      <td style="padding:6px; border:1px solid #ddd;"><b>1. Hive 表</b></td>
+      <td style="padding:6px; border:1px solid #ddd; font-family:monospace; font-size:12px;">spark.sql("SELECT * FROM db.table WHERE dt='20260701'")</td>
+      <td style="padding:6px; border:1px solid #ddd;">需要 Hive Metastore URI</td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #ddd;"><b>2. HDFS Parquet 路径</b></td>
+      <td style="padding:6px; border:1px solid #ddd; font-family:monospace; font-size:12px;">spark.read.parquet("hdfs://namenode:8020/user/hive/warehouse/db.db/table/")</td>
+      <td style="padding:6px; border:1px solid #ddd;">你已经有路径了，不需要额外信息</td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #ddd;"><b>3. JDBC 连 Spark Thrift</b></td>
+      <td style="padding:6px; border:1px solid #ddd; font-family:monospace; font-size:12px;">jdbc:hive2://thrift-server:10000</td>
+      <td style="padding:6px; border:1px solid #ddd;">你的 Java 项目可以不改，直接指向 Spark</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>实际场景对照</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <tr style="background:#f5f5f5;"><th style="padding:6px; text-align:left; border:1px solid #ddd;">你的场景</th><th style="padding:6px; text-align:left; border:1px solid #ddd;">Spark 怎么替代</th></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">hdfs dfs -get 下载 parquet → Python 处理</td><td style="padding:6px; border:1px solid #ddd;">spark.read.parquet("hdfs://...") 直接在 Executor 上读，不走网络</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">Java JDBC 执行 SELECT ... WHERE ...</td><td style="padding:6px; border:1px solid #ddd;">spark.sql("SELECT ...") 或继续用 JDBC 连 Spark Thrift Server</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">Python sklearn 单机训练</td><td style="padding:6px; border:1px solid #ddd;">Spark MLlib 分布式训练 或 PyTorch + mapPartitions</td></tr>
+    <tr><td style="padding:6px; border:1px solid #ddd;">结果写回本地 csv</td><td style="padding:6px; border:1px solid #ddd;">df.write.parquet("hdfs://...") 直接写回 HDFS</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>你现在不做额外准备就能试的</h3>
+  <div style="text-align:left; font-size:13px; background:#f0fff0; border-radius:8px; padding:14px;">
+    <p><b>方式 2（HDFS Parquet 路径）——你已经有了！</b></p>
+    <p>你已经有 HDFS keytab，已经知道数据路径。拿到 spark-submit 权限后：</p>
+    <pre style="font-size:12px; background:#fff; padding:8px; border-radius:4px;">
+# 把你现在的路径直接放进代码
+df = spark.read.parquet("hdfs://namenode:8020/user/yourname/datasets/xxx/data.parquet")
+# 后续训练/推理/写回，全部在集群内完成，不走网络</pre>
+  </div>
+</div>

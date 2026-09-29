@@ -1,0 +1,73 @@
+基于10.240.8.150，已经有了jupyter基础环境。需要新建一个python3.10，并装一个jupyter将内核注册到已有的notebook上。
+1.离线下载python包，执行：
+（前半句参数设置是因为OpenSSL有问题，需要强制设置才行，不然会报错，当然，也可以写个变量固定下来，这里懒得写了。）
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 conda create -n py310_yujj_2 --offline /data/yujj/python-3.10.6-haa1d7c7_1.tar.bz2
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 source activate py310_yujj_2
+
+2.安装pip
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 conda install /data/yujj/pip-23.2.1-py310h06a4308_0.tar.bz2
+
+3.检查python和pip的路径：
+which python
+which pip
+
+4.设置行内源：
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 pip config set global.index-url http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple
+
+5.装包（注意参数-m，指定当前python解释器路径下的pip，不然可能pip会乱），之下whl：
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 python3 -m pip list
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 python3 -m pip install jupyter --trusted-host 10.208.29.10 --only-binary=:all:
+
+！千万不要一个一个装，要装死得！
+
+6.起notebook
+screen -S jupyter_session
+用root或者直接起notebook
+ctrl+A，然后快速按D剥离窗口，让他长挂后台就行，需要关的时候kill进程。
+
+如果内核闪退，看jupyter报错，一般是环境问题比如：libffi，sqlite，openssl等问题。下对应的环境解决。
+
+7.通用装包语法：
+
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 python3 -m pip install openevolve --trusted-host 10.208.29.10 --only-binary=:all:
+
+8.jupyter前端装包：
+%pip install fastapi --trusted-host 10.208.29.10 --only-binary=:all:
+#注意！和%不一样，%识别jupyter当前使用的kernel，而！是给系统python环境的。
+#如果找不到合适的包，可能是因为他没有whl格式的安装包，去掉后半段就行。
+
+9.装gssapi，涉及C编译器规范问题，通过%env CFLAGS='-std=c99' ，指定kernel的环境变量，然后再装包就没问题了。
+
+4.设置行内源：
+
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 pip config set global.index-url http://user-bdas.bdm:bdasbdmPwdNexus@10.208.29.10:8087/repository/BDAS.BDM-PY-PUBLIC/simple
+
+
+
+
+
+
+
+7.通用装包语法：
+
+
+
+CRYPTOGRAPHY_ALLOW_OPENSSL_102=1 python3 -m pip install {openevolve} --trusted-host 10.208.29.10 --only-binary=:all:
+
+
+
+pip源
+
+http://10.208.29.10:8087/
+
+user-bdas.bdm
+
+bdasbdmPwdNexus
+
+
+
+ 奇怪的建模服务器
+
+ http://10.240.8.150:8888/tree/2-%E5%8D%8E%E5%B8%88DC%E9%A1%B9%E7%9B%AE%E7%BB%84   
+
+ Bos95594!

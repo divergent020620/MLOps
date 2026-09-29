@@ -1,0 +1,45 @@
+# ============================================================================
+# Cube Studio py3.12 行外验证镜像(应用层)
+#
+# 用途: 本地验证 py3.12 依赖链安装 + myapp 启动; 最终行内用行内麒麟基座组装
+# 基座: 用户本地 notebook:jupyter-ubuntu-py312 -> Python 3.12.13 @ /opt/python
+#        (与行内 /opt/python3.12.10-x86_64-bin 同为 3.12.x, 无行为差异;
+#         wheel 采购限定 manylinux2014(glibc 2.17)保证麒麟 glibc 2.28 可装)
+#
+# 构建(仓库根为 context):
+#   docker build -f py312/Dockerfile.local-app -t cube312:local .
+#  前提: py312/wheels/ 已由 pip download 采购完成(见 py312/download_wheels.sh)
+#
+# 运行(源码用 -v 挂载, 代码即改即生效):
+#   docker run -it --rm --name cube312 \
+#     -v $(pwd)/install/docker/entrypoint.sh:/entrypoint.sh \
+#     -v $(pwd)/install/docker/config.py:/home/myapp/myapp/config.py \
+#     -v $(pwd)/install/docker/project.py:/home/myapp/myapp/project.py \
+#     -v $(pwd)/myapp:/home/myapp/myapp \
+#     -e STAGE=dev -e MYSQL_SERVICE=... -e REDIS_HOST=... cube312:local bash /entrypoint.sh
+# ============================================================================
+
+FROM notebook:jupyter-ubuntu-py312
+
+# PATH 置顶 /opt/python(基座 python3.12.13), 与行内布局一致
+ENV PATH=/opt/python/bin:$PATH
+ENV PYTHONPATH=/home/myapp
+ENV MYAPP_HOME=/home/myapp
+
+# ── 1. 应用 venv(模拟行内"基座 python + venv"布局, 不污染基座环境) ──
+RUN /opt/python/bin/python -m venv /home/myapp/py312 && \
+    /home/myapp/py312/bin/pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# ── 2. 行外采购的 cp312 wheels(限定 manylinux2014, 零编译) ──
+COPY install/docker/requirements.txt /opt/requirements.txt
+COPY py312/wheels/ /opt/wheels/
+RUN /home/myapp/py312/bin/pip install --no-index --find-links /opt/wheels -r /opt/requirements.txt
+
+# ── 3. 启动入口(同行内, config.py/project.py 由 -v 挂载覆盖) ──
+COPY install/docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# 应用 venv 置顶(覆盖基座 python), 与行内 PATH 策略一致
+ENV PATH=/home/myapp/py312/bin:/home/myapp/myapp/bin:$PATH
+
+CMD ["bash", "/entrypoint.sh"]

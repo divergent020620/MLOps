@@ -1,0 +1,19 @@
+# HDFS Kerberos HTTP-SPNEGO 客户端组(独立文件, 必须 --no-deps 装配!)
+#
+# WHY 单独一个文件:
+#   requests-kerberos 0.15.0 的 metadata 声明 pyspnego[kerberos], 其 kerberos extra
+#   依赖 gssapi(C 扩展, PyPI 只发 macosx/win wheel, Linux 仅 sdist)——
+#   零编译/PyPI 解析下 pip 必然 ResolutionImpossible。
+#   而运行时只需要纯 py 的 requests-kerberos 壳 + pyspnego 0.12.2(均无 C 依赖,
+#   已验证: KerberosClient(url, timeout=...) 构造 OK)。
+#   真的发起 HTTP SPNEGO 协商时才需要 native 后端(gssapi/pykerberos)——行内如
+#   HDFS 为严格 SPNEGO, 需行外编译 pykerberos wheel 带入(预案, 见组装交接文档)。
+#
+# 安装顺序(基于行内 pypi 源或离线 wheels 均可):
+#   1) pip install --no-deps -r requirements-kerberos.txt
+#   2) pip install -r requirements.txt(主依赖)
+#   (hdfs 2.7.3 不硬依赖 requests-kerberos, 无解析冲突)
+
+--no-deps
+requests-kerberos==0.15.0
+pyspnego==0.12.2

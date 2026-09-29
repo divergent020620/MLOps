@@ -1,0 +1,127 @@
+# ============================================================================
+# Cube Studio — 麒麟信创 Python 3.12 通用开发环境 (无 HDFS)
+# 基于 domestic-jupyter/Dockerfile.hdfs，去除 HDFS/Hadoop/Kerberos 依赖
+# 升级 Python 至 3.12，预装常用数据科学 / 机器学习库
+#
+# 构建:
+#   docker build --network=host \
+#     -t cube-studio/python:3.12-kylin -f Dockerfile.kylin-py312 .
+# ============================================================================
+
+FROM cube-studio/kylin:v10-sp3-2403
+
+ENV TZ=Asia/Shanghai
+ENV LANG=zh_CN.UTF-8
+ENV LC_ALL=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN.UTF-8
+
+# ── 1. 系统依赖 ────────────────────────────────────────────
+RUN yum install -y --nogpgcheck \
+        vim wget curl git unzip zip lsof procps-ng net-tools \
+        fontconfig wqy-microhei-fonts \
+        nodejs npm \
+        bzip2 \
+        iproute \
+        gcc gcc-c++ make \
+        openssl-devel \
+        bzip2-devel \
+        libffi-devel \
+        zlib-devel \
+        readline-devel \
+        sqlite-devel \
+        xz-devel \
+    && yum clean all && rm -rf /var/cache/yum/*
+
+# ── 2. Miniconda + Python 3.12 ─────────────────────────────
+# 使用较新版本 Miniconda 以支持 Python 3.12
+COPY packages/Miniconda3-py312_25.3.1-1-Linux-x86_64.sh /tmp/
+RUN bash /tmp/Miniconda3-py312_25.3.1-1-Linux-x86_64.sh -b && \
+    rm -f /tmp/Miniconda3-py312_25.3.1-1-Linux-x86_64.sh
+
+ENV PATH=/root/miniconda3/bin:${PATH}
+RUN conda create -y -n py312 python=3.12
+ENV PATH=/root/miniconda3/envs/py312/bin:${PATH}
+ENV CONDA_DEFAULT_ENV=py312
+
+# ── 3. JupyterLab + Python 常用库 ──────────────────────────
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
+    pip install --no-cache-dir \
+        # ── Jupyter 生态 ──
+        jupyterlab \
+        notebook \
+        ipykernel \
+        # ── 科学计算 & 数据处理 ──
+        numpy \
+        pandas \
+        scipy \
+        scikit-learn \
+        polars \
+        pyarrow \
+        # ── 可视化 ──
+        matplotlib \
+        Pillow \
+        seaborn \
+        plotly \
+        pyecharts \
+        # ── 深度学习 & 机器学习 ──
+        torch \
+        torchvision \
+        torchaudio \
+        transformers \
+        xgboost \
+        lightgbm \
+        # ── 数据库 & SQL ──
+        pymysql \
+        sqlalchemy \
+        psycopg2-binary \
+        redis \
+        # ── 消息队列 ──
+        pika \
+        kafka-python \
+        # ── Web & API ──
+        requests \
+        httpx \
+        aiohttp \
+        fastapi \
+        uvicorn \
+        flask \
+        jinja2 \
+        # ── 异步任务 ──
+        celery \
+        # ── 工具库 ──
+        pyyaml \
+        pysnooper \
+        tqdm \
+        click \
+        python-dotenv \
+        loguru \
+        rich \
+        # ── 文件格式 ──
+        openpyxl \
+        xlrd \
+        xlwt \
+        python-pptx \
+        python-docx \
+        # ── 测试 ──
+        pytest \
+        pytest-cov \
+        # ── 代码质量 ──
+        black \
+        ruff \
+        mypy \
+    && rm -rf /tmp/* /root/.cache
+
+# ── 4. 环境变量 ────────────────────────────────────────────
+ENV PATH=/root/miniconda3/envs/py312/bin:/root/miniconda3/bin:${PATH}
+
+# ── 5. 初始化 ─────────────────────────────────────────────
+COPY init.sh /init.sh
+RUN chmod +x /init.sh
+RUN echo "alias ll='ls -alF'" >> ~/.bashrc && \
+    echo "alias la='ls -A'" >> ~/.bashrc && \
+    echo "alias vi='vim'" >> ~/.bashrc && \
+    echo "source /root/miniconda3/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate py312" >> ~/.bashrc
+
+WORKDIR /mnt
+EXPOSE 3000 8888

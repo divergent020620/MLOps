@@ -52,3 +52,12 @@ compile.py
 # Kerberos / security credentials
 krb5.conf
 *.keytab
+
+# Path-too-long on Windows
+fix/middle/
+
+# Broken symlinks (Windows)
+myapp/static/aihub
+myapp/static/dataset
+myapp/static/global
+myapp/static/mnt

@@ -1,0 +1,34 @@
+# ============================================================================
+# Cube Studio — 麒麟信创 前端 nginx 基础镜像
+# ★ 替代原 192.168.11.12/cube-studio/kubeflow-dashboard-frontend:20260630v1
+# ★ 仅 yum install nginx 一次联网操作
+#
+# 构建:
+#   docker build --network=host \
+#     -t 192.168.11.12/cube-studio/kubeflow-dashboard-frontend:kylin-base \
+#     -f install/docker/dockerFrontend/Dockerfile-base.kylin .
+#   docker push 192.168.11.12/cube-studio/kubeflow-dashboard-frontend:kylin-base
+# ============================================================================
+
+FROM cube-studio/kylin:v10-sp3-2403
+
+ENV TZ=Asia/Shanghai
+ENV LANG=zh_CN.UTF-8
+
+# ── nginx（yum install，仅此一次联网操作）──────────────────
+RUN yum install -y --nogpgcheck nginx && \
+    yum clean all && rm -rf /var/cache/yum/*
+
+# ── nginx 配置（沿用现有文件，不涉及发行版差异）────────────
+COPY install/docker/dockerFrontend/nginx.conf /etc/nginx/nginx.conf
+COPY install/docker/dockerFrontend/nginx.80.conf /etc/nginx/conf.d/default.conf
+
+# ── 启动脚本 ──────────────────────────────────────────────
+COPY install/docker/dockerFrontend/start.sh /start.sh
+RUN chmod +x /start.sh
+
+# ── 前端静态文件目录（构建时由 build_frontend.sh 的 Dockerfile 填充）
+RUN mkdir -p /data/web/frontend
+
+EXPOSE 80
+CMD ["/start.sh"]

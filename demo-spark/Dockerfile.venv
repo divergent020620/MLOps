@@ -1,0 +1,30 @@
+FROM 10.240.125.39/cube-studio/notebook:jupyter-ubuntu-py374
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY}
+
+# 安装 Python 包
+RUN python3 -m pip install --upgrade pip -q && \
+    pip install numpy pandas pyarrow scikit-learn onnx onnxruntime \
+        matplotlib Pillow seaborn tqdm h5py -q && \
+    pip install torch==1.13.1 torchvision==0.14.1 \
+        -f https://download.pytorch.org/whl/cpu/torch_stable.html -q
+
+# 创建可移植 venv + 补齐 conda stdlib/共享库
+RUN python3 -m venv --copies /opt/pyspark_env && \
+    /opt/pyspark_env/bin/pip install --upgrade pip -q && \
+    /opt/pyspark_env/bin/pip install numpy pandas pyarrow scikit-learn onnx onnxruntime \
+        matplotlib Pillow seaborn tqdm h5py -q && \
+    /opt/pyspark_env/bin/pip install torch==1.13.1 torchvision==0.14.1 \
+        -f https://download.pytorch.org/whl/cpu/torch_stable.html -q && \
+    rm /opt/pyspark_env/pyvenv.cfg && \
+    cp -r /root/miniconda3/envs/python37/lib/python3.7/* /opt/pyspark_env/lib/python3.7/ && \
+    cp /root/miniconda3/lib/*.so* /opt/pyspark_env/lib/
+
+# 验证
+RUN export LD_LIBRARY_PATH=/opt/pyspark_env/lib && \
+    /opt/pyspark_env/bin/python -c "import torch,numpy,onnxruntime,pandas,sklearn,types; print('imports OK')" && \
+    /opt/pyspark_env/bin/python -c "import types; types.CodeType(0,0,0,0,0,b'',(),(),(),'','',0,b'',(),()); print('cloudpickle OK')" && \
+    /opt/pyspark_env/bin/python -c "import torch,torch.nn as nn; m=nn.Sequential(nn.Linear(10,2)); print('CNN test:',m(torch.randn(1,10)).shape)" && \
+    echo "=== ALL OK ==="
