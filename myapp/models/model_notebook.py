@@ -15,7 +15,7 @@ from flask import g, request
 from myapp import app,db,cache
 
 from sqlalchemy import Column, Integer, String, ForeignKey
-from flask import Markup
+from markupsafe import Markup
 import datetime
 import pysnooper
 metadata = Model.metadata

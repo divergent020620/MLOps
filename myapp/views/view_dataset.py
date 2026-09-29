@@ -13,7 +13,8 @@ from wtforms import StringField, SelectField
 from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, Select2Widget, Select2ManyWidget
 from myapp.forms import MyBS3TextAreaFieldWidget, MySelect2Widget, MyCommaSeparatedListField, MySelect2ManyWidget, \
     MySelectMultipleField
-from flask import jsonify, Markup, make_response, flash
+from flask import jsonify, make_response, flash
+from markupsafe import Markup
 from .baseApi import MyappModelRestApi
 from flask import g, request, redirect
 import json, os, sys
@@ -154,14 +155,14 @@ example：
             description= _('数据集英文名，(小写字母、数字、- 组成)，最长50个字符'),
             default='',
             widget=BS3TextFieldWidget(),
-            validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$")]
+            validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$")]
         ),
         "version": StringField(
             label= _('版本'),
             description= _('数据集版本'),
             default='latest',
             widget=BS3TextFieldWidget(),
-            validators=[DataRequired(), Regexp("[a-z0-9_\-\.]*")]
+            validators=[DataRequired(), Regexp(r"[a-z0-9_\-\.]*")]
         ),
         "subdataset": StringField(
             label= _('子数据集'),

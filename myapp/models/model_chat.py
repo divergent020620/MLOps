@@ -7,7 +7,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey ,Date,DateTime
 from myapp import app
 from sqlalchemy import Column, Integer, String
 
-from flask import Markup
+from markupsafe import Markup
 from myapp.models.base import MyappModelBase
 metadata = Model.metadata
 conf = app.config

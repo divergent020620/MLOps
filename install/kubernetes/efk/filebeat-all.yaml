@@ -22,7 +22,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: filebeat
-        image: elastic/filebeat:7.13.4
+        image: 192.168.11.12/cube-studio/elastic/filebeat:7.13.4
         args: [
           "-c", "/etc/filebeat.yml",
           "-e",

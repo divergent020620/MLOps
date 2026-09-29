@@ -12,7 +12,8 @@ from flask_babel import lazy_gettext as _
 from dateutil.tz import tzutc
 from myapp import app, conf
 from myapp.utils.py.py_k8s import K8s, K8SStreamThread
-from flask import g, flash, request, render_template, send_from_directory, send_file, make_response, Markup, jsonify, redirect
+from flask import g, flash, request, render_template, send_from_directory, send_file, make_response, jsonify, redirect
+from markupsafe import Markup
 import datetime, time
 from myapp import app, appbuilder, db, event_logger,cache
 from .base import BaseMyappView

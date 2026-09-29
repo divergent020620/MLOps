@@ -2,6 +2,9 @@
 
 set -ex
 
+echo "=== [entrypoint] START $(date) hostname=$(hostname) ==="
+
+echo "=== [entrypoint] symlinks ==="
 rm -f /home/myapp/myapp/static/mnt
 mkdir -p /data/k8s/kubeflow/pipeline/workspace
 ln -s /data/k8s/kubeflow/pipeline/workspace /home/myapp/myapp/static/mnt
@@ -15,35 +18,67 @@ ln -s /cube-studio/aihub /home/myapp/myapp/static/
 
 rm -f /home/myapp/myapp/static/global
 ln -s /data/k8s/kubeflow/global /home/myapp/myapp/static/
+
+echo "=== [entrypoint] create_db ==="
 export FLASK_APP=myapp:app
 python myapp/create_db.py
-# myapp db init    # 生成migrations文件夹，不再需要操作
-# myapp db migrate   # 生成对应版本数据库表的升级文件到versions文件夹下，需要你的数据库是已经upgrade的
-myapp db upgrade     # 数据库表同步更新到mysql
-# 创建admin相关的用户，权限，角色，视图
-myapp fab create-admin --username admin --firstname admin --lastname admin --email admin@tencent.com --password admin
-# 会创建默认的角色和权限。会创建自定义的menu权限，也才能显示自定义menu。
-myapp init
+
+echo "=== [entrypoint] db upgrade ==="
+# HA: Redis 分布式锁，确保多个 Pod 并发时只有一个执行 db upgrade
+python -c "
+import redis, os, subprocess, time
+r = redis.Redis(host=os.environ['REDIS_HOST'], port=int(os.environ.get('REDIS_PORT','6379')), password=os.environ.get('REDIS_PASSWORD',''))
+print(f'[entrypoint] redis connected, trying lock...')
+for i in range(30):
+    if r.set('cube:db-upgrade-lock', os.environ.get('HOSTNAME','unknown'), nx=True, ex=120):
+        print(f'[entrypoint] lock acquired at attempt {i}')
+        try:
+            subprocess.run(['myapp', 'db', 'upgrade'], check=True)
+            print('[entrypoint] db upgrade done (this pod held the lock)')
+        except Exception as e:
+            print(f'[entrypoint] db upgrade failed: {e}')
+        finally:
+            r.delete('cube:db-upgrade-lock')
+        break
+    print(f'[entrypoint] lock held by another pod, retry {i}/30')
+    time.sleep(2)
+else:
+    print('[entrypoint] db upgrade lock not acquired within 60s, continuing')
+"
+
+echo "=== [entrypoint] fab create-admin ==="
+myapp fab create-admin --username admin --firstname admin --lastname admin --email admin@tencent.com --password admin || true
+
+echo "=== [entrypoint] init ==="
+myapp init || true
+
+echo "=== [entrypoint] 幂等补缺表(FAB5 新增表如 user_attribute/service_pipeline; 旧库无则补齐) ==="
+python - <<'PYEOF' || true
+from myapp import app, db
+from flask_appbuilder import Model
+import myapp.models.user_attributes  # 注册 user_attribute(FAB Model 表), 不进 db.metadata
+with app.app_context():
+    db.create_all()
+    Model.metadata.create_all(db.engine)
+print("ensure tables done")
+PYEOF
 
 if [ "$STAGE" = "build" ]; then
-  # 构建前端主体
+  echo "=== [entrypoint] STAGE=build ==="
   cd /home/myapp/myapp/frontend && npm install && npm run build
-  # 构建机器学习pipeline
   cd /home/myapp/myapp/vision && npm install && npm run build
-  # 构建数据ETL pipeline
   cd /home/myapp/myapp/visionPlus && yarn && npm run build
 elif [ "$STAGE" = "dev" ]; then
+  echo "=== [entrypoint] STAGE=dev ==="
   export FLASK_APP=myapp:app
-#  FLASK_ENV=development  flask run -p 80 --with-threads  --host=0.0.0.0
   python myapp/check_tables.py
   python myapp/run.py
 
 elif [ "$STAGE" = "prod" ]; then
+  echo "=== [entrypoint] STAGE=prod, starting gunicorn ==="
   export FLASK_APP=myapp:app
   python myapp/check_tables.py
   gunicorn --bind  0.0.0.0:80 --workers 20 --worker-class=gevent --timeout 300 --limit-request-line 0 --limit-request-field_size 0 --log-level=info --access-logfile - --error-logfile - --capture-output myapp:app
 else
     myapp --help
 fi
-
-

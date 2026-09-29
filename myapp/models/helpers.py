@@ -5,7 +5,8 @@ import json
 import logging
 import re
 from sqlalchemy.orm import relationship
-from flask import escape, g, Markup
+from flask import g
+from markupsafe import escape, Markup
 from flask_appbuilder.models.decorators import renders
 from flask_appbuilder.models.mixins import AuditMixin
 import humanize
@@ -22,7 +23,7 @@ from myapp.utils.core import QueryStatus
 def json_to_dict(json_str):
     if json_str:
         val = re.sub(",[ \t\r\n]+}", "}", json_str)
-        val = re.sub(",[ \t\r\n]+\]", "]", val)
+        val = re.sub(r",[ \t\r\n]+\]", "]", val)
         return json.loads(val)
     else:
         return {}

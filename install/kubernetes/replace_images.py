@@ -1,7 +1,7 @@
 import os, re
 
-HARBOR = "10.240.125.39/cube-studio"
-K8S_DIR = "/root/cube-studio-master/install/kubernetes"
+HARBOR = "192.168.11.12/cube-studio"
+K8S_DIR = "/bdm/share_bdm/cube-studio-master/install/kubernetes"
 
 SKIP_DIRS = {'crds', 'base'}
 SKIP_FILES = {'operator-crd.yml', 'install-crd.yaml'}
@@ -11,7 +11,7 @@ def fix_image(img):
     clean = img.strip('"\'')
     if clean == 'auto' or '{{' in clean or '$' in clean:
         return img
-    if clean.startswith('10.240.125.39'):
+    if clean.startswith('192.168.11.12'):
         return img
     original = clean
     m = re.match(r'^([a-zA-Z0-9][a-zA-Z0-9._-]*\.[a-zA-Z]{2,})/', clean)
@@ -24,7 +24,6 @@ def fix_image(img):
     if clean != original:
         print(f"  {original} -> {clean}")
     return q + clean + q if q else clean
-
 
 def process_file(fpath):
     try:
@@ -79,7 +78,6 @@ def process_file(fpath):
             f.write('\n'.join(new_lines))
         print(f"[{fpath}] +{changed}")
     return changed
-
 
 total = 0
 for root, dirs, files in os.walk(K8S_DIR):

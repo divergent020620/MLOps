@@ -12,7 +12,7 @@ from .model_job import Pipeline
 from myapp import app,db
 from myapp.models.base import MyappModelBase
 from sqlalchemy import Column, Integer, String, ForeignKey
-from flask import Markup
+from markupsafe import Markup
 metadata = Model.metadata
 conf = app.config
 import pysnooper

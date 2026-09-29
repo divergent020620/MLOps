@@ -133,7 +133,7 @@ class ETL_Pipeline_ModelView_Base():
             description= _("英文名(小写字母、数字、- 组成)，最长50个字符"),
             default='',
             widget=BS3TextFieldWidget(),
-            validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+            validators=[Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
         ),
         "project": QuerySelectField(
             _('项目组'),

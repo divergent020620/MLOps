@@ -3,7 +3,8 @@ import functools
 import json
 import logging
 from flask_appbuilder.actions import ActionItem
-from flask import Markup, Response, current_app, make_response, send_file, flash, g, jsonify, request
+from flask import Response, current_app, make_response, send_file, flash, g, jsonify, request
+from markupsafe import Markup
 from flask_babel import gettext as __
 from flask_babel import lazy_gettext as _
 from flask.globals import session

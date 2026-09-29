@@ -22,8 +22,8 @@ spec:
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.46.0
-        image: quay.io/prometheus-operator/prometheus-operator:v0.46.0  # 这个包含了arm64版本
+        - --prometheus-config-reloader=192.168.11.12/cube-studio/prometheus-operator/prometheus-config-reloader:v0.46.0
+        image: 192.168.11.12/cube-studio/prometheus-operator/prometheus-operator:v0.46.0  # 这个包含了arm64版本
         name: prometheus-operator
         ports:
         - containerPort: 8080

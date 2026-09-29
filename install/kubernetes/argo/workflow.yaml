@@ -1185,7 +1185,7 @@ spec:
 #          value: 'true'
         - name: ARGO_SECURE
           value: 'false'
-        image: ccr.ccs.tencentyun.com/cube-argoproj/argocli:v3.4.3   # v3.3.5
+        image: 192.168.11.12/cube-studio/cube-argoproj/argocli:v3.4.3   # v3.3.5
         imagePullPolicy: IfNotPresent
         name: argo-server
         ports:
@@ -1247,7 +1247,7 @@ spec:
           value: admin
         - name: MINIO_SECRET_KEY
           value: password
-        image: minio/minio:RELEASE.2023-04-20T17-56-55Z
+        image: 192.168.11.12/cube-studio/minio/minio:RELEASE.2023-04-20T17-56-55Z
         imagePullPolicy: IfNotPresent
         lifecycle:
           postStart:
@@ -1304,7 +1304,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: ccr.ccs.tencentyun.com/cube-argoproj/workflow-controller:v3.4.3
+        image: 192.168.11.12/cube-studio/cube-argoproj/workflow-controller:v3.4.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3

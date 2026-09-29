@@ -15,7 +15,8 @@ from flask_appbuilder.fieldwidgets import Select2Widget, BS3TextFieldWidget
 from myapp.models.model_job import Images, Job_Template, Repository
 from myapp.models.model_team import Project, Project_User
 from myapp.models.model_serving import InferenceService
-from flask import g, make_response, Markup, jsonify, request
+from flask import g, make_response, jsonify, request
+from markupsafe import Markup
 import random, pysnooper, os
 
 from .baseApi import (

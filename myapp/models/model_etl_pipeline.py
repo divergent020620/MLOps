@@ -9,7 +9,7 @@ from myapp import app
 from myapp.models.helpers import ImportMixin
 from myapp.models.model_team import Project
 from sqlalchemy import Column, Integer, String, ForeignKey
-from flask import Markup
+from markupsafe import Markup
 from myapp.models.base import MyappModelBase
 metadata = Model.metadata
 conf = app.config

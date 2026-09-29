@@ -2,7 +2,8 @@ import copy
 import math
 import traceback
 
-from flask import Markup,g
+from flask import g
+from markupsafe import Markup
 from flask_appbuilder.baseviews import expose_api
 from jinja2 import Environment, BaseLoader, DebugUndefined
 from myapp import app, appbuilder, db, cache

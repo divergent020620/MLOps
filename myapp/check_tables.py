@@ -22,10 +22,12 @@ def check_tables():
         results = [item[0] for item in results]
         print(results)
         for table_name in ['ab_permission', 'ab_permission_view', 'ab_permission_view_role', 'ab_register_user',
-                           'ab_role', 'ab_user', 'ab_user_role', 'ab_view_menu', 'alembic_version', 'dimension',
-                           'docker', 'images', 'inferenceservice', 'job_template', 'logs', 'metadata_metric', 'model',
-                           'nni', 'notebook', 'pipeline', 'project', 'project_user', 'repository', 'run',
-                           'service', 'task', 'metadata_table', 'workflow']:
+                           'ab_role', 'ab_user', 'ab_user_role', 'ab_view_menu', 'aihub', 'alembic_version',
+                           'announcement', 'chat', 'chat_log', 'dataset', 'dimension', 'docker',
+                           'etl_pipeline', 'etl_task', 'favorite', 'images', 'inferenceservice', 'job_template',
+                           'logs', 'metadata_metric', 'metadata_table', 'model', 'nni', 'notebook',
+                           'pipeline', 'platform_config', 'project', 'project_user', 'repository', 'run',
+                           'service', 'service_pipeline', 'sqlab_query', 'task', 'user_attribute', 'workflow']:
             if table_name not in results:
                 print('%s db下，table %s不完整，请\n1、mysql: drop dabatase %s\n2、重启当前pod' % (uri.database,table_name,uri.database))
                 exit(1)

@@ -13,7 +13,7 @@ from myapp import app
 from myapp.models.base import MyappModelBase
 from sqlalchemy import Column, Integer, String, ForeignKey
 
-from flask import Markup
+from markupsafe import Markup
 import datetime
 metadata = Model.metadata
 conf = app.config
@@ -211,6 +211,8 @@ class InferenceService(Model,AuditMixinNullable,MyappModelBase,service_common):
     label = Column(String(100), nullable=False,comment='中文名')
     namespace = Column(String(200), nullable=True, default='service', comment='命名空间')
     service_type= Column(String(100),nullable=True,default='serving',comment='服务类型')
+    deploy_type = Column(String(50), default='online', comment='部署方式：online在线服务/batch批处理')
+    schedule = Column(String(200), default='', comment='批处理cron表达式，如 0 2 * * *')
     model_name = Column(String(200),default='',comment='模型名')
     model_version = Column(String(200),default='',comment='模型版本')
     model_path = Column(String(200),default='',comment='模型地址')
@@ -253,6 +255,11 @@ class InferenceService(Model,AuditMixinNullable,MyappModelBase,service_common):
 
     priority = Column(Integer,default=1,comment='优先级')   # giving priority to meeting high-priority resource needs
 
+    label_columns = {
+        'deploy_type': _('部署方式'),
+        'schedule': _('定时调度'),
+    }
+
 
     @property
     def model_name_url(self):
@@ -276,13 +283,17 @@ class InferenceService(Model,AuditMixinNullable,MyappModelBase,service_common):
         # if self.created_by.username==g.user.username or g.user.is_admin():
         if self.created_by.id == g.user.id or self.project.user_role(g.user.id)=='creator' or g.user.is_admin():
             dom = f'''
-                <a target=_blank href="/inferenceservice_modelview/api/deploy/debug/{self.id}">{__("调试")}</a> | 
-                <a href="/inferenceservice_modelview/api/deploy/prod/{self.id}">{__("部署")}</a> | 
+                <a target=_blank href="/inferenceservice_modelview/api/deploy/debug/{self.id}">{__("调试")}</a> |
+                <a href="/inferenceservice_modelview/api/deploy/prod/{self.id}">{__("部署")}</a> |
                 <a target=_blank href="{monitoring_url}">{__("监控")}</a> |
                 <a href="/inferenceservice_modelview/api/clear/{self.id}">{__("清理")}</a>
                 '''
+            if self.deploy_type == 'batch':
+                dom += f' | <a href="/inferenceservice_modelview/api/run_batch/{self.id}">{__("批处理运行")}</a>'
         else:
             dom = f''' {__("调试")}  | {__("部署")}</a> |<a target=_blank href="{monitoring_url}">{__("监控")}</a> | {__("清理")} '''
+            if self.deploy_type == 'batch':
+                dom += f' | <a href="/inferenceservice_modelview/api/run_batch/{self.id}">{__("批处理运行")}</a>'
 
         # if help_url:
         #     dom=f'<a target=_blank href="{help_url}">{__("帮助")}</a> | '+dom
@@ -309,6 +320,9 @@ class InferenceService(Model,AuditMixinNullable,MyappModelBase,service_common):
     @property
     def status_url(self):
         from myapp.utils.py.py_k8s import K8s
+        if self.deploy_type == 'batch':
+            url = f'/k8s/web/search/{self.project.cluster["NAME"]}/{self.namespace}/{self.name.replace("_", "-")}'
+            return Markup(f'<a target=_blank href="{url}">{self.model_status}</a>')
         if self.model_status=='online':
             try:
                 # 查看k8s的pod是否read了
@@ -327,6 +341,8 @@ class InferenceService(Model,AuditMixinNullable,MyappModelBase,service_common):
 
     @property
     def ready(self):
+        if self.deploy_type == 'batch':
+            return True
         from myapp.utils.py.py_k8s import K8s
         if self.model_status=='online':
             try:
@@ -472,6 +488,8 @@ class InferenceService(Model,AuditMixinNullable,MyappModelBase,service_common):
             name = self.name+"-copy",
             label = self.label,
             service_type = self.service_type,
+            deploy_type = self.deploy_type,
+            schedule = self.schedule,
             model_name = self.model_name,
             model_version = self.model_version,
             model_path = self.model_path,

@@ -233,7 +233,7 @@ services:
       docker-root: "/var/lib/docker"
       feature-gates: "TaintBasedEvictions=false"
       # 指定pause镜像
-      pod-infra-container-image: 'rancher/pause:3.1'
+      pod-infra-container-image: '192.168.11.12/cube-studio/rancher/pause:3.1''
       # 传递给网络插件的MTU值，以覆盖默认值，设置为0(零)则使用默认的1460
       network-plugin-mtu: '1500'
       # 修改节点最大Pod数量
@@ -355,7 +355,7 @@ addons: |-
       namespace: default
     spec:
       containers:
-        image: nginx
+        image: 192.168.11.12/cube-studio/nginx
         ports:
         - containerPort: 80
 

@@ -14,7 +14,7 @@ import pysnooper
 import traceback
 import threading
 import logging
-from myapp import conf
+from myapp import conf, get_platform_config
 from myapp.utils import core
 from kubernetes.config import kube_config,load_incluster_config
 
@@ -57,6 +57,7 @@ class K8s():
 
         self.v1 = client.CoreV1Api(api_client)
         self.AppsV1Api = client.AppsV1Api(api_client)
+        self.BatchV1Api = client.BatchV1Api(api_client)
         self.NetworkingV1Api = client.NetworkingV1Api(api_client)
         self.CustomObjectsApi = client.CustomObjectsApi(api_client)
         self.rbacvi = client.RbacAuthorizationV1Api(api_client)
@@ -932,6 +933,23 @@ class K8s():
                             }
                         )
 
+                    if "(pvc-ro)" in volume:
+                        pvc_name = volume.replace('(pvc-ro)', '').replace(' ', '')
+                        volumn_name = pvc_name.replace('_', '-').lower()[-60:].strip('-')
+                        k8s_volumes.append({
+                            "name": volumn_name,
+                            "persistentVolumeClaim": {
+                                "claimName": pvc_name
+                            }
+                        })
+                        k8s_volume_mounts.append(
+                            {
+                                "name": volumn_name,
+                                "mountPath": mount,
+                                "readOnly": True,
+                            }
+                        )
+
                     if "(nfs-ro)" in volume:
                         ip_path = volume.replace('(nfs-ro)', '').replace(' ', '')
                         # 兼容两种格式: IP:/path 或 IP/path
@@ -1300,13 +1318,46 @@ class K8s():
                 hosts = row.strip().split(' ')
                 hosts = [host.strip() for host in hosts if host.strip()]
                 if len(hosts) > 1:
-                    host_aliase = client.V1HostAlias(ip=hosts[0], hostnames=hosts[1:])
+                    host_aliase = client.V1HostAlias(ip=hosts[0], hostnames=[hn.lower() for hn in hosts[1:]])
                     host_aliases.append(host_aliase)
+
+        # 合并数据库中的全局 hostAliases（admin 通过 UI 管理）
+        platform_host_aliases = get_platform_config('PLATFORM_HOST_ALIASES', '')
+        if platform_host_aliases:
+            platform_host_list = re.split('\r|\n', platform_host_aliases)
+            for row in platform_host_list:
+                hosts = row.strip().split(' ')
+                hosts = [host.strip() for host in hosts if host.strip()]
+                if len(hosts) > 1:
+                    host_aliase = client.V1HostAlias(ip=hosts[0], hostnames=[hn.lower() for hn in hosts[1:]])
+                    host_aliases.append(host_aliase)
+
+        # DNS 配置（预留，暂无 DNS 服务器）
+        dns_config = None
+        dns_nameservers_str = get_platform_config('DNS_NAMESERVERS', '')
+        dns_searches_str = get_platform_config('DNS_SEARCHES', '')
+        dns_options_str = get_platform_config('DNS_OPTIONS', '')
+        if dns_nameservers_str or dns_searches_str or dns_options_str:
+            nameservers = [ns.strip() for ns in dns_nameservers_str.split('\n') if ns.strip()] if dns_nameservers_str else None
+            searches = [s.strip() for s in dns_searches_str.split('\n') if s.strip()] if dns_searches_str else None
+            options = []
+            if dns_options_str:
+                for line in dns_options_str.split('\n'):
+                    line = line.strip()
+                    if line and ':' in line:
+                        parts = line.split(':', 1)
+                        options.append(client.V1PodDNSConfigOption(
+                            name=parts[0].strip(),
+                            value=parts[1].strip()))
+            dns_config = client.V1PodDNSConfig(
+                nameservers=nameservers, searches=searches,
+                options=options if options else None)
 
         service_account = accounts if accounts else None
         spec = v1_pod_spec.V1PodSpec(affinity=affinity,image_pull_secrets=image_pull_secrets, node_selector=nodeSelector,node_name=node_name if node_name else None,
                                      volumes=k8s_volumes, containers=containers, restart_policy=restart_policy,
-                                     host_aliases=host_aliases, service_account=service_account,scheduler_name=scheduler_name)
+                                     host_aliases=host_aliases, service_account=service_account,scheduler_name=scheduler_name,
+                                     dns_config=dns_config)
         metadata = v1_object_meta.V1ObjectMeta(name=name, namespace=namespace, labels=labels, annotations=annotations)
         pod = v1_pod.V1Pod(api_version='v1', kind='Pod', metadata=metadata, spec=spec)
         return pod, spec
@@ -2419,6 +2470,103 @@ class K8s():
             pass
         try:
             self.rbacvi.create_namespaced_role_binding(namespace=namespace, body=sa_role_json)
+        except Exception as e:
+            print(e)
+
+
+    # 创建 CronJob（批处理推理）
+    def create_cronjob(self, namespace, name, schedule, labels, command, args, volume_mount, working_dir,
+                       node_selector, resource_memory, resource_cpu, resource_gpu, image_pull_policy,
+                       image_pull_secrets, image, hostAliases, env, privileged, accounts, username,
+                       annotations={}):
+        pod, pod_spec = self.make_pod(
+            namespace=namespace, name=name, labels=labels, annotations=annotations,
+            command=command, args=args, volume_mount=volume_mount, working_dir=working_dir,
+            node_selector=node_selector, resource_memory=resource_memory, resource_cpu=resource_cpu,
+            resource_gpu=resource_gpu, image_pull_policy=image_pull_policy,
+            image_pull_secrets=image_pull_secrets, image=image, hostAliases=hostAliases,
+            env=env, privileged=privileged, accounts=accounts, username=username,
+            restart_policy='OnFailure'
+        )
+        pod_template_spec = client.V1PodTemplateSpec(
+            metadata=client.V1ObjectMeta(labels=labels, annotations=annotations),
+            spec=pod_spec
+        )
+        job_spec = client.V1JobSpec(
+            template=pod_template_spec,
+            backoff_limit=0,
+            ttl_seconds_after_finished=86400
+        )
+        cronjob_spec = client.V1CronJobSpec(
+            schedule=schedule,
+            job_template=client.V1JobTemplateSpec(spec=job_spec),
+            concurrency_policy='Forbid',
+            successful_jobs_history_limit=3,
+            failed_jobs_history_limit=1
+        )
+        metadata = client.V1ObjectMeta(name=name, namespace=namespace, labels=labels)
+        cronjob = client.V1CronJob(
+            api_version='batch/v1', kind='CronJob', metadata=metadata, spec=cronjob_spec
+        )
+        try:
+            self.BatchV1Api.read_namespaced_cron_job(name=name, namespace=namespace)
+            self.BatchV1Api.replace_namespaced_cron_job(name=name, namespace=namespace, body=cronjob)
+        except ApiException as e:
+            if e.status == 404:
+                self.BatchV1Api.create_namespaced_cron_job(namespace, cronjob)
+
+    # 删除 CronJob
+    def delete_cronjob(self, namespace, name):
+        try:
+            self.BatchV1Api.delete_namespaced_cron_job(name=name, namespace=namespace, grace_period_seconds=0)
+        except ApiException as api_e:
+            if api_e.status != 404:
+                print(api_e)
+        except Exception as e:
+            print(e)
+
+    # 创建一次性 Job（手动触发批处理）
+    def create_job(self, namespace, name, labels, command, args, volume_mount, working_dir,
+                   node_selector, resource_memory, resource_cpu, resource_gpu, image_pull_policy,
+                   image_pull_secrets, image, hostAliases, env, privileged, accounts, username,
+                   annotations={}):
+        pod, pod_spec = self.make_pod(
+            namespace=namespace, name=name, labels=labels, annotations=annotations,
+            command=command, args=args, volume_mount=volume_mount, working_dir=working_dir,
+            node_selector=node_selector, resource_memory=resource_memory, resource_cpu=resource_cpu,
+            resource_gpu=resource_gpu, image_pull_policy=image_pull_policy,
+            image_pull_secrets=image_pull_secrets, image=image, hostAliases=hostAliases,
+            env=env, privileged=privileged, accounts=accounts, username=username,
+            restart_policy='OnFailure'
+        )
+        pod_template_spec = client.V1PodTemplateSpec(
+            metadata=client.V1ObjectMeta(labels=labels, annotations=annotations),
+            spec=pod_spec
+        )
+        job_spec = client.V1JobSpec(
+            template=pod_template_spec,
+            backoff_limit=0,
+            ttl_seconds_after_finished=86400
+        )
+        metadata = client.V1ObjectMeta(name=name, namespace=namespace, labels=labels)
+        job = client.V1Job(
+            api_version='batch/v1', kind='Job', metadata=metadata, spec=job_spec
+        )
+        try:
+            self.BatchV1Api.read_namespaced_job(name=name, namespace=namespace)
+            self.BatchV1Api.delete_namespaced_job(name=name, namespace=namespace, grace_period_seconds=0)
+        except ApiException as e:
+            if e.status != 404:
+                print(e)
+        self.BatchV1Api.create_namespaced_job(namespace, job)
+
+    # 删除 Job
+    def delete_job(self, namespace, name):
+        try:
+            self.BatchV1Api.delete_namespaced_job(name=name, namespace=namespace, grace_period_seconds=0)
+        except ApiException as api_e:
+            if api_e.status != 404:
+                print(api_e)
         except Exception as e:
             print(e)
 

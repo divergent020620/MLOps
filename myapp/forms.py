@@ -53,10 +53,8 @@ def filter_not_empty_values(value):
 import pysnooper, datetime, time, json
 from wtforms.widgets.core import Markup, html_params
 
-try:
-    from html import escape
-except ImportError:
-    from cgi import escape
+# py3.12: cgi 已弃用(3.13 移除), html.escape 3.12 起必存在
+from html import escape
 from wtforms.compat import text_type, iteritems
 
 

@@ -19,7 +19,7 @@ spec:
       containers:
         - command:
             - /manager
-          image: kubeflow/training-operator
+          image: 192.168.11.12/cube-studio/kubeflow/training-operator
           name: training-operator
           ports:
             - containerPort: 8080

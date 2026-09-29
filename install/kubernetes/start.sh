@@ -1,9 +1,83 @@
 #!/bin/bash
+# Cube Studio 一键部署脚本
+#
+# 用法:
+#   bash start.sh <内网IP>                           # 默认：在 K8s 内部署 MySQL Pod
+#   bash start.sh <内网IP> --mysql-host <IP[:端口]>   # 使用外部 MySQL（服务器/TDSQL）
+#
+# 示例:
+#   bash start.sh 192.168.11.11                                          # Pod 模式
+#   bash start.sh 192.168.11.11 --mysql-host 192.168.11.15               # 外部 MySQL，默认端口 3306
+#   bash start.sh 192.168.11.11 --mysql-host 192.168.11.15:3307          # 外部 MySQL，指定端口
+#   bash start.sh 192.168.11.11 --mysql-host 192.168.11.15 --mysql-user root --mysql-pass admin --mysql-db kubeflow
 
-if [ $# -eq 0 ]; then
-  echo "错误：请提供 内网ip地址 作为参数"
-  exit 1
+INGRESS_IP=""
+MYSQL_HOST=""
+MYSQL_PORT="3306"
+MYSQL_USER="root"
+MYSQL_PASS="admin"
+MYSQL_DB="kubeflow"
+MYSQL_CHARSET="utf8mb4"
+
+# 解析参数
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --mysql-host)
+            MYSQL_HOST="$2"
+            shift 2
+            ;;
+        --mysql-port)
+            MYSQL_PORT="$2"
+            shift 2
+            ;;
+        --mysql-user)
+            MYSQL_USER="$2"
+            shift 2
+            ;;
+        --mysql-pass)
+            MYSQL_PASS="$2"
+            shift 2
+            ;;
+        --mysql-db)
+            MYSQL_DB="$2"
+            shift 2
+            ;;
+        --mysql-charset)
+            MYSQL_CHARSET="$2"
+            shift 2
+            ;;
+        *)
+            INGRESS_IP="$1"
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$INGRESS_IP" ]; then
+    echo "错误：请提供 内网IP地址 作为参数"
+    echo ""
+    echo "用法:"
+    echo "  bash start.sh <内网IP>                                      # K8s Pod 模式"
+    echo "  bash start.sh <内网IP> --mysql-host <服务器IP>               # 外部 MySQL"
+    echo "  bash start.sh <内网IP> --mysql-host <IP:端口> --mysql-user <用户> --mysql-pass <密码>"
+    exit 1
 fi
+
+# 如果 --mysql-host 里包含了端口（格式 IP:PORT），拆分
+if echo "$MYSQL_HOST" | grep -q ':'; then
+    MYSQL_PORT="${MYSQL_HOST##*:}"
+    MYSQL_HOST="${MYSQL_HOST%:*}"
+fi
+
+MYSQL_URI="mysql+pymysql://${MYSQL_USER}:${MYSQL_PASS}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}?charset=${MYSQL_CHARSET}"
+
+echo "=========================================="
+echo "  Cube Studio 部署"
+echo "=========================================="
+echo "  入口 IP:     ${INGRESS_IP}"
+echo "  MySQL 模式:  $([ -n "$MYSQL_HOST" ] && echo "外部服务器 (${MYSQL_HOST}:${MYSQL_PORT})" || echo "K8s Pod")"
+echo "=========================================="
+
 bash init_node.sh
 mkdir -p ~/.kube && rm -rf ~/.kube/config && cp config ~/.kube/config
 mkdir -p kubeconfig && echo "" > kubeconfig/dev-kubeconfig
@@ -19,9 +93,14 @@ fi
 version=`kubectl version --short | awk '/Server Version:/ {print $3}'`
 echo "kubernets versison" $version
 
-node=`kubectl  get node -o wide |grep $1 |awk '{print $1}'| head -n 1`
+node=`kubectl  get node -o wide |grep $INGRESS_IP |awk '{print $1}'| head -n 1`
 
-kubectl label node $node train=true cpu=true notebook=true service=true org=public istio=true kubeflow=true kubeflow-dashboard=true mysql=true redis=true monitoring=true logging=true --overwrite
+# 节点标签：外部 MySQL 时不打 mysql=true
+if [ -n "$MYSQL_HOST" ]; then
+    kubectl label node $node train=true cpu=true notebook=true service=true org=public istio=true kubeflow=true kubeflow-dashboard=true redis=true monitoring=true logging=true --overwrite
+else
+    kubectl label node $node train=true cpu=true notebook=true service=true org=public istio=true kubeflow=true kubeflow-dashboard=true mysql=true redis=true monitoring=true logging=true --overwrite
+fi
 
 # kubectl label nodes --all train=true cpu=true notebook=true service=true org=public istio=true kubeflow=true kubeflow-dashboard=true mysql=true redis=true monitoring=true logging=true --overwrite
 
@@ -35,11 +114,18 @@ kubectl apply -f sa-rbac.yaml
 # kubectl delete -f dashboard/v2.6.1-user.yaml
 kubectl apply -f dashboard/v2.6.1-cluster.yaml
 kubectl apply -f dashboard/v2.6.1-user.yaml
-# 部署mysql
-kubectl create -f mysql/pv-pvc-hostpath.yaml
-kubectl create -f mysql/service.yaml
-kubectl create -f mysql/configmap-mysql.yaml
-kubectl create -f mysql/deploy.yaml
+
+# 部署mysql（仅在 Pod 模式时部署）
+if [ -z "$MYSQL_HOST" ]; then
+    echo ">>> 部署 MySQL Pod..."
+    kubectl create -f mysql/pv-pvc-hostpath.yaml
+    kubectl create -f mysql/service.yaml
+    kubectl create -f mysql/configmap-mysql.yaml
+    kubectl create -f mysql/deploy.yaml
+else
+    echo ">>> 使用外部 MySQL: ${MYSQL_HOST}:${MYSQL_PORT}"
+fi
+
 # 部署redis
 kubectl delete -f redis/redis.yaml
 kubectl create -f redis/redis.yaml
@@ -143,19 +229,25 @@ kubectl create -f pv-pvc-pipeline.yaml
 kubectl create -f pv-pvc-service.yaml
 
 # 替换配置文件config.py中的内网ip地址
-sed -i "s/SERVICE_EXTERNAL_IP=\\[\\]/SERVICE_EXTERNAL_IP=\[\"$1\"\]/g" cube/overlays/config/config.py
+sed -i "s/SERVICE_EXTERNAL_IP=\\[\\]/SERVICE_EXTERNAL_IP=\[\"$INGRESS_IP\"\]/g" cube/overlays/config/config.py
+
+# 替换 kustomization.yml 中的 MYSQL_SERVICE（外部 MySQL 模式）
+if [ -n "$MYSQL_HOST" ]; then
+    echo ">>> 配置 MYSQL_SERVICE: ${MYSQL_URI}"
+    sed -i "s|- MYSQL_SERVICE=.*|- MYSQL_SERVICE=${MYSQL_URI}|g" cube/overlays/kustomization.yml
+fi
 
 kubectl delete -k cube/overlays
 kubectl apply -k cube/overlays
 
 # 配置入口
-kubectl patch svc istio-ingressgateway -n istio-system -p '{"spec":{"externalIPs":["'"$1"'"]}}'
-echo "打开网址：http://$1"
+kubectl patch svc istio-ingressgateway -n istio-system -p '{"spec":{"externalIPs":["'"$INGRESS_IP"'"]}}'
+echo "打开网址：http://$INGRESS_IP"
 
 # ipvs模式启动配置入口
 # kubectl patch svc istio-ingressgateway -n istio-system -p '{"spec":{"type":"NodePort"}}'
 # nodeport=`kubectl get svc -n istio-system istio-ingressgateway -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}'`
-# echo "打开网址：http://$1:$nodeport"
+# echo "打开网址：http://$INGRESS_IP:$nodeport"
 
 
 

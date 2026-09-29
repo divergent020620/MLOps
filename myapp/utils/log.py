@@ -57,7 +57,7 @@ class DBEventLogger(AbstractEventLogger):
         if not user_id and g.user:
             user_id = g.user.get_id()
 
-        sesh = current_app.appbuilder.get_session
+        sesh = current_app.appbuilder.session  # FAB 5.x: get_session 已改名 session
         try:
             log = Log(
                 action=str(action),

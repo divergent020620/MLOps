@@ -12,7 +12,7 @@ from myapp.models.helpers import AuditMixinNullable
 from myapp import app
 from sqlalchemy import Column, Integer, String, ForeignKey
 
-from flask import Markup
+from markupsafe import Markup
 metadata = Model.metadata
 conf = app.config
 

@@ -1,3 +1,14 @@
+# ============================================================
+# 环境说明(两套):
+# 开发环境(192.168.11.x): 本文件默认值即开发环境——
+#   - Harbor: 192.168.11.12/cube-studio(master2)
+#   - MySQL:  192.168.11.15:3306/kubeflow(root/admin, worker2 裸金属)
+#   - Redis:  K8s Service redis-master.infra
+# 生产环境(10.240.125.x): 切换前修改——
+#   - images newName/newTag → 10.240.125.39/cube-studio/<镜像>:app-p312-v1(+前端 tag)
+#   - deploy-config: MYSQL_SERVICE/REDIS_*/ENVIRONMENT=PROD 按行内实际值
+#   - busybox init 镜像(../base/deploy-*.yaml)同步换生产 harbor
+# ============================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: infra
@@ -17,7 +28,7 @@ configMapGenerator:
   - REDIS_HOST=redis-master.infra
   - REDIS_PORT=6379
   - REDIS_PASSWORD=admin
-  - MYSQL_SERVICE=mysql+pymysql://root:admin@mysql-service.infra:3306/kubeflow?charset=utf8
+  - MYSQL_SERVICE=mysql+pymysql://root:admin@192.168.11.15:3306/kubeflow?charset=utf8mb4
   - ENVIRONMENT=DEV
 
 
@@ -34,12 +45,12 @@ resources:
   - ../base
 
 images:
-- name: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard
-  newName: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard
-  newTag: 2025.03.01
-- name: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard-frontend
-  newName: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard-frontend
-  newTag: 2025.03.01
+- name: 192.168.11.12/cube-studio/kubeflow-dashboard
+  newName: 192.168.11.12/cube-studio/kubeflow-dashboard
+  newTag: "kylin-20260730-v6"
+- name: 192.168.11.12/cube-studio/kubeflow-dashboard-frontend
+  newName: 192.168.11.12/cube-studio/kubeflow-dashboard-frontend
+  newTag: "kylin-20260730"
 
 
 # kustomize build . | kubectl apply -f -

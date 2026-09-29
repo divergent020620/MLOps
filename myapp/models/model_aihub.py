@@ -9,7 +9,8 @@ from sqlalchemy import Text
 from myapp import app
 from sqlalchemy import Column, Integer, String
 
-from flask import Markup,request
+from flask import request
+from markupsafe import Markup
 from myapp.models.base import MyappModelBase
 metadata = Model.metadata
 conf = app.config

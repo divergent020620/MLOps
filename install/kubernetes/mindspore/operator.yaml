@@ -4179,7 +4179,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+        image: 192.168.11.12/cube-studio/kubebuilder/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
@@ -4198,7 +4198,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: swr.cn-south-1.myhuaweicloud.com/mindspore/ms-operator:latest
+        image: 192.168.11.12/cube-studio/mindspore/ms-operator:latest
         livenessProbe:
           httpGet:
             path: /healthz

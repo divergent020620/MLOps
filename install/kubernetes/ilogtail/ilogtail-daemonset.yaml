@@ -24,7 +24,7 @@ spec:
               value: "1"
             - name: mem_usage_limit
               value: "512"
-          image: sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/ilogtail-community-edition/ilogtail:latest
+          image: 192.168.11.12/cube-studio/ilogtail-community-edition/ilogtail:latest
           imagePullPolicy: IfNotPresent
           resources:
             limits:

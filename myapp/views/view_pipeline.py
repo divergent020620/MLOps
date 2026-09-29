@@ -19,7 +19,7 @@ from flask_appbuilder.actions import action
 from flask import jsonify, Response, request, render_template
 from flask_appbuilder.forms import GeneralModelConverter
 from myapp.utils import core
-from myapp import app, appbuilder, db, event_logger
+from myapp import app, appbuilder, db, event_logger, get_platform_config
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from jinja2 import Environment, BaseLoader, DebugUndefined,Undefined
 import os
@@ -208,19 +208,19 @@ def dag_to_pipeline(pipeline, dbsession, workflow_label=None, **kwargs):
             elif type(task_args[task_attr_name]) == dict or type(task_args[task_attr_name]) == list:
                 ops_args.append('%s' % str(task_attr_name))
                 args_values = json.dumps(task_args[task_attr_name], ensure_ascii=False)
-                # args_values = template_str(args_values) if re.match('\{\{.*\}\}',args_values) else args_values
+                # args_values = template_str(args_values) if re.match(r'\{\{.*\}\}',args_values) else args_values
                 ops_args.append('%s' % args_values)
             # # list类型，分多次导入,# list类型逗号分隔就好了
             # elif type(task_args[task_attr_name]) == list:
             #     for args_values in task_args[task_attr_name].split('\n'):
             #         ops_args.append('%s' % str(task_attr_name))
-            #         # args_values = template_str(args_values) if re.match('\{\{.*\}\}',args_values) else args_values
+            #         # args_values = template_str(args_values) if re.match(r'\{\{.*\}\}',args_values) else args_values
             #         ops_args.append('%s' % args_values)
             # 其他的直接添加
             elif task_attr_name not in ['images','workdir']:
                 ops_args.append('%s' % str(task_attr_name))
                 args_values = task_args[task_attr_name]
-                # args_values = template_str(args_values) if re.match('\{\{.*\}\}',args_values) else args_values
+                # args_values = template_str(args_values) if re.match(r'\{\{.*\}\}',args_values) else args_values
                 ops_args.append('%s' % str(args_values))  # 这里应该对不同类型的参数名称做不同的参数处理，比如bool型，只有参数，没有值
 
         # 设置环境变量
@@ -373,6 +373,10 @@ def dag_to_pipeline(pipeline, dbsession, workflow_label=None, **kwargs):
 
         global_host_aliases = conf.get('HOSTALIASES', '')
         # global_host_aliases = ''
+        # 合并数据库中的全局 hostAliases
+        platform_host_aliases = get_platform_config('PLATFORM_HOST_ALIASES', '')
+        if platform_host_aliases:
+            global_host_aliases += "\n" + platform_host_aliases
         if task_temp.job_template.host_aliases:
             global_host_aliases += "\n" + task_temp.job_template.host_aliases
         if global_host_aliases:
@@ -600,7 +604,7 @@ class Pipeline_ModelView_Base():
             _('名称'),
             description= _("英文名(小写字母、数字、- 组成)，最长50个字符"),
             widget=BS3TextFieldWidget(),
-            validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+            validators=[Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
         ),
         "describe": StringField(
             _("描述"),

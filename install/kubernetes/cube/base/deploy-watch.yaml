@@ -47,9 +47,50 @@ spec:
       serviceAccountName: kubeflow-dashboard
       imagePullSecrets:
         - name: hubsecret
+      # P1: 启动前等待 MySQL 和 Redis 就绪，避免启动失败
+      initContainers:
+        - name: wait-for-mysql
+          image: 192.168.11.12/cube-studio/busybox:1.36.0
+          command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for MySQL..."
+            until nc -z $(echo $MYSQL_SERVICE | sed -n 's/.*@\([^:]*\):\([0-9]*\).*/\1 \2/p' | awk '{print $1}') $(echo $MYSQL_SERVICE | sed -n 's/.*@\([^:]*\):\([0-9]*\).*/\1 \2/p' | awk '{print $2}') 2>/dev/null; do
+              sleep 2
+            done
+            echo "MySQL is ready."
+          env:
+          - name: MYSQL_SERVICE
+            valueFrom:
+              configMapKeyRef:
+                name: deploy-config
+                key: MYSQL_SERVICE
+        - name: wait-for-redis
+          image: 192.168.11.12/cube-studio/busybox:1.36.0
+          command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for Redis..."
+            until nc -z $REDIS_HOST $REDIS_PORT 2>/dev/null; do
+              sleep 2
+            done
+            echo "Redis is ready."
+          env:
+          - name: REDIS_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: deploy-config
+                key: REDIS_HOST
+          - name: REDIS_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: deploy-config
+                key: REDIS_PORT
       containers:
         - name: kubeflow-watch-workflow
-          image: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard
+          image: 192.168.11.12/cube-studio/kubeflow-dashboard:kylin-20260730-v6
           imagePullPolicy: Always  # IfNotPresent
           workingDir: /home/myapp
           command: ["supervisord", "-c", "/home/myapp/myapp/tools/supervisord.conf"]

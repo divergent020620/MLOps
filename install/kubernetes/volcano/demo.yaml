@@ -31,7 +31,7 @@ spec:
           name: web
         spec:
           containers:
-            - image: nginx
+            - image: 192.168.11.12/cube-studio/nginx
               imagePullPolicy: IfNotPresent
               name: nginx
               resources:

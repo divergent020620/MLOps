@@ -4,5 +4,5 @@ namespace: kubeflow
 resources:
   - ../../base
 images:
-  - name: kubeflow/training-operator
+  - name: 192.168.11.12/cube-studio/kubeflow/training-operator
     newTag: "v1-8a066f9"

@@ -6,7 +6,8 @@ from flask import redirect, g, flash, request, session, abort, render_template, 
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
-from flask_appbuilder import AppBuilder, IndexView, SQLA
+from flask_appbuilder import AppBuilder, IndexView
+from flask_sqlalchemy import SQLAlchemy as SQLA
 from flask_appbuilder.baseviews import expose
 from flask_compress import Compress
 from flask_migrate import Migrate
@@ -134,7 +135,8 @@ if conf.get("WTF_CSRF_ENABLED"):
     for ex in csrf_exempt_list:
         csrf.exempt(ex)
 
-pessimistic_connection_handling(db.engine)
+with app.app_context():
+    pessimistic_connection_handling(db.engine)  # FS 3.x: db.engine 需在 app context 内访问
 
 cache = setup_cache(app, conf.get("CACHE_CONFIG"))
 
@@ -276,7 +278,7 @@ import jwt
 # @pysnooper.snoop()
 def check_login():
     # /static下面不少地方静态文件直接访问。所以不能加权限限制
-    static_urls = ['/static/', '/logout', '/login','/register', '/health', '/wechat','/wework', '/dingtalk','/proxy','/llm/api/','/message_modelview/api/','/announcement_modelview/api/']
+    static_urls = ['/static/', '/logout', '/login','/register', '/health', '/wechat','/wework', '/dingtalk','/proxy','/llm/api/','/message_modelview/api/','/announcement_modelview/api/','/myapp/feature/']
     for url in static_urls:
         if url in request.path:
             return
@@ -347,7 +349,7 @@ def apply_http_headers(response):
     return response
 
 
-@appbuilder.app.errorhandler(404)
+@app.errorhandler(404)
 def page_not_found(e):
     return (
         render_template(
@@ -366,7 +368,28 @@ def page_not_found(e):
 #     app.logger.setLevel(gunicorn_logger.level)
 
 
-# 引入视图
-from myapp import views
+# 从数据库加载平台全局配置的懒加载函数
+# 必须定义在 from myapp import views 之前，避免循环导入
+def _load_platform_config():
+    try:
+        from myapp.models.model_platform_config import PlatformConfig
+        config_row = db.session.query(PlatformConfig).filter_by(id=1).first()
+        if config_row:
+            conf['PLATFORM_HOST_ALIASES'] = config_row.host_aliases or ''
+            conf['DNS_NAMESERVERS'] = config_row.dns_nameservers or ''
+            conf['DNS_SEARCHES'] = config_row.dns_searches or ''
+            conf['DNS_OPTIONS'] = config_row.dns_options or ''
+    except Exception:
+        pass
+
+def get_platform_config(key, default=''):
+    """懒加载获取平台配置，首次调用时才查 DB"""
+    if 'PLATFORM_HOST_ALIASES' not in conf:
+        _load_platform_config()
+    return conf.get(key, default)
+
+# 引入视图(FAB 5.x: add_view_no_menu/add_api 等注册需在 app context 内, 包一层即可)
+with app.app_context():
+    from myapp import views
 
 

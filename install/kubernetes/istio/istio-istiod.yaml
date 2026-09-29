@@ -931,7 +931,7 @@ data:
         spec:
           initContainers:
             - name: grpc-bootstrap-init
-              image: busybox:1.36.0
+              image: 192.168.11.12/cube-studio/busybox:1.36.0
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - mountPath: /var/lib/grpc/data/
@@ -1571,7 +1571,7 @@ spec:
         fsGroup: 1337
       containers:
         - name: discovery
-          image: "docker.io/istio/pilot:1.14.1"
+          image: "192.168.11.12/cube-studio/istio/pilot:1.14.1""
           args:
           - "discovery"
           - --monitoringAddr=:15014

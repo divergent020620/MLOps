@@ -20,7 +20,7 @@ from myapp.project import push_message
 from myapp import app, appbuilder, db, event_logger, cache
 from flask import request
 from sqlalchemy import or_
-from flask import Markup
+from markupsafe import Markup
 from myapp.utils.py import py_k8s
 import logging
 from .baseApi import (
@@ -404,7 +404,7 @@ class Workflow_ModelView_Base():
                         # 对于可重试节点的发起节点，没有日志和执行命令，
                         displayName = status_more['nodes'][child].get('displayName', '')
                         displayName = displayName.replace("(0)", '(first)')
-                        match = re.findall("(\([1-9]+\))", displayName)
+                        match = re.findall(r"(\([1-9]+\))", displayName)
                         if len(match) > 0:
                             retry_index = match[0].replace("(", '').replace(")", '')
                             displayName = displayName.replace(match[0], __('(第%s次重试)')%retry_index)

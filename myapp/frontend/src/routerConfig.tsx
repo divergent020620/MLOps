@@ -118,6 +118,15 @@ export const innerDynamicRouterConfig: IRouterConfigPlusItem[] = [
         isCollapsed: true,
         element: lazy2Compont(() => import("./pages/HDFSConfig/index") as any)
     },
+    {
+        path: '/platformConfig',
+        title: '平台配置',
+        key: 'platform_config',
+        icon: '',
+        menu_type: 'innerRouter',
+        isCollapsed: true,
+        element: lazy2Compont(() => import("./pages/PlatformConfig/index") as any)
+    },
 ]
 
 const innerDynamicRouterConfigMap = innerDynamicRouterConfig.reduce((pre, next) => ({

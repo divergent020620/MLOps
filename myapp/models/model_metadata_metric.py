@@ -1,5 +1,5 @@
 from flask_appbuilder import Model
-from flask import Markup
+from markupsafe import Markup
 from sqlalchemy import (
     Boolean,
     Text,

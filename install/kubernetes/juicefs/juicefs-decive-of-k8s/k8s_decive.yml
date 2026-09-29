@@ -271,7 +271,7 @@ spec:
           value: /var/lib/juicefs/volume
         - name: JUICEFS_CONFIG_PATH
           value: /var/lib/juicefs/config
-        image: juicedata/juicefs-csi-driver:v0.17.1
+        image: 192.168.11.12/cube-studio/juicedata/juicefs-csi-driver:v0.17.1
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -313,7 +313,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: quay.io/k8scsi/csi-provisioner:v1.6.0
+        image: 192.168.11.12/cube-studio/k8scsi/csi-provisioner:v1.6.0
         name: csi-provisioner
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -326,7 +326,7 @@ spec:
           value: /csi/csi.sock
         - name: HEALTH_PORT
           value: "9909"
-        image: quay.io/k8scsi/livenessprobe:v1.1.0
+        image: 192.168.11.12/cube-studio/k8scsi/livenessprobe:v1.1.0
         name: liveness-probe
         volumeMounts:
         - mountPath: /csi
@@ -406,7 +406,7 @@ spec:
           value: /var/lib/juicefs/volume
         - name: JUICEFS_CONFIG_PATH
           value: /var/lib/juicefs/config
-        image: juicedata/juicefs-csi-driver:v0.17.1
+        image: 192.168.11.12/cube-studio/juicedata/juicefs-csi-driver:v0.17.1
         lifecycle:
           preStop:
             exec:
@@ -459,7 +459,7 @@ spec:
           value: /csi/csi.sock
         - name: DRIVER_REG_SOCK_PATH
           value: /var/lib/kubelet/csi-plugins/csi.juicefs.com/csi.sock
-        image: quay.io/k8scsi/csi-node-driver-registrar:v2.1.0
+        image: 192.168.11.12/cube-studio/k8scsi/csi-node-driver-registrar:v2.1.0
         name: node-driver-registrar
         volumeMounts:
         - mountPath: /csi
@@ -474,7 +474,7 @@ spec:
           value: /csi/csi.sock
         - name: HEALTH_PORT
           value: "9909"
-        image: quay.io/k8scsi/livenessprobe:v1.1.0
+        image: 192.168.11.12/cube-studio/k8scsi/livenessprobe:v1.1.0
         name: liveness-probe
         volumeMounts:
         - mountPath: /csi

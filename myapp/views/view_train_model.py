@@ -24,11 +24,12 @@ from flask import (
     redirect, request,
     flash,
     g,
-    Markup,
     make_response,
     redirect,
     request, jsonify
 )
+
+from markupsafe import Markup
 from .base import MyappFilter
 from .baseApi import (
     MyappModelRestApi
@@ -120,7 +121,7 @@ triton-server：框架:地址。onnx:模型文件地址model.onnx，pytorch:torc
             widget=MyBS3TextFieldWidget(),
             description= _('模型版本'),
             default=datetime.datetime.now().strftime('v%Y.%m.%d.1'),
-            validators=[DataRequired(),Regexp("[a-z0-9_\-\.]*")]
+            validators=[DataRequired(),Regexp(r"[a-z0-9_\-\.]*")]
         ),
         "run_id": StringField(
             _('run id'),
@@ -138,7 +139,7 @@ triton-server：框架:地址。onnx:模型文件地址model.onnx，pytorch:torc
             _("模型名"),
             widget=MyBS3TextFieldWidget(),
             description= _('模型名(a-z0-9-字符组成，最长54个字符)'),
-            validators=[DataRequired(), Regexp("^[a-z0-9\-]*$"), Length(1, 54)]
+            validators=[DataRequired(), Regexp(r"^[a-z0-9\-]*$"), Length(1, 54)]
         ),
         "framework": SelectField(
             _('算法框架'),

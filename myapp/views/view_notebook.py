@@ -21,7 +21,7 @@ from wtforms.validators import DataRequired, Length, Regexp
 from wtforms import SelectField, StringField
 from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, Select2Widget
 from myapp.forms import MySelect2Widget, MyBS3TextFieldWidget
-from flask import Markup
+from markupsafe import Markup
 from myapp.utils.py.py_k8s import K8s
 from flask import (
     abort,
@@ -89,7 +89,7 @@ class Notebook_ModelView_Base():
             default="%s-" % g.user.username + uuid.uuid4().hex[:4],
             description= _('英文名(小写字母、数字、-组成)，最长50个字符'),
             widget=MyBS3TextFieldWidget(readonly=True if notebook else False),
-            validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]  # 注意不能以-开头和结尾
+            validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]  # 注意不能以-开头和结尾
         )
         self.add_form_extra_fields['describe'] = StringField(
             _('描述'),
@@ -171,7 +171,7 @@ class Notebook_ModelView_Base():
             default='0',
             description= _('申请的gpu卡数目，示例:2，每个容器独占整卡。-1为共享占用方式，小数(0.1)为vgpu方式，申请具体的卡型号，可以类似 1(V100)'),
             widget=BS3TextFieldWidget(),
-            validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]
+            validators=[DataRequired(),Regexp(r'^[\-\.0-9,a-zA-Z\(\)]*$')]
         )
 
         columns = ['name', 'describe', 'images', 'resource_memory', 'resource_cpu', 'resource_gpu']
@@ -233,6 +233,10 @@ class Notebook_ModelView_Base():
                 item.volume_mount = ','.join(volume_mount_arr).strip(',')
             # 合并项目组的挂载
             item.volume_mount = core.merge_volume_mount(item.project.volume_mount,item.volume_mount)
+
+        # 自动追加数据集 PVC（只读共享），仅在 jupyter 命名空间生效
+        item.volume_mount = core.merge_volume_mount(
+            item.volume_mount, 'kubeflow-dataset(pvc-ro):/mnt/datasets')
 
 
 
@@ -602,6 +606,8 @@ class Notebook_ModelView_Base():
         workingDir = None
         health=None
         volume_mount = notebook.volume_mount
+        # 自动追加数据集 PVC（只读共享），对已有 notebook 点 reset 也生效
+        volume_mount = core.merge_volume_mount(volume_mount, 'kubeflow-dataset(pvc-ro):/mnt/datasets')
         # 端口+0是jupyterlab  +1是sshd   +2 +3 是预留的用户自己启动应用占用的端口
         port_str = conf.get('NOTEBOOK_PORT','10000+10*ID').replace('ID', str(notebook.id))
         meet_ports = core.get_not_black_port(int(eval(port_str)))

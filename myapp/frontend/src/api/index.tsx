@@ -75,7 +75,9 @@ axios.interceptors.request.use(
             let logConfig = config
             return logConfig;
         } else {
-            handleTips.gotoLogin();
+            if (!window.location.pathname.startsWith('/login')) {
+                handleTips.gotoLogin();
+            }
             return Promise.reject('');
         }
     },
@@ -147,7 +149,9 @@ axios.interceptors.response.use(
 
             if (error.response.status === 401) {
                 handleTips.trigger('登录超时，需要重新登录');
-                handleTips.gotoLogin();
+                if (!window.location.pathname.startsWith('/login')) {
+                    handleTips.gotoLogin();
+                }
             } else if (error.response.status === 502) {
                 handleTips.trigger('网络连接中...');
             } else {

@@ -212,7 +212,7 @@ const AppWrapper = (props: IProps) => {
                     return <Menu.ItemGroup key={sub.path} title={sub.title}>
                       {
                         sub.children?.map(thr => {
-                          return <Menu.Item disabled={!!thr.disable} hidden={!!thr.hidden} key={thr.path} onClick={() => {
+                          return <Menu.Item disabled={!!thr.disable} hidden={!!thr.hidden || !!thr.disable} key={thr.path} onClick={() => {
                             if (!menu.isCollapsed) {
                               setIsMenuCollapsed(false)
                             }
@@ -233,7 +233,7 @@ const AppWrapper = (props: IProps) => {
                       }
                     </Menu.ItemGroup>
                   }
-                  return <Menu.Item disabled={!!sub.disable} hidden={!!sub.hidden} key={sub.path} onClick={() => {
+                  return <Menu.Item disabled={!!sub.disable} hidden={!!sub.hidden || !!sub.disable} key={sub.path} onClick={() => {
                     if (!menu.isCollapsed) {
                       setIsMenuCollapsed(false)
                     }
@@ -254,7 +254,7 @@ const AppWrapper = (props: IProps) => {
               }
             </SubMenu>
           }
-          return <Menu.Item disabled={!!menu.disable} hidden={!!menu.hidden} key={menu.path} onClick={() => {
+          return <Menu.Item disabled={!!menu.disable} hidden={!!menu.hidden || !!menu.disable} key={menu.path} onClick={() => {
             if (!menu.isCollapsed) {
               setIsMenuCollapsed(false)
             }
@@ -309,7 +309,7 @@ const AppWrapper = (props: IProps) => {
 
   const renderNavTopMenu = () => {
     return currentNavList.map((app) => {
-      if (!!app.hidden) {
+      if (!!app.hidden || !!app.disable) {
         return null
       }
       if (app.isSingleModule || app.isDropdown) {

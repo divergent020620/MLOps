@@ -151,7 +151,7 @@ spec:
         fsGroup: 1000
       initContainers:
       - name: init-sysctl
-        image: busybox:1.36.0
+        image: 192.168.11.12/cube-studio/busybox:1.36.0
         imagePullPolicy: IfNotPresent
         securityContext:
           privileged: true
@@ -172,7 +172,7 @@ spec:
             add:
             - IPC_LOCK
             - SYS_RESOURCE
-        image: docker.io/elasticsearch:7.16.2
+        image: 192.168.11.12/cube-studio/elasticsearch:7.16.2
         env:
         - name: ES_JAVA_OPTS
           valueFrom:

@@ -6,7 +6,12 @@ metadata:
   labels:
     app: kubeflow-dashboard
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: kubeflow-dashboard
@@ -17,6 +22,12 @@ spec:
         app: kubeflow-dashboard
     spec:
       affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: kubeflow-dashboard
+            topologyKey: kubernetes.io/hostname
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -50,9 +61,50 @@ spec:
 
       imagePullSecrets:
         - name: hubsecret
+      # P1: 启动前等待 MySQL 和 Redis 就绪，避免启动失败
+      initContainers:
+        - name: wait-for-mysql
+          image: 192.168.11.12/cube-studio/busybox:1.36.0
+          command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for MySQL..."
+            until nc -z $(echo $MYSQL_SERVICE | sed -n 's/.*@\([^:]*\):\([0-9]*\).*/\1 \2/p' | awk '{print $1}') $(echo $MYSQL_SERVICE | sed -n 's/.*@\([^:]*\):\([0-9]*\).*/\1 \2/p' | awk '{print $2}') 2>/dev/null; do
+              sleep 2
+            done
+            echo "MySQL is ready."
+          env:
+          - name: MYSQL_SERVICE
+            valueFrom:
+              configMapKeyRef:
+                name: deploy-config
+                key: MYSQL_SERVICE
+        - name: wait-for-redis
+          image: 192.168.11.12/cube-studio/busybox:1.36.0
+          command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for Redis..."
+            until nc -z $REDIS_HOST $REDIS_PORT 2>/dev/null; do
+              sleep 2
+            done
+            echo "Redis is ready."
+          env:
+          - name: REDIS_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: deploy-config
+                key: REDIS_HOST
+          - name: REDIS_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: deploy-config
+                key: REDIS_PORT
       containers:
         - name: kubeflow-dashboard
-          image: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard
+          image: 192.168.11.12/cube-studio/kubeflow-dashboard:kylin-20260730-v6
           imagePullPolicy: Always  # IfNotPresent   Always
           command: ["bash","/entrypoint.sh"]
           env:
@@ -123,15 +175,22 @@ spec:
               path: /health
               port: http
             initialDelaySeconds: 10
-            periodSeconds: 60
-            timeoutSeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - bash
+                - -c
+                - sleep 10  # 等待 K8s Service 摘除端点 + Istio 停止路由
           livenessProbe:
-            failureThreshold: 2
+            failureThreshold: 3
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 500
-            periodSeconds: 60
+            initialDelaySeconds: 60
+            periodSeconds: 15
             timeoutSeconds: 10
           securityContext:
             privileged: true

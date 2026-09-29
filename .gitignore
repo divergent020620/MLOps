@@ -7,13 +7,13 @@ myapp/test
 /myapp/static/appbuilder/mnt
 /images/web/target-detection/yolo/
 /install/docker/data/mysql/
-/myapp/visionPlus/node_modules
-/myapp/frontend/node_modules
-/myapp/frontendSrc/node_modules
-/myapp/music/node_modules
+/myapp/visionPlus/
+/myapp/frontend/
+/myapp/frontendSrc/
+/myapp/music/
 /sdk/dist/
 /install/docker/data/
-/aihub/src/cubestudio/aihub/web/frontend/node_modules
+/aihub/src/cubestudio/aihub/web/frontend/
 /aihub/modelscope/aihub/
 /aihub/modelscope/modelscope/
 /aihub/deep-learning/chat-private-knowledge/wiki/
@@ -36,3 +36,19 @@ compile.py
 /install/docker/kubeconfig/
 /install/docker/project/
 /myapp/dm/
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.tar.bz2
+*.tbz2
+*.tar.xz
+*.txz
+*.7z
+*.rar
+
+# Kerberos / security credentials
+krb5.conf
+*.keytab

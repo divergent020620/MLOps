@@ -7,3 +7,4 @@ resources:
 - deploy-backend.yaml
 - deploy-frontend.yaml
 - deploy-schedule.yaml
+- pdb.yaml

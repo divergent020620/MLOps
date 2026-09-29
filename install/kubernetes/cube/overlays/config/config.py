@@ -1,6 +1,6 @@
 
 
-import imp
+import importlib.util  # py3.12: imp 模块已移除, 用 importlib 替代
 import json
 import os
 import shutil
@@ -59,7 +59,8 @@ FLASK_USE_RELOAD = True
 SHOW_STACKTRACE = True
 
 # Extract and use X-Forwarded-For/X-Forwarded-Proto headers?
-ENABLE_PROXY_FIX = False
+# HA: 开启以正确解析多级代理后的客户端 IP
+ENABLE_PROXY_FIX = True
 
 # ------------------------------
 # GLOBALS FOR APP Builder
@@ -347,9 +348,11 @@ try:
             )
         )
         module = sys.modules[__name__]
-        override_conf = imp.load_source(
+        override_spec = importlib.util.spec_from_file_location(
             "myapp_config", os.environ[CONFIG_PATH_ENV_VAR]
         )
+        override_conf = importlib.util.module_from_spec(override_spec)
+        override_spec.loader.exec_module(override_conf)
         for key in dir(override_conf):
             if key.isupper():
                 setattr(module, key, getattr(override_conf, key))
@@ -380,9 +383,11 @@ def get_env_variable(var_name, default=None):
 ENVIRONMENT=get_env_variable('ENVIRONMENT','DEV').lower()
 
 # 数据库链接相关配置
-SQLALCHEMY_POOL_SIZE = 300
+# HA: 多 Pod 时缩小连接池，避免撑爆 MySQL max_connections
+# 2 Pod * 100 base + 2 Pod * 300 overflow = 800 max, 留有余量
+SQLALCHEMY_POOL_SIZE = 100
 SQLALCHEMY_POOL_RECYCLE = 300  # 超时重连， 必须小于数据库的超时终端时间
-SQLALCHEMY_MAX_OVERFLOW = 800
+SQLALCHEMY_MAX_OVERFLOW = 300
 SQLALCHEMY_TRACK_MODIFICATIONS=False
 
 
@@ -402,7 +407,7 @@ from celery.schedules import crontab
 CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24  # cache默认超时是24小时，一天才过期
 
 CACHE_CONFIG = {
-    'CACHE_TYPE': 'redis', # 使用 Redis
+    'CACHE_TYPE': 'RedisCache', # 使用 Redis (flask-caching 2.5.x 后端名)
     'CACHE_REDIS_HOST': REDIS_HOST, # 配置域名
     'CACHE_REDIS_PORT': int(REDIS_PORT), # 配置端口号
     'CACHE_REDIS_URL':'redis://:%s@%s:%s/1'%(REDIS_PASSWORD,REDIS_HOST,str(REDIS_PORT)) if REDIS_PASSWORD else 'redis://%s:%s/1'%(REDIS_HOST,str(REDIS_PORT))   # 0，1为数据库编号（redis有0-16个数据库）
@@ -729,28 +734,32 @@ SERVICE_PIPELINE_JAEGER='tracing.service'
 HUBSECRET = ['hubsecret']
 
 # 私有仓库的组织名，如果完全内网环境，修改为自己的内网
-REPOSITORY_ORG='ccr.ccs.tencentyun.com/cube-studio/'
+REPOSITORY_ORG='192.168.11.12/cube-studio/'
 # 私有仓库的组织名，用户在线构建的镜像自动推送这个组织下面
-PUSH_REPOSITORY_ORG='ccr.ccs.tencentyun.com/cube-studio/'
+PUSH_REPOSITORY_ORG='192.168.11.12/cube-studio/'
 
 # 用户常用默认镜像
-USER_IMAGE = 'ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9'
+USER_IMAGE = '192.168.11.12/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9'
 # notebook每个pod使用的用户账号
 JUPYTER_ACCOUNTS=''
 HUBSECRET_NAMESPACE=[PIPELINE_NAMESPACE,AUTOML_NAMESPACE,NOTEBOOK_NAMESPACE,SERVICE_NAMESPACE,AIHUB_NAMESPACE]
 
 # notebook使用的镜像
 NOTEBOOK_IMAGES=[
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:vscode-ubuntu-cpu-base', 'vscode（cpu）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:vscode-ubuntu-gpu-base', 'vscode（gpu）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:jupyter-ubuntu22.04', 'jupyter（cpu）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:jupyter-ubuntu22.04-cuda11.8.0-cudnn8','jupyter（gpu）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:jupyter-ubuntu-bigdata', 'jupyter（bigdata）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:jupyter-ubuntu-machinelearning', 'jupyter（machinelearning）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:jupyter-ubuntu-deeplearning', 'jupyter（deeplearning）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:enterprise-jupyter-ubuntu-cpu-pro', 'jupyter-conda-pro（todo）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:enterprise-matlab-ubuntu-deeplearning', 'matlab（todo）'],
-    ['ccr.ccs.tencentyun.com/cube-studio/notebook:enterprise-rstudio-ubuntu-bigdata', 'rstudio（todo）'],
+    # ★ 麒麟信创镜像
+    ['192.168.11.12/cube-studio/notebook:jupyter-kylin-hdfs', 'jupyter-kylin（hdfs）'],
+    ['192.168.11.12/cube-studio/notebook:jupyter-kylin-spark', 'jupyter-kylin（spark）'],
+    # 原 ubuntu 镜像
+    ['192.168.11.12/cube-studio/notebook:vscode-ubuntu-cpu-base', 'vscode（cpu）'],
+    ['192.168.11.12/cube-studio/notebook:vscode-ubuntu-gpu-base', 'vscode（gpu）'],
+    ['192.168.11.12/cube-studio/notebook:jupyter-ubuntu22.04', 'jupyter（cpu）'],
+    ['192.168.11.12/cube-studio/notebook:jupyter-ubuntu22.04-cuda11.8.0-cudnn8','jupyter（gpu）'],
+    ['192.168.11.12/cube-studio/notebook:jupyter-ubuntu-bigdata', 'jupyter（bigdata）'],
+    ['192.168.11.12/cube-studio/notebook:jupyter-ubuntu-machinelearning', 'jupyter（machinelearning）'],
+    ['192.168.11.12/cube-studio/notebook:jupyter-ubuntu-deeplearning', 'jupyter（deeplearning）'],
+    ['192.168.11.12/cube-studio/notebook:enterprise-jupyter-ubuntu-cpu-pro', 'jupyter-conda-pro（todo）'],
+    ['192.168.11.12/cube-studio/notebook:enterprise-matlab-ubuntu-deeplearning', 'matlab（todo）'],
+    ['192.168.11.12/cube-studio/notebook:enterprise-rstudio-ubuntu-bigdata', 'rstudio（todo）'],
 ]
 
 # 定时检查大小的目录列表。需要再celery中启动检查任务
@@ -771,7 +780,7 @@ ARCHIVES_HOST_PATH = "/data/k8s/kubeflow/pipeline/archives"
 # prometheus地址
 PROMETHEUS = 'prometheus-k8s.monitoring:9090'
 # nni默认镜像
-NNI_IMAGES='ccr.ccs.tencentyun.com/cube-studio/nni:20240501'
+NNI_IMAGES='192.168.11.12/cube-studio/nni:20240501'
 
 # 数据集的存储地址
 DATASET_SAVEPATH = '/dataset/'
@@ -819,21 +828,21 @@ ALL_LINKS=[
 
 # 推理服务的各种配置
 INFERNENCE_IMAGES={
-    "tfserving":['ccr.ccs.tencentyun.com/cube-studio/tfserving:2.14.1-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.14.1','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.13.1-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.13.1','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.12.2-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.12.2','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.11.1-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.11.1','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.10.1-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.10.1','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.9.3-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.9.3','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.8.4-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.8.4','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.7.4-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.7.4','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.6.5-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.6.5','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.5.4-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.5.4'],
-    'torch-server':['ccr.ccs.tencentyun.com/cube-studio/torchserve:0.9.0-gpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.9.0-cpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.8.2-gpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.8.2-cpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.7.1-gpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.7.1-cpu'],
-    'onnxruntime':['ccr.ccs.tencentyun.com/cube-studio/onnxruntime:latest','ccr.ccs.tencentyun.com/cube-studio/onnxruntime:latest-cuda'],
-    'triton-server':['ccr.ccs.tencentyun.com/cube-studio/tritonserver:24.01-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:23.12-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:22.12-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:21.12-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:20.12-py3']
+    "tfserving":['192.168.11.12/cube-studio/tfserving:2.14.1-gpu','192.168.11.12/cube-studio/tfserving:2.14.1','192.168.11.12/cube-studio/tfserving:2.13.1-gpu','192.168.11.12/cube-studio/tfserving:2.13.1','192.168.11.12/cube-studio/tfserving:2.12.2-gpu','192.168.11.12/cube-studio/tfserving:2.12.2','192.168.11.12/cube-studio/tfserving:2.11.1-gpu','192.168.11.12/cube-studio/tfserving:2.11.1','192.168.11.12/cube-studio/tfserving:2.10.1-gpu','192.168.11.12/cube-studio/tfserving:2.10.1','192.168.11.12/cube-studio/tfserving:2.9.3-gpu','192.168.11.12/cube-studio/tfserving:2.9.3','192.168.11.12/cube-studio/tfserving:2.8.4-gpu','192.168.11.12/cube-studio/tfserving:2.8.4','192.168.11.12/cube-studio/tfserving:2.7.4-gpu','192.168.11.12/cube-studio/tfserving:2.7.4','192.168.11.12/cube-studio/tfserving:2.6.5-gpu','192.168.11.12/cube-studio/tfserving:2.6.5','192.168.11.12/cube-studio/tfserving:2.5.4-gpu','192.168.11.12/cube-studio/tfserving:2.5.4'],
+    'torch-server':['192.168.11.12/cube-studio/torchserve:0.9.0-gpu','192.168.11.12/cube-studio/torchserve:0.9.0-cpu','192.168.11.12/cube-studio/torchserve:0.8.2-gpu','192.168.11.12/cube-studio/torchserve:0.8.2-cpu','192.168.11.12/cube-studio/torchserve:0.7.1-gpu','192.168.11.12/cube-studio/torchserve:0.7.1-cpu'],
+    'onnxruntime':['192.168.11.12/cube-studio/onnxruntime:latest','192.168.11.12/cube-studio/onnxruntime:latest-cuda'],
+    'triton-server':['192.168.11.12/cube-studio/tritonserver:24.01-py3','192.168.11.12/cube-studio/tritonserver:23.12-py3','192.168.11.12/cube-studio/tritonserver:22.12-py3','192.168.11.12/cube-studio/tritonserver:21.12-py3','192.168.11.12/cube-studio/tritonserver:20.12-py3']
 }
 
 CONTAINER_CLI='docker'   # 或者 docker nerdctl
 
 DOCKER_IMAGES='docker:23.0.4'
-NERDCTL_IMAGES='ccr.ccs.tencentyun.com/cube-studio/nerdctl:1.7.2'
+NERDCTL_IMAGES='192.168.11.12/cube-studio/nerdctl:1.7.2'
 DOCKER_SOCKET = '/var/run/docker.sock(hostpath):/var/run/docker.sock'
 CONTAINERD_SOCKET = '/etc/containerd/(hostpath):/etc/containerd/,/run/containerd/containerd.sock(hostpath):/run/containerd/containerd.sock'
 # CONTAINERD_SOCKET = '/var/lib/rancher/rke2/agent/etc/containerd/(hostpath):/etc/containerd/,/run/k3s/containerd/containerd.sock(hostpath):/run/containerd/containerd.sock'
 
-WAIT_POD_IMAGES='ccr.ccs.tencentyun.com/cube-studio/wait-pod:v1'
+WAIT_POD_IMAGES='192.168.11.12/cube-studio/wait-pod:v1'
 # notebook，pipeline镜像拉取策略
 IMAGE_PULL_POLICY='Always'    # IfNotPresent   Always
 
@@ -898,6 +907,12 @@ CLUSTERS={
         "KUBECONFIG":'/home/myapp/kubeconfig/dev-kubeconfig',
         "SERVICE_DOMAIN": 'service.local.com',
         # "HOST": "192.168.0.100"   # 本地调试的时候这里更换为k8s的istio ingressgateway的ip并解开注释
+    },
+    # 生产(行内)集群: ENVIRONMENT=prod 时使用, 生产实际域名/kubeconfig 按行内为准
+    "prod":{
+        "NAME":"prod",
+        "KUBECONFIG":'/home/myapp/kubeconfig/prod-kubeconfig',
+        "SERVICE_DOMAIN": 'service.svc.cluster.local',
     }
 }
 

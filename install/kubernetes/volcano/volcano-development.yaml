@@ -7508,7 +7508,7 @@ spec:
         kubeflow: 'true'
       containers:
           - name: volcano-controllers
-            image: volcanosh/vc-controller-manager:v1.7.0
+            image: 192.168.11.12/cube-studio/volcanosh/vc-controller-manager:v1.7.0
             args:
               - --logtostderr
               - -v=4
@@ -7664,7 +7664,7 @@ spec:
         kubeflow: 'true'
       containers:
         - name: volcano-scheduler
-          image: volcanosh/vc-scheduler:v1.7.0
+          image: 192.168.11.12/cube-studio/volcanosh/vc-scheduler:v1.7.0
           args:
             - --logtostderr
             - --scheduler-conf=/volcano.scheduler/volcano-scheduler.conf

@@ -27,10 +27,11 @@ from myapp.utils.py.py_k8s import K8s
 from flask import (
     flash,
     g,
-    Markup,
     redirect,
     request, render_template
 )
+
+from markupsafe import Markup
 from .baseApi import (
     MyappModelRestApi
 )
@@ -99,7 +100,7 @@ class NNI_ModelView_Base():
         _('名称'),
         description= _('英文名(小写字母、数字、- 组成)，最长50个字符'),
         widget=BS3TextFieldWidget(),
-        validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
+        validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
     )
     edit_form_extra_fields['describe'] = StringField(
         _("描述"),
@@ -112,7 +113,7 @@ class NNI_ModelView_Base():
         description='',
         widget=BS3TextFieldWidget(),
         default=datamodel.obj.namespace.default.arg,
-        validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
+        validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
     )
 
     edit_form_extra_fields['parallel_trial_count'] = IntegerField(
@@ -150,7 +151,7 @@ class NNI_ModelView_Base():
         default=datamodel.obj.objective_goal.default.arg,
         description= _('目标门限'),
         widget=BS3TextFieldWidget(),
-        validators=[DataRequired(),Regexp("^[\.0-9]*$")]
+        validators=[DataRequired(),Regexp(r"^[\.0-9]*$")]
     )
     edit_form_extra_fields['objective_metric_name'] = StringField(
         _('目标指标名'),
@@ -249,7 +250,7 @@ class NNI_ModelView_Base():
         default='0',
         description=_('申请的gpu卡数目，示例:2，每个容器独占整卡。-1为共享占用方式，小数(0.1)为vgpu方式，申请具体的卡型号，可以类似 1(V100)'),
         widget=BS3TextFieldWidget(),
-        validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]
+        validators=[DataRequired(),Regexp(r'^[\-\.0-9,a-zA-Z\(\)]*$')]
     )
 
     # @pysnooper.snoop()

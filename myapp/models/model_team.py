@@ -13,7 +13,8 @@ from sqlalchemy.orm import backref, relationship
 from myapp.models.base import MyappModelBase
 
 from flask_appbuilder.models.decorators import renders
-from flask import Markup,g
+from flask import g
+from markupsafe import Markup
 from sqlalchemy import String,Column,Integer,ForeignKey,UniqueConstraint
 
 

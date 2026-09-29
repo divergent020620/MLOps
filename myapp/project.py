@@ -171,7 +171,7 @@ class Myauthdbview(AuthDBView):
         if form.validate_on_submit():
             username = form.username.data
             import re
-            if not re.match('^[a-z][a-z0-9\-]*[a-z0-9]$',username):
+            if not re.match(r'^[a-z][a-z0-9\-]*[a-z0-9]$',username):
                 flash('用户名只能由小写字母、数字、-组成',"warning")
                 return redirect(self.appbuilder.get_url_for_login)
 

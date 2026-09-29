@@ -8460,7 +8460,7 @@ spec:
             name: strimzi-cluster-operator
       containers:
         - name: strimzi-cluster-operator
-          image: 'quay.io/strimzi/operator:0.32.0'
+          image: '192.168.11.12/cube-studio/strimzi/operator:0.32.0''
           ports:
             - containerPort: 8080
               name: http

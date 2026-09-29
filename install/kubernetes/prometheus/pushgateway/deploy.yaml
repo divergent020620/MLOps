@@ -32,7 +32,7 @@ spec:   # 包括一些container，storage，volume以及其他Kubernetes需要�
         - name: hubsecret
       containers:
       - name: cloud-pushgateway-container     # 容器名称
-        image: ccr.ccs.tencentyun.com/cube-studio/prometheus:pushgateway
+        image: 192.168.11.12/cube-studio/prometheus:pushgateway
         command: ['python','server.py']
 #        command: ['sleep','300000']
         workingDir: /app/pushgateway    # 

@@ -32,10 +32,11 @@ from myapp.views.view_team import Project_Join_Filter, filter_join_org_project
 from flask import (
     flash,
     g,
-    Markup,
     redirect,
     request
 )
+
+from markupsafe import Markup
 from .base import MyappFilter
 from .baseApi import (
     MyappModelRestApi
@@ -122,11 +123,11 @@ class InferenceService_ModelView_base():
     datamodel = SQLAInterface(InferenceService)
 
     # add_columns = ['service_type','project','name', 'label','images','resource_memory','resource_cpu','resource_gpu','min_replicas','max_replicas','ports','host','hpa','metrics','health']
-    columns = ['service_type', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path',
+    columns = ['service_type', 'deploy_type', 'schedule', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path',
                    'resource_memory', 'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'hpa', 'priority',
                    'canary', 'shadow', 'host', 'inference_config', 'working_dir', 'command', 'env',
                    'ports', 'metrics', 'health', 'sidecar']
-    show_columns = ['service_type', 'project', 'name', 'label', 'model_name', 'model_version', 'images', 'model_path',
+    show_columns = ['service_type', 'deploy_type', 'schedule', 'project', 'name', 'label', 'model_name', 'model_version', 'images', 'model_path',
                     'images', 'volume_mount', 'sidecar', 'working_dir', 'command', 'env', 'resource_memory',
                     'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'ports', 'inference_host_url',
                     'hpa', 'priority', 'canary', 'shadow', 'health', 'model_status', 'expand', 'metrics',
@@ -140,7 +141,7 @@ class InferenceService_ModelView_base():
     }
     edit_form_query_rel_fields = add_form_query_rel_fields
 
-    list_columns = ['project', 'service_type', 'label', 'model_name_url', 'model_version', 'inference_host_url', 'ip',
+    list_columns = ['project', 'service_type', 'deploy_type', 'label', 'model_name_url', 'model_version', 'inference_host_url', 'ip',
                     'status_url', 'resource', 'replicas_html', 'creator', 'modified', 'operate_html']
     list_select_columns = list_columns+['model_status','changed_on','id']
     cols_width = {
@@ -203,7 +204,7 @@ triton-server：框架:地址。onnx:模型文件地址model.onnx，pytorch:torc
         "host": StringField(_('域名'), default=InferenceService.host.default.arg,description= _('访问域名，')+host_rule,widget=BS3TextFieldWidget(),validators=[Regexp('^[\x00-\x7F]*$')]),
         "transformer":StringField(_('前后置处理'), default=InferenceService.transformer.default.arg,description= _('前后置处理逻辑，用于原生开源框架的请求预处理和响应预处理，目前仅支持kfserving下框架'),widget=BS3TextFieldWidget()),
         'resource_gpu':StringField(_('gpu'), default='0', description= _('申请的gpu卡数目，示例:2，每个容器独占整卡。申请具体的卡型号，可以类似 1(V100)，<span style="color:red;">虚拟化占用和共享模式占用仅todo支持</span>'),
-                                                        widget=BS3TextFieldWidget(),validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')]),
+                                                        widget=BS3TextFieldWidget(),validators=[DataRequired(),Regexp(r'^[\-\.0-9,a-zA-Z\(\)]*$')]),
         "working_dir": StringField(_('工作目录'), description=_('工作目录，容器进程启动目录，不填默认使用Dockerfile内定义的工作目录。')+core.open_jupyter(_('打开目录'),'working_dir'),widget=BS3TextFieldWidget()),
 
         'sidecar': MySelectMultipleField(
@@ -227,14 +228,14 @@ triton-server：框架:地址。onnx:模型文件地址model.onnx，pytorch:torc
             default='',
             description= _('英文名(小写字母、数字、- 组成)，最长50个字符'),
             widget=MyBS3TextFieldWidget(),
-            validators=[DataRequired(), Regexp("^[a-z][a-z0-9\.\/:\-]*[a-z0-9]$"), Length(1, 54)]  #
+            validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\.\/:\-]*[a-z0-9]$"), Length(1, 54)]  #
         ),
         'model_version': StringField(
             _('模型版本号'),
             default=datetime.datetime.now().strftime('v%Y.%m.%d.1'),
             description= _('版本号，时间格式'),
             widget=MyBS3TextFieldWidget(),
-            validators=[DataRequired(),Regexp("[a-z0-9_\-\.]*"), Length(1, 54)]
+            validators=[DataRequired(),Regexp(r"[a-z0-9_\-\.]*"), Length(1, 54)]
         ),
 
         'service_type': SelectField(
@@ -244,6 +245,21 @@ triton-server：框架:地址。onnx:模型文件地址model.onnx，pytorch:torc
             widget=MySelect2Widget(retry_info=True),
             choices=[[x, x] for x in service_type_choices],
             validators=[DataRequired()]
+        ),
+        'deploy_type': SelectField(
+            _('部署方式'),
+            default='online',
+            description=_('online：在线服务（常驻pod）；batch：批处理（定时/手动触发，跑完退出）'),
+            widget=Select2Widget(),
+            choices=[['online', _('在线服务')], ['batch', _('批处理')]],
+            validators=[DataRequired()]
+        ),
+        'schedule': StringField(
+            _('定时调度'),
+            default='',
+            description=_('cron表达式，仅批处理时生效。示例：0 2 * * *（每天凌晨2点执行）'),
+            widget=BS3TextFieldWidget(),
+            validators=[Regexp(r'^[0-9a-zA-Z ,\-*\/]*$')]
         ),
         'label': StringField(
             _('标签'),
@@ -384,9 +400,9 @@ triton-server：框架:地址。onnx:模型文件地址model.onnx，pytorch:torc
     '''
 
     edit_form_extra_fields = add_form_extra_fields
-    # edit_form_extra_fields['name']=StringField(_('名称'), description='英文名(小写字母、数字、- 组成)，最长50个字符',widget=MyBS3TextFieldWidget(readonly=True), validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
+    # edit_form_extra_fields['name']=StringField(_('名称'), description='英文名(小写字母、数字、- 组成)，最长50个字符',widget=MyBS3TextFieldWidget(readonly=True), validators=[Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
 
-    model_columns = ['service_type', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path']
+    model_columns = ['service_type', 'deploy_type', 'schedule', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path']
     service_columns = ['resource_memory', 'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'hpa',
                        'priority', 'canary', 'shadow', 'host', 'volume_mount', 'sidecar']
     admin_columns = ['inference_config', 'working_dir', 'command', 'env', 'ports', 'metrics', 'health']
@@ -547,10 +563,21 @@ output %s
     # @pysnooper.snoop(watch_explode=('item'))
     def use_expand(self, item):
 
+        model_version = item.model_version.replace('v', '').replace('.', '').replace(':', '')
+
+        # 批处理模式跳过在线服务特有配置（ports/metrics/health/host）
+        if item.deploy_type == 'batch':
+            if not item.ports:
+                item.ports = '80'
+            if not item.name:
+                item.name = item.model_name.replace('/','-').replace(':','-').replace('.','-').strip('-') + "-" + model_version
+                if len(item.name) > 60:
+                    item.name = item.name[:60]
+            return
+
         # 先存储特定参数到expand
         expand = json.loads(item.expand) if item.expand else {}
         # print(self.src_item_json)
-        model_version = item.model_version.replace('v', '').replace('.', '').replace(':', '')
         model_path = "/" + item.model_path.strip('/') if item.model_path else ''
 
         if not item.ports:
@@ -702,6 +729,10 @@ output %s
     def pre_add(self, item):
         if not item.namespace:
             item.namespace = item.project.service_namespace
+        if not item.deploy_type:
+            item.deploy_type = 'online'
+        if not item.schedule:
+            item.schedule = ''
 
         if not item.expand:
             item.expand= '{}'
@@ -763,6 +794,9 @@ output %s
                     k8s_client.delete_crd(group='security.istio.io',version='v1beta1',plural='requestauthentications',namespace=namespace,name=name)
                     k8s_client.delete_crd(group='security.istio.io',version='v1beta1',plural='authorizationpolicies',namespace=namespace,name=name)
                     k8s_client.delete_crd(group='batch.volcano.sh',version='v1alpha1',plural='jobs',namespace=namespace,name=name+"-vc")
+                    # 清理批处理 CronJob 和 Job
+                    k8s_client.delete_cronjob(namespace=namespace, name=name)
+                    k8s_client.delete_job(namespace=namespace, name=name)
         except Exception as e:
             print(e)
 
@@ -832,6 +866,60 @@ output %s
     # @pysnooper.snoop()
     def deploy_prod(self, service_id):
         return self.deploy(service_id, stag='prod')
+
+    @event_logger.log_this
+    @expose_api(description="手动触发一次批处理",url='/run_batch/<service_id>', methods=['POST', 'GET'])
+    def run_batch(self, service_id):
+        service = db.session.query(InferenceService).filter_by(id=service_id).first()
+        if not service or service.deploy_type != 'batch':
+            flash(__('仅批处理类型服务支持手动运行'), 'warning')
+            return redirect(conf.get('MODEL_URLS', {}).get('inferenceservice', ''))
+
+        from myapp.utils.py.py_k8s import K8s
+        k8s_client = K8s(service.project.cluster.get('KUBECONFIG', ''))
+        namespace = service.project.service_namespace
+        batch_name = '%s-batch-%s' % (service.name, datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+
+        model_path = service.model_path.replace('{{creator}}', service.created_by.username).replace('$model_name', service.model_name)
+        command = service.command.replace('$model_path', model_path).replace('$model_name', service.model_name).replace('$model_version', service.model_version).replace("{{creator}}", service.created_by.username)
+
+        image_pull_secrets = conf.get('HUBSECRET', [])
+        user_repositorys = db.session.query(Repository).filter(Repository.created_by_fk == g.user.id).all()
+        image_pull_secrets = list(set(image_pull_secrets + [rep.hubsecret for rep in user_repositorys]))
+
+        volume_mount = service.volume_mount.replace("{{creator}}", service.created_by.username)
+        if service.env:
+            for e in service.env.split("\n"):
+                if '=' in e:
+                    volume_mount = volume_mount.replace('{{' + e.split("=")[0] + '}}', e.split("=")[1])
+
+        pod_env = (service.env or '').strip()
+        pod_env += "\nKUBEFLOW_ENV=batch"
+        pod_env += '\nKUBEFLOW_MODEL_PATH=' + (model_path if service.model_path else '')
+        pod_env += '\nKUBEFLOW_MODEL_IMAGES=' + service.images
+        pod_env += '\nKUBEFLOW_MODEL_NAME=' + service.model_name
+        pod_env += '\nKUBEFLOW_INFERENCE_ID=' + str(service.id)
+        pod_env += '\nKUBEFLOW_RUN_ID=' + str(uuid.uuid4().hex[:4])
+
+        labels = {"app": batch_name, "user": service.created_by.username, 'pod-type': "batch-inference"}
+        pod_annotations = {'project': service.project.name}
+
+        k8s_client.create_job(
+            namespace=namespace, name=batch_name, labels=labels,
+            command=['bash', '-c', command] if command else None, args=None,
+            volume_mount=volume_mount,
+            working_dir=service.working_dir.replace('{{creator}}', service.created_by.username),
+            node_selector=service.get_node_selector(),
+            resource_memory=service.resource_memory, resource_cpu=service.resource_cpu,
+            resource_gpu=service.resource_gpu if service.resource_gpu else '',
+            image_pull_policy=conf.get('IMAGE_PULL_POLICY', 'Always'),
+            image_pull_secrets=image_pull_secrets, image=service.images,
+            hostAliases=conf.get('HOSTALIASES', ''), env=pod_env,
+            privileged=False, accounts=None, username=service.created_by.username,
+            annotations=pod_annotations
+        )
+        flash(__('批处理任务 %s 已创建' % batch_name), 'info')
+        return redirect(conf.get('MODEL_URLS', {}).get('inferenceservice', ''))
 
     @event_logger.log_this
     @expose_api(description="推理服务升级",url='/deploy/update/', methods=['POST', 'GET'])
@@ -997,7 +1085,90 @@ output %s
         pod_env = pod_env.strip(',')
         pod_env = pod_env.replace('$model_path',model_path).replace('$model_name',service.model_name).replace('$model_version',service.model_version).replace("{{creator}}", service.created_by.username)
 
+        # 批处理部署：CronJob / 一次性 Job
+        if service.deploy_type == 'batch':
+            labels = {"app": name, "user": service.created_by.username, 'pod-type': "batch-inference"}
+            pod_annotations = {'project': service.project.name}
+            service.namespace = namespace
+            db.session.commit()
 
+            if stag == 'debug':
+                # 调试模式：创建一次性 Job（sleep 长驻）
+                batch_name = 'debug-' + name
+                batch_command = ['bash', '-c', 'sleep 43200']
+                k8s_client.delete_job(namespace=namespace, name=batch_name)
+                k8s_client.create_job(
+                    namespace=namespace, name=batch_name, labels=labels,
+                    command=batch_command, args=None, volume_mount=volume_mount,
+                    working_dir=service.working_dir.replace('{{creator}}', service.created_by.username),
+                    node_selector=service.get_node_selector(),
+                    resource_memory='2G', resource_cpu='2', resource_gpu='',
+                    image_pull_policy=conf.get('IMAGE_PULL_POLICY', 'Always'),
+                    image_pull_secrets=image_pull_secrets, image=service.images,
+                    hostAliases=conf.get('HOSTALIASES', ''), env=pod_env,
+                    privileged=False, accounts=None, username=service.created_by.username,
+                    annotations=pod_annotations
+                )
+                service.model_status = 'debug'
+                db.session.commit()
+                time.sleep(2)
+                pods = k8s_client.get_pods(namespace=namespace, labels={"app": batch_name})
+                if pods:
+                    return redirect("/k8s/web/debug/%s/%s/%s/%s" % (service.project.cluster['NAME'], namespace, pods[0]['name'], batch_name))
+                flash(__('调试环境已创建'), 'info')
+                return redirect(conf.get('MODEL_URLS', {}).get('inferenceservice', ''))
+
+            elif stag == 'test':
+                # 测试模式：创建一次性 Job
+                batch_name = 'test-' + name
+                k8s_client.delete_job(namespace=namespace, name=batch_name)
+                k8s_client.create_job(
+                    namespace=namespace, name=batch_name, labels=labels,
+                    command=['bash', '-c', command] if command else None, args=None,
+                    volume_mount=volume_mount,
+                    working_dir=service.working_dir.replace('{{creator}}', service.created_by.username),
+                    node_selector=service.get_node_selector(),
+                    resource_memory=service.resource_memory, resource_cpu=service.resource_cpu,
+                    resource_gpu=service.resource_gpu if service.resource_gpu else '',
+                    image_pull_policy=conf.get('IMAGE_PULL_POLICY', 'Always'),
+                    image_pull_secrets=image_pull_secrets, image=service.images,
+                    hostAliases=conf.get('HOSTALIASES', ''), env=pod_env,
+                    privileged=False, accounts=None, username=service.created_by.username,
+                    annotations=pod_annotations
+                )
+                service.model_status = 'test'
+                db.session.commit()
+                flash(__('测试批处理任务已创建'), 'info')
+                return redirect(conf.get('MODEL_URLS', {}).get('inferenceservice', ''))
+
+            else:
+                # 生产模式：创建/更新 CronJob
+                if service.schedule:
+                    k8s_client.create_cronjob(
+                        namespace=namespace, name=name, schedule=service.schedule,
+                        labels=labels, command=['bash', '-c', command] if command else None,
+                        args=None, volume_mount=volume_mount,
+                        working_dir=service.working_dir.replace('{{creator}}', service.created_by.username),
+                        node_selector=service.get_node_selector(),
+                        resource_memory=service.resource_memory, resource_cpu=service.resource_cpu,
+                        resource_gpu=service.resource_gpu if service.resource_gpu else '',
+                        image_pull_policy=conf.get('IMAGE_PULL_POLICY', 'Always'),
+                        image_pull_secrets=image_pull_secrets, image=service.images,
+                        hostAliases=conf.get('HOSTALIASES', ''), env=pod_env,
+                        privileged=False, accounts=None, username=service.created_by.username,
+                        annotations=pod_annotations
+                    )
+                    flash(__('批处理 CronJob 已部署'), 'info')
+                else:
+                    flash(__('未配置定时调度，请在 schedule 字段填写 cron 表达式'), 'warning')
+                service.model_status = 'online'
+                service.deploy_history = service.deploy_history + "\n" + "deploy %s: %s %s" % (stag, g.user.username, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                service.deploy_history = '\n'.join(service.deploy_history.split("\n")[-10:])
+                service.deploy_history = service.deploy_history.strip()
+                db.session.commit()
+                return redirect(conf.get('MODEL_URLS', {}).get('inferenceservice', ''))
+
+        # 在线服务部署（原有逻辑）
         sidecar_contaners = []
 
         if stag == 'test' or stag == 'debug':

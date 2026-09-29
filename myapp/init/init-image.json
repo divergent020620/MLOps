@@ -1,7 +1,7 @@
 [
   {
     "group_name": "基础命令",
-    "name": "ccr.ccs.tencentyun.com/cube-studio/python:strong",
+    "name": "192.168.11.12/cube-studio/python:strong",
     "repository": "hubsecret",
     "gitpath": "",
     "describe": "丰富版本python镜像",

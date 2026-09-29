@@ -26,10 +26,11 @@ from flask import (
     abort,
     flash,
     g,
-    Markup,
     redirect,
     request
 )
+
+from markupsafe import Markup
 from .base import MyappFilter
 from myapp.models.model_dimension import Dimension_table
 from myapp.utils import core
@@ -59,7 +60,7 @@ Metadata_column_fields = {
         description= _('列名(小写字母、数字、_ 组成)，最长50个字符'),
         default='',
         widget=BS3TextFieldWidget(),
-        validators=[Regexp("^[a-z][a-z0-9\-_]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+        validators=[Regexp(r"^[a-z][a-z0-9\-_]*[a-z0-9]$"), Length(1, 54), DataRequired()]
     ),
     "describe": StringField(
         label= _('列描述'),
@@ -201,14 +202,14 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
             default="",
             description= _('链接串地址： <br> 示例：mysql+pymysql://账号:密码@ip:端口/库名?charset=utf8 <br> 示例：postgresql+psycopg2://账号:密码@ip:端口/库名'),
             widget=BS3TextFieldWidget(),
-            validators=[DataRequired(), Regexp("^(mysql\+pymysql|postgresql\+psycopg2)://.*:.*@.*:[0-9]*/[a-zA-Z_\-]*")]
+            validators=[DataRequired(), Regexp(r"^(mysql\+pymysql|postgresql\+psycopg2)://.*:.*@.*:[0-9]*/[a-zA-Z_\-]*")]
         ),
         "table_name": StringField(
             label= _('表名'),
             description= _('远程数据库的表名(小写字母、数字、_ 组成)，最长50个字符'),
             widget=BS3TextFieldWidget(),
             default='',
-            validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-_]*[a-z0-9]$")]
+            validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\-_]*[a-z0-9]$")]
         ),
         "label": StringField(
             label= _('标签'),

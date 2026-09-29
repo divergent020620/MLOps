@@ -7,7 +7,8 @@ import os,time,json
 from myapp.models.helpers import AuditMixinNullable
 from myapp import app
 from sqlalchemy import Column, Integer, String
-from flask import Markup,request,g
+from flask import request, g
+from markupsafe import Markup
 from myapp.models.base import MyappModelBase
 metadata = Model.metadata
 conf = app.config
@@ -114,8 +115,13 @@ class Dataset(Model,AuditMixinNullable,MyappModelBase):
             if re.match('^/mnt/', icon):
                 path = icon.replace('/mnt/', '/data/k8s/kubeflow/pipeline/workspace/')
             if path and os.path.exists(path):
-                import imghdr
-                if imghdr.what(path) in {'jpg', 'bmp', 'png', 'jpeg', 'rgb', 'tif', 'tiff', 'gif', 'GIF'}:
+                # py3.12: imghdr 已弃用(3.13 移除), 改用 Pillow 判断图片类型
+                from PIL import Image
+                try:
+                    img_type = Image.open(path).format
+                except Exception:
+                    img_type = None
+                if img_type and img_type.lower() in {'jpg', 'bmp', 'png', 'jpeg', 'rgb', 'tif', 'tiff', 'gif'}:
                     icon = "/static"+icon  # 形成相对网址
 
 

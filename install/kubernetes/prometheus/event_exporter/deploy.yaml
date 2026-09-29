@@ -80,7 +80,7 @@ spec:
         - command:
             - ./event_exporter
           env: []
-          image: ccr.ccs.tencentyun.com/cube-studio/event-exporter
+          image: 192.168.11.12/cube-studio/event-exporter
           imagePullPolicy: IfNotPresent
           name: event-exporter
           ports:

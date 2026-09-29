@@ -20,6 +20,32 @@ spec:
     app.kubernetes.io/name: redis
     app.kubernetes.io/instance: redis
 ---
+# Source: redis/templates/configmap.yaml
+# Redis RDB 持久化配置：定时快照，停电后最多丢几分钟数据，对性能几乎没有影响（fork+copy-on-write）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: infra
+data:
+  redis.conf: |-
+    # RDB 快照策略（默认值，BGSAVE 后台异步执行，不阻塞主进程）
+    save 900 1
+    save 300 10
+    save 60 10000
+    # 快照失败时拒绝写入，保证数据一致性
+    stop-writes-on-bgsave-error yes
+    # 压缩 RDB 文件
+    rdbcompression yes
+    # RDB 文件名
+    dbfilename dump.rdb
+    # 持久化目录（挂载 PVC）
+    dir /data
+    # 密码
+    requirepass admin
+    # 日志
+    loglevel notice
+---
 # Source: redis/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -44,12 +70,24 @@ spec:
         app.kubernetes.io/name: redis
         app.kubernetes.io/instance: redis
     spec:
+      # 绑定到 redis 节点，确保 hostPath PV 始终可访问
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: redis
+                operator: In
+                values:
+                - "true"
       containers:
         - name: redis
-          securityContext:
-            {}
-          image: "ccr.ccs.tencentyun.com/cube-studio/redis:7.4"     # 6.2.12
+          securityContext: {}
+          image: "192.168.11.12/cube-studio/redis:7.4"     # 6.2.12
           imagePullPolicy: IfNotPresent
+          command:
+            - redis-server
+            - /usr/local/etc/redis/redis.conf
           ports:
           - containerPort: 6379
             name: redis
@@ -57,6 +95,9 @@ spec:
             requests:
               cpu: 20m
               memory: 512Mi
+            limits:
+              cpu: 2
+              memory: 2Gi
           env:
             - name: REDIS_PASSWORD
               value: admin
@@ -65,8 +106,32 @@ spec:
           volumeMounts:
             - name: redis-data
               mountPath: /data
-      nodeSelector:
-        redis: 'true'
+            - name: redis-config
+              mountPath: /usr/local/etc/redis/redis.conf
+              subPath: redis.conf
+          # P1: 健康探针 — Pod 故障时 K8s 自动重启
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+              - redis-cli
+              - -a
+              - admin
+              - ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
       volumes:
         - name: redis-data
-          emptyDir: { }
+          persistentVolumeClaim:
+            claimName: infra-redis-pvc
+        - name: redis-config
+          configMap:
+            name: redis-config

@@ -15,4 +15,5 @@ def datetime_to_epoch(dttm):
 
 
 def now_as_float():
-    return datetime_to_epoch(datetime.utcnow())
+    # py3.12: datetime.utcnow 弃用; replace(tzinfo=None) 保持原 naive-UTC 语义
+    return datetime_to_epoch(datetime.now(pytz.utc).replace(tzinfo=None))

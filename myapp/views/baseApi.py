@@ -7,7 +7,8 @@ import re
 import traceback
 import urllib.parse
 import os
-from flask import Markup, Response, current_app, make_response, send_file, flash, g, jsonify, request, render_template
+from flask import Response, current_app, make_response, send_file, flash, g, jsonify, request, render_template
+from markupsafe import Markup
 from inspect import isfunction
 
 from sqlalchemy import create_engine
@@ -67,7 +68,7 @@ from flask import (
 from flask_appbuilder.exceptions import FABException, InvalidOrderByColumnFABException
 from flask_appbuilder.security.decorators import permission_name, protect, has_access
 from myapp.views.base import has_access_api
-from flask_appbuilder.api import BaseModelApi, BaseApi, ModelRestApi
+from flask_appbuilder.api import BaseApi, ModelRestApi  # FAB 5.x: BaseModelApi 已移除(项目未使用)
 from sqlalchemy.sql import sqltypes
 from myapp import app, appbuilder, db, event_logger, cache
 from myapp.forms import MySelectMultipleField
@@ -1362,7 +1363,7 @@ class MyappModelRestApi(ModelRestApi):
             return self.response_error(422, message=item.errors)
         try:
             self.pre_add(item)
-            self.datamodel.add(item, raise_exception=True)
+            self.datamodel.add(item)  # FAB 5.x: raise_exception 参数已移除
             self.post_add(item)
             result_data = self.add_model_schema.dump(item, many=False)
             result_data[self.primary_key] = self.datamodel.get_pk_value(item)
@@ -1449,7 +1450,7 @@ class MyappModelRestApi(ModelRestApi):
         import traceback
         try:
             self.pre_update(item)
-            self.datamodel.edit(item, raise_exception=True)
+            self.datamodel.edit(item)  # FAB 5.x: raise_exception 参数已移除
             if self.post_update:
                 self.post_update(item)
             result = self.edit_model_schema.dump(
@@ -1493,7 +1494,7 @@ class MyappModelRestApi(ModelRestApi):
         try:
             if self.pre_delete:
                 self.pre_delete(item)
-            self.datamodel.delete(item, raise_exception=True)
+            self.datamodel.delete(item)  # FAB 5.x: raise_exception 参数已移除
             self.post_delete(item)
             back_data = {
                 "status": 0,
@@ -1883,8 +1884,15 @@ class MyappModelRestApi(ModelRestApi):
 
     # @pysnooper.snoop()
     def _sanitize_page_args(self, page, page_size):
-        _page = page or 0
-        _page_size = page_size or self.page_size
+        # FAB 5.x rison 参数可能为 str, 统一转 int 避免 '>' 比较崩溃
+        try:
+            _page = int(page or 0)
+        except (TypeError, ValueError):
+            _page = 0
+        try:
+            _page_size = int(page_size or self.page_size)
+        except (TypeError, ValueError):
+            _page_size = self.page_size
         max_page_size = self.max_page_size or current_app.config.get(
             "FAB_API_MAX_PAGE_SIZE"
         )
@@ -2073,7 +2081,7 @@ class MyappModelRestApi(ModelRestApi):
 
         # 处理正则自动输入
         default = ret.get('default', None)
-        if default and re.match('\$\{.*\}', str(default)):
+        if default and re.match(r'\$\{.*\}', str(default)):
             ret['ui-type'] = 'match-input'
 
         return ret

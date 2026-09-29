@@ -24,7 +24,7 @@ spec:
           value: "minio2022"
         - name: MINIO_PROMETHEUS_AUTH_TYPE
           value: public
-        image: minio/minio:RELEASE.2022-10-08T20-11-00Z
+        image: 192.168.11.12/cube-studio/minio/minio:RELEASE.2022-10-08T20-11-00Z
         imagePullPolicy: IfNotPresent
         args:
         - server

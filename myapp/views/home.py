@@ -678,6 +678,26 @@ class Myapp(BaseMyappView):
             }
             projetc['children'].append(announcement_setting)
 
+            # 平台配置菜单（仅管理员可见）
+            platform_config_menu = {
+                "name": 'platform_config',
+                "title": __('平台配置'),
+                "icon": '<svg t="1743484800000" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5300" width="128" height="128"><path d="M512 512m-447.4 0a447.4 447.4 0 1 0 894.8 0 447.4 447.4 0 1 0-894.8 0Z" fill="#666666" p-id="5301"></path><path d="M512 160L320 352h128v192h128V352h128L512 160zM512 864l192-192h-128V480h-128v192H320l192 192z" fill="#FFFFFF" p-id="5302"></path></svg>',
+                "isMenu": True,
+                "isExpand": True,
+                "children": [
+                    {
+                        "name": 'platform_config',
+                        "title": __('DNS / Hosts 配置'),
+                        "icon": '<svg t="1743484800000" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5300" width="128" height="128"><path d="M512 512m-447.4 0a447.4 447.4 0 1 0 894.8 0 447.4 447.4 0 1 0-894.8 0Z" fill="#666666" p-id="5301"></path><path d="M512 160L320 352h128v192h128V352h128L512 160zM512 864l192-192h-128V480h-128v192H320l192 192z" fill="#FFFFFF" p-id="5302"></path></svg>',
+                        "menu_type": "innerRoute",
+                        "url": "{host}/frontend/platformConfig".format(host=request.host_url.strip('/')),
+                        "disable": not is_admin
+                    }
+                ]
+            }
+            projetc['children'].append(platform_config_menu)
+
             projetc['children'].append(links)
         # if conf.get('BABEL_DEFAULT_LOCALE','zh')=='en':
         #     menu = [projetc, data, dev, ml, service]

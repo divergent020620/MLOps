@@ -9,7 +9,12 @@ spec:
   hosts:
   - "*"    # 管理平台的域名   kubeflow.local.com
   http:
-  - route:
+  - retries:
+      attempts: 2
+      perTryTimeout: 30s
+      retryOn: "5xx,reset,connect-failure,refused-stream,unavailable,cancelled"
+    timeout: 300s
+    route:
     - destination:
         host: kubeflow-dashboard-frontend.infra.svc.cluster.local
         port:

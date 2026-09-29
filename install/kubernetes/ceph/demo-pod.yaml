@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
     - name: web-server
-      image: nginx
+      image: 192.168.11.12/cube-studio/nginx
       volumeMounts:
         - name: mypvc
           mountPath: /var/lib/www/html

@@ -31,7 +31,7 @@
         "label": "下载处理标注数据",
         "volume_mount": "kubeflow-user-workspace(pvc):/mnt/",
         "args": {
-          "images": "ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
+          "images": "192.168.11.12/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
           "workdir": "/mnt/{{creator}}/",
           "command": "rm -rf coco.zip && wget https://cube-studio.oss-cn-hangzhou.aliyuncs.com/pipeline/coco.zip --no-check-certificate && unzip -o coco.zip && cd  coco_data_sample && bash reset_file.sh"
         }
@@ -65,7 +65,7 @@
           "--model_version": "v2024.07.01.1",
           "--model_path": "/mnt/{{creator}}/coco_data_sample/yolov8_best.pt",
           "--service_type": "serving",
-          "--images": "ccr.ccs.tencentyun.com/cube-studio/yolov8:20250801",
+          "--images": "192.168.11.12/cube-studio/yolov8:20250801",
           "--volume_mount": "kubeflow-user-workspace(pvc):/mnt,/data/k8s/kubeflow/labelstudio(hostpath):/labelstudio/",
           "--working_dir": "/yolov8",
           "--command": "python server.py",
@@ -345,7 +345,7 @@
         "resource_cpu": "2",
         "resource_gpu": "0",
         "args": {
-          "images": "ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
+          "images": "192.168.11.12/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
           "workdir": "/mnt/{{creator}}/pipeline/example/ml/",
           "command": "sh fix.sh"
         }
@@ -384,7 +384,7 @@
           "--model_version": "v2023.11.01.1",
           "--model_path": "/mnt/{{creator}}/pipeline/example/ml/decisionTree_model.pkl",
           "--service_type": "ml-server",
-          "--images": "ccr.ccs.tencentyun.com/cube-studio/ml-server:20240601",
+          "--images": "192.168.11.12/cube-studio/ml-server:20240601",
           "--working_dir": "",
           "--command": "",
           "--env": "",
@@ -526,7 +526,7 @@
         "resource_gpu": "0",
         "resource_rdma": "0",
         "args": {
-          "images": "ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
+          "images": "192.168.11.12/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
           "workdir": "/mnt/{{creator}}/pipeline/example/deepseek/",
           "command": "python data-process-identiy.py"
         }
@@ -683,7 +683,7 @@
                 "resource_gpu": "0",
                 "resource_rdma": "0",
                 "args": {
-                    "images": "ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
+                    "images": "192.168.11.12/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
                     "workdir": "/mnt/{{creator}}/pipeline/example/yolo/electric-bicycle",
                     "command": "python yolo-data-process.py"
                 }
@@ -723,7 +723,7 @@
                     "--model_version": "v20240701",
                     "--model_path": "/mnt/{{creator}}/pipeline/example/yolo/electric-bicycle/electric-bicycle-new.pt",
                     "--service_type": "serving",
-                    "--images": "ccr.ccs.tencentyun.com/cube-studio/yolov8:2024.07",
+                    "--images": "192.168.11.12/cube-studio/yolov8:2024.07",
                     "--working_dir": "/yolov8",
                     "--command": "python server.py",
                     "--env": "MODELPATH=/mnt/admin/pipeline/example/yolo/electric-bicycle/electric-bicycle-new.pt\nYOLO_SAVE_DIR=/mnt/admin/pipeline/example/yolo/inference/\nYOLO_EXAMPLE=https://cube-studio.oss-cn-hangzhou.aliyuncs.com/labelstudio/vision/electric-bicycle/2020_2582.jpg",
@@ -749,7 +749,7 @@
                 "resource_gpu": "0",
                 "resource_rdma": "0",
                 "args": {
-                    "images": "ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
+                    "images": "192.168.11.12/cube-studio/ubuntu-gpu:cuda11.8.0-cudnn8-python3.9",
                     "workdir": "/mnt/{{creator}}/pipeline/example/yolo/",
                     "command": "rm -rf electric-bicycle.zip && wget https://cube-studio.oss-cn-hangzhou.aliyuncs.com/pipeline/electric-bicycle/electric-bicycle.zip --no-check-certificate && unzip -n electric-bicycle.zip && cd electric-bicycle && sh reset.sh"
                 }

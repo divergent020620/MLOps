@@ -362,7 +362,7 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
         - name: rook-ceph-operator
-          image: rook/ceph:master
+          image: 192.168.11.12/cube-studio/rook/ceph:master
           args: ["ceph", "operator"]
           volumeMounts:
             - mountPath: /var/lib/rook

@@ -24,7 +24,8 @@ from myapp.models.model_team import Project
 import pysnooper
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from flask_appbuilder.models.decorators import renders
-from flask import Markup,request,g
+from flask import request, g
+from markupsafe import Markup
 from myapp.models.base import MyappModelBase
 import datetime
 metadata = Model.metadata

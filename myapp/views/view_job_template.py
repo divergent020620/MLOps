@@ -25,11 +25,12 @@ from .baseApi import (
 from flask import (
     flash,
     g,
-    Markup,
     make_response,
     redirect,
     request
 )
+
+from markupsafe import Markup
 
 from .base import MyappFilter
 from flask_appbuilder import expose
@@ -84,7 +85,7 @@ class Job_Template_ModelView_Base():
             description= _('英文名(小写字母、数字、- 组成)，最长50个字符'),
             default='',
             widget=BS3TextFieldWidget(),  # 传给widget函数的是外层的field对象，以及widget函数的参数
-            validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
+            validators=[Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
         ),
         "describe": StringField(
             _("描述"),
@@ -148,7 +149,7 @@ class Job_Template_ModelView_Base():
             default='',
             description= _('k8s的ServiceAccount，在此类任务运行时会自动挂载此账号，多用于任务操作k8s pod时使用'),
             widget=BS3TextFieldWidget(),  # 传给widget函数的是外层的field对象，以及widget函数的参数
-            validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(0, 54)]
+            validators=[Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(0, 54)]
         ),
         "privileged": BooleanField(
             _('超级权限'),

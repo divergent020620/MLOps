@@ -16,7 +16,7 @@ fullnameOverride: alluxio
 ## Common ##
 
 # Docker Image
-image: alluxio/alluxio
+image: 192.168.11.12/cube-studio/alluxio/alluxio
 imageTag: 2.9.0
 imagePullPolicy: IfNotPresent
 
@@ -689,7 +689,7 @@ csi:
     dnsPolicy: ClusterFirstWithHostNet
     provisioner:
       # for kubernetes 1.17 or above
-      image: k8s.gcr.io/sig-storage/csi-provisioner:v2.0.5
+      image: 192.168.11.12/cube-studio/sig-storage/csi-provisioner:v2.0.5
       resources:
         limits:
           cpu: 100m
@@ -721,7 +721,7 @@ csi:
           cpu: "1"
           memory: "1Gi"
     driverRegistrar:
-      image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.0
+      image: 192.168.11.12/cube-studio/sig-storage/csi-node-driver-registrar:v2.0.0
       resources:
         limits:
           cpu: 100m

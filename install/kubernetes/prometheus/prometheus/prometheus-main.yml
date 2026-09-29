@@ -11,7 +11,7 @@ spec:
 #    - name: alertmanager-main
 #      namespace: monitoring
 #      port: web
-  image: prom/prometheus:v2.27.1 # quay.io/prometheus/prometheus:v2.27.1
+  image: 192.168.11.12/cube-studio/prom/prometheus:v2.27.1 # quay.io/prometheus/prometheus:v2.27.1
 #  args:
 #    - '--web.route-prefix=/prometheus' # 添加这一行，添加后grafana就没法正常访问资源了
   replicas: 1

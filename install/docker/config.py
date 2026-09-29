@@ -1,6 +1,6 @@
 
 
-import imp
+import importlib.util  # py3.12: imp 模块已移除, 用 importlib 替代
 import json
 import os
 import shutil
@@ -59,7 +59,8 @@ FLASK_USE_RELOAD = True
 SHOW_STACKTRACE = True
 
 # Extract and use X-Forwarded-For/X-Forwarded-Proto headers?
-ENABLE_PROXY_FIX = False
+# HA: 开启以正确解析多级代理后的客户端 IP
+ENABLE_PROXY_FIX = True
 
 # ------------------------------
 # GLOBALS FOR APP Builder
@@ -347,9 +348,11 @@ try:
             )
         )
         module = sys.modules[__name__]
-        override_conf = imp.load_source(
+        override_spec = importlib.util.spec_from_file_location(
             "myapp_config", os.environ[CONFIG_PATH_ENV_VAR]
         )
+        override_conf = importlib.util.module_from_spec(override_spec)
+        override_spec.loader.exec_module(override_conf)
         for key in dir(override_conf):
             if key.isupper():
                 setattr(module, key, getattr(override_conf, key))
@@ -402,7 +405,7 @@ from celery.schedules import crontab
 CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24  # cache默认超时是24小时，一天才过期
 
 CACHE_CONFIG = {
-    'CACHE_TYPE': 'redis', # 使用 Redis
+    'CACHE_TYPE': 'RedisCache', # 使用 Redis (flask-caching 2.5.x 后端名)
     'CACHE_REDIS_HOST': REDIS_HOST, # 配置域名
     'CACHE_REDIS_PORT': int(REDIS_PORT), # 配置端口号
     'CACHE_REDIS_URL':'redis://:%s@%s:%s/1'%(REDIS_PASSWORD,REDIS_HOST,str(REDIS_PORT)) if REDIS_PASSWORD else 'redis://%s:%s/1'%(REDIS_HOST,str(REDIS_PORT))   # 0，1为数据库编号（redis有0-16个数据库）
@@ -741,6 +744,10 @@ HUBSECRET_NAMESPACE=[PIPELINE_NAMESPACE,AUTOML_NAMESPACE,NOTEBOOK_NAMESPACE,SERV
 
 # notebook使用的镜像
 NOTEBOOK_IMAGES=[
+    # ★ 麒麟信创镜像
+    ['192.168.11.12/cube-studio/notebook:jupyter-kylin-hdfs', 'jupyter-kylin（hdfs）'],
+    ['192.168.11.12/cube-studio/notebook:jupyter-kylin-spark', 'jupyter-kylin（spark）'],
+    # 原 ubuntu 镜像（过渡期保留）
     ['ccr.ccs.tencentyun.com/cube-studio/notebook:vscode-ubuntu-cpu-base', 'vscode（cpu）'],
     ['ccr.ccs.tencentyun.com/cube-studio/notebook:vscode-ubuntu-gpu-base', 'vscode（gpu）'],
     ['ccr.ccs.tencentyun.com/cube-studio/notebook:jupyter-ubuntu22.04', 'jupyter（cpu）'],
@@ -825,7 +832,7 @@ INFERNENCE_IMAGES={
     'triton-server':['ccr.ccs.tencentyun.com/cube-studio/tritonserver:24.01-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:23.12-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:22.12-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:21.12-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:20.12-py3']
 }
 
-CONTAINER_CLI='docker'   # 或者 docker nerdctl
+CONTAINER_CLI='nerdctl'   # 或者 docker nerdctl
 
 DOCKER_IMAGES='docker:23.0.4'
 NERDCTL_IMAGES='ccr.ccs.tencentyun.com/cube-studio/nerdctl:1.7.2'
@@ -898,6 +905,12 @@ CLUSTERS={
         "KUBECONFIG":'/home/myapp/kubeconfig/dev-kubeconfig',
         "SERVICE_DOMAIN": 'service.local.com',
         # "HOST": "192.168.0.100"   # 本地调试的时候这里更换为k8s的istio ingressgateway的ip并解开注释
+    },
+    # 生产(行内)集群: ENVIRONMENT=prod 时使用, 生产实际域名/kubeconfig 按行内为准
+    "prod":{
+        "NAME":"prod",
+        "KUBECONFIG":'/home/myapp/kubeconfig/prod-kubeconfig',
+        "SERVICE_DOMAIN": 'service.svc.cluster.local',
     }
 }
 

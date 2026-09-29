@@ -204,7 +204,7 @@ spec:
       serviceAccountName: kubeflow-prometheus-adapter
       containers:
       - name: prometheus-adapter
-        image: "ccr.ccs.tencentyun.com/cube-studio/prometheus-adapter:v0.9.1"
+        image: "192.168.11.12/cube-studio/prometheus-adapter:v0.9.1""
         imagePullPolicy: IfNotPresent
         args:
         - /adapter

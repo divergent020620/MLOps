@@ -537,7 +537,7 @@ def check_ownership(obj, raise_if_false=True):
     roles = [r.name for r in get_user_roles()]
     if "Admin" in roles:
         return True
-    session = db.create_scoped_session()
+    session = db.create_session()  # Flask-SQLAlchemy 3.x: create_scoped_session 已删除
     orig_obj = session.query(obj.__class__).filter_by(id=obj.id).first()
 
     # Making a list of owners that works across ORM models

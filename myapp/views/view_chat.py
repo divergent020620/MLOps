@@ -25,7 +25,8 @@ from myapp import app, appbuilder
 from wtforms import StringField, SelectField
 from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, Select2Widget
 from myapp.forms import MyBS3TextAreaFieldWidget, MySelect2Widget
-from flask import jsonify, Markup, make_response, stream_with_context
+from flask import jsonify, make_response, stream_with_context
+from markupsafe import Markup
 from .baseApi import MyappModelRestApi
 from flask import g, request, redirect
 import urllib
@@ -248,7 +249,7 @@ aihub接口类型
             description= _('英文名(小写字母、数字、- 组成)，最长50个字符'),
             default='',
             widget=BS3TextFieldWidget(),
-            validators=[DataRequired(),Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$")]
+            validators=[DataRequired(),Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$")]
         ),
         "label": StringField(
             label= _('标签'),
@@ -352,7 +353,7 @@ aihub接口类型
             description=_('英文名(小写字母、数字、- 组成)，最长50个字符'),
             default='',
             widget=MyBS3TextFieldWidget(readonly=True if chat else False),
-            validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$")]
+            validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$")]
         )
 
     def pre_add_web(self):
@@ -687,7 +688,7 @@ AI:
         # 添加数据库记录
         try:
             text = emoji.demojize(search_text)
-            search_text = re.sub(':\S+?:', ' ', text)  # 去除表情
+            search_text = re.sub(r':\S+?:', ' ', text)  # 去除表情
             # chatlog = ChatLog(
             #     username=str(username),
             #     chat_id=chat.id,

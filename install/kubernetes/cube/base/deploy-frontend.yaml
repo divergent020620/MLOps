@@ -77,7 +77,12 @@ metadata:
   labels:
     app: kubeflow-dashboard-frontend
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: kubeflow-dashboard-frontend
@@ -88,6 +93,12 @@ spec:
         app: kubeflow-dashboard-frontend
     spec:
       affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: kubeflow-dashboard-frontend
+            topologyKey: kubernetes.io/hostname
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -111,7 +122,7 @@ spec:
         - name: hubsecret
       containers:
         - name: kubeflow-dashboard-frontend
-          image: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard-frontend
+          image: 192.168.11.12/cube-studio/kubeflow-dashboard-frontend:kylin-20260730-v6
           imagePullPolicy: Always  # IfNotPresent  Always
           ports:
             - name: http
@@ -121,6 +132,24 @@ spec:
             requests:
               cpu: 10m
               memory: 100Mi
+
+          livenessProbe:
+            httpGet:
+              path: /frontend/
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /frontend/
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
 
           volumeMounts:
             - name: nginx-configmap

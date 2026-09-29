@@ -28,7 +28,7 @@ const userName = cookies.get('myapp_username')
 
 if (!!userName) {
   isLogin = true
-} else {
+} else if (!window.location.pathname.startsWith('/login')) {
   handleTips.gotoLogin()
 }
 

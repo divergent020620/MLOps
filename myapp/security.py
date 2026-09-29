@@ -37,12 +37,10 @@ from flask_appbuilder.const import (
     AUTH_DB,
     AUTH_LDAP,
     AUTH_OAUTH,
-    AUTH_OID,
     AUTH_REMOTE_USER,
     LOGMSG_WAR_SEC_LOGIN_FAILED
 )
 from flask_appbuilder.security.views import SimpleFormView
-from flask_appbuilder._compat import as_unicode
 from wtforms import StringField
 from wtforms.validators import DataRequired,Regexp,Length
 
@@ -182,7 +180,7 @@ class MyUserRemoteUserModelView_Base():
     add_form_extra_fields = {
         "username" : StringField(
             _("用户名"),
-            validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$")],
+            validators=[DataRequired(), Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$")],
             widget=BS3TextFieldWidget(),
             description=_("用户名只能由小写字母、数字、-组成"),
         ),
@@ -199,7 +197,7 @@ class MyUserRemoteUserModelView_Base():
         ),
         "email": StringField(
             _("邮箱"),
-            validators=[DataRequired(), Regexp(".*@.*\..*")],
+            validators=[DataRequired(), Regexp(r".*@.*\..*")],
             widget=BS3TextFieldWidget()
         ),
         "org": StringField(
@@ -293,6 +291,9 @@ class MyappSecurityManager(SecurityManager):
         #     token = request.headers['token']
         if authorization_value:
             from myapp import conf
+            # 兼容标准 Bearer 格式(如 FAB SecurityApi / FAB 5 前端请求头)
+            if authorization_value.startswith('Bearer '):
+                authorization_value = authorization_value[7:]
             # username 免认证，设计到多平台调用时打开
             if len(authorization_value) < 40: # 任务模板请求后端api调用  and conf.get('AUTH_PLATFORM_ACCESS',False):
                 username = authorization_value
@@ -302,13 +303,20 @@ class MyappSecurityManager(SecurityManager):
                     return user
             else:  # token 认证
                 encoded_jwt = authorization_value.encode('utf-8')
-                payload = jwt.decode(encoded_jwt, conf.get('JWT_PASSWORD','cube-studio'), algorithms=['HS256'])
-                # if payload['iat'] > time.time():
-                #     return
-                # elif payload['exp'] < time.time():
-                #     return
-                # else:
-                user = self.find_user(payload['sub'])
+                # 兼容两种签发方: 平台自签(JWT_PASSWORD) 与 FAB/JWT-Extended(SECRET_KEY)
+                payload = None
+                for jwt_key in (conf.get('JWT_PASSWORD', 'cube-studio'), conf.get('SECRET_KEY')):
+                    if not jwt_key:
+                        continue
+                    try:
+                        payload = jwt.decode(encoded_jwt, jwt_key, algorithms=['HS256'])
+                        break
+                    except jwt.InvalidTokenError:
+                        continue
+                if payload is None:
+                    return None
+                # FAB SecurityApi 的 sub 为用户 id, 平台自签的 sub 为 username
+                user = self.find_user(payload['sub']) or self.get_user_by_id(int(payload['sub']))
                 g.user = user
                 return user
 
@@ -340,12 +348,9 @@ class MyappSecurityManager(SecurityManager):
             self.user_view = self.userremoteusermodelview
             self.auth_view = self.authremoteuserview()
         else:
-            self.user_view = self.useroidmodelview
-            self.auth_view = self.authoidview()
-            if self.auth_user_registration:
-                pass
-                self.registeruser_view = self.registeruseroidview()
-                self.appbuilder.add_view_no_menu(self.registeruser_view)
+            # FAB 5.x 移除 OID; 统一走 remoteuser(项目 SSO 实际为 AUTH_REMOTE_USER)
+            self.user_view = self.userremoteusermodelview
+            self.auth_view = self.authremoteuserview()
 
         self.appbuilder.add_view_no_menu(self.auth_view)
 

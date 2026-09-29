@@ -100,7 +100,7 @@ class Task_ModelView_Base():
             label= _('名称'),
             description= _('英文名(小写字母、数字、- 组成)，最长50个字符'),
             widget=BS3TextFieldWidget(),
-            validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
+            validators=[Regexp(r"^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54), DataRequired()]
         ),
         "label": StringField(
             label= _('标签'),
@@ -170,7 +170,7 @@ class Task_ModelView_Base():
         ),
     }
 
-    add_form_extra_fields['resource_gpu'] = StringField('gpu', default='0', description= _('gpu的资源使用配置(单位卡)，示例:1，2，训练任务每个容器独占整卡。申请具体的卡型号，可以类似 1(V100)'),widget=BS3TextFieldWidget(),validators=[DataRequired(),Regexp('^[\-\.0-9,a-zA-Z\(\)]*$')])
+    add_form_extra_fields['resource_gpu'] = StringField('gpu', default='0', description= _('gpu的资源使用配置(单位卡)，示例:1，2，训练任务每个容器独占整卡。申请具体的卡型号，可以类似 1(V100)'),widget=BS3TextFieldWidget(),validators=[DataRequired(),Regexp(r'^[\-\.0-9,a-zA-Z\(\)]*$')])
     add_form_extra_fields['resource_rdma'] = StringField('rdma', default='0', description= _('RDMA的资源使用配置，示例 0，1，10，填写方式咨询管理员'), widget=BS3TextFieldWidget())
 
     edit_form_extra_fields = add_form_extra_fields
@@ -674,7 +674,7 @@ class Task_ModelView_Base():
 
         # 包含上游输出的不能进行单任务运行
         import re
-        all_templates_vars = re.findall("(\{\{.*?\}\})",task.args)
+        all_templates_vars = re.findall(r"(\{\{.*?\}\})",task.args)
         for var in all_templates_vars:
             if '.output' in var:
                 message = __('包含接收上游输出，不允许单任务运行')
@@ -740,7 +740,7 @@ class Task_ModelView_Base():
                 # elif type(task_args[task_attr_name]) == list:
                 #     for args_values in task_args[task_attr_name].split('\n'):
                 #         ops_args.append('%s' % str(task_attr_name))
-                #         # args_values = template_str(args_values) if re.match('\{\{.*\}\}',args_values) else args_values
+                #         # args_values = template_str(args_values) if re.match(r'\{\{.*\}\}',args_values) else args_values
                 #         ops_args.append('%s' % args_values)
 
                 elif task_attr_name not in ['images','workdir']:  # 如果参数名直接是这些，就不作为参数，而是替换模板的这两个配置

@@ -20,7 +20,7 @@ spec:
                 path: /home/fzh/wide_and_deep/
           containers:
             - name: mindspore
-              image: swr.cn-south-1.myhuaweicloud.com/mindspore-ci/mindspore-gpu:1.7.0-20220327121541
+              image: 192.168.11.12/cube-studio/mindspore-ci/mindspore-gpu:1.7.0-20220327121541
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/bash
@@ -43,7 +43,7 @@ spec:
                 path: /home/fzh/wide_and_deep/
           containers:
             - name: mindspore
-              image: swr.cn-south-1.myhuaweicloud.com/mindspore-ci/mindspore-gpu:1.7.0-20220327121541
+              image: 192.168.11.12/cube-studio/mindspore-ci/mindspore-gpu:1.7.0-20220327121541
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/bash
@@ -63,7 +63,7 @@ spec:
                 path: /home/fzh/wide_and_deep/
           containers:
             - name: mindspore
-              image: swr.cn-south-1.myhuaweicloud.com/mindspore-ci/mindspore-gpu:1.7.0-20220327121541
+              image: 192.168.11.12/cube-studio/mindspore-ci/mindspore-gpu:1.7.0-20220327121541
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/bash

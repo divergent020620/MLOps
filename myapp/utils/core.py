@@ -25,7 +25,8 @@ import bleach
 import celery
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
-from flask import current_app, flash, Flask, g, Markup, render_template
+from flask import current_app, flash, Flask, g, render_template
+from markupsafe import Markup
 from flask_appbuilder.security.sqla.models import User
 from flask_babel import gettext as __
 from flask_babel import lazy_gettext as _
@@ -790,7 +791,7 @@ def pessimistic_connection_handling(some_engine):
             # run a SELECT 1.   use a core select() so that
             # the SELECT of a scalar value without a table is
             # appropriately formatted for the backend
-            connection.scalar(select([1]))
+            connection.scalar(select(1))  # SQLAlchemy 2.0: select([1]) 旧形态已移除
         except exc.DBAPIError as err:
             # catch SQLAlchemy's DBAPIError, which is a wrapper
             # for the DBAPI's exception.  It includes a .connection_invalidated
@@ -802,12 +803,18 @@ def pessimistic_connection_handling(some_engine):
                 # itself and establish a new connection.  The disconnect detection
                 # here also causes the whole connection pool to be invalidated
                 # so that all stale connections are discarded.
-                connection.scalar(select([1]))
+                connection.scalar(select(1))  # SQLAlchemy 2.0: select([1]) 旧形态已移除
             else:
                 raise
         finally:
             # restore 'close with result'
             connection.should_close_with_result = save_should_close_with_result
+            # SQLAlchemy 2.0: SELECT 1 触发 autobegin, 需要回滚清掉隐式事务,
+            # 否则连接复用(如 FAB create_all)时报 "already initialized a Transaction"
+            try:
+                connection.rollback()
+            except Exception:
+                pass
 
 
 class QueryStatus:
@@ -1573,7 +1580,7 @@ def checkip(ip):
         ip = ip[:ip.index(':')]
     if '|' in ip:
         ip = ip.split('|')[0]   # 内网ip|公网域名
-    p = re.compile('^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
+    p = re.compile(r'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
     if p.match(ip):
         return True
     else:

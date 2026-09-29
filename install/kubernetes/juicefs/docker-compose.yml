@@ -4,7 +4,7 @@ services:
   minio-juicefs:
     container_name: minio-juicefs
     restart: always
-    image: bitnami/minio:2022.9.17
+    image: 192.168.11.12/cube-studio/bitnami/minio:2022.9.17
     #ports:            #使用host模式时不需要
     #  - '9010:9000'   
     #  - '9011:9001'
@@ -21,7 +21,7 @@ services:
     network_mode: host
 
   redis-juicefs:
-    image: redis:7.0.11
+    image: 192.168.11.12/cube-studio/redis:7.0.11
     container_name:  redis-juicefs
     restart: always
     #expose:

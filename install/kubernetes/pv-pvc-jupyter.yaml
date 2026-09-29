@@ -62,3 +62,35 @@ spec:
       storage: 500Gi
   storageClassName: ""
   volumeName: jupyter-kubeflow-archives
+
+# 数据集存储（只读），各节点通过 NFS 软链共享 /data/k8s/kubeflow/dataset
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jupyter-kubeflow-dataset
+  labels:
+    jupyter-pvname: jupyter-kubeflow-dataset
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadOnlyMany
+  hostPath:
+    path: /data/k8s/kubeflow/dataset
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: kubeflow-dataset
+  namespace: jupyter
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: ""
+  volumeName: jupyter-kubeflow-dataset
